@@ -216,9 +216,10 @@ class SendDialog extends React.Component {
 
   _startTransfer() {
     const {
-      wallet,
+      closeDialog,
       refreshCoinBalance,
       snackbarUpdate,
+      wallet,
     } = this.props;
 
     const {
@@ -250,23 +251,20 @@ class SendDialog extends React.Component {
         payment,
         loadingMessage: "Preparing the Bitcoin transfer...",
       });
+
       return wallet.transferBitcoin(uri, speed, this._confirmTransfer);
     }).then((resp) => {
       this._successTransfer(resp);
     }).catch((error) => {
-
-      if (error.message == "Redeem deferred") {
-        snackbarUpdate("Blockchain transfer has been scheduled and is expected to start soon");
-      } else if (error.message) {
-        snackbarUpdate(error.message, true);
-      } else {
-        snackbarUpdate("Failed to redeem coins", true);
-      }
-
       refreshCoinBalance("XBT").then(() => {
-        this.setState({
-          sendStatus: 'initial',
-        });
+        if (error.message == "Redeem deferred") {
+          snackbarUpdate("Blockchain transfer has been scheduled and is expected to start soon");
+        } else if (error.message) {
+          snackbarUpdate(error.message, true);
+        } else {
+          snackbarUpdate("Failed to redeem coins", true);
+        }
+        closeDialog();
       });
     });
   };
