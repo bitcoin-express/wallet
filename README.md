@@ -34,17 +34,17 @@ Install all the dependencies of the project:
     npm install
 ```
 
-Run webpack (developer mode) - dev/ folder
+Run webpack (developer mode) at the desired folder (by default at dev/ folder)
 ```shellscript
     npm run build:dev -- --env.dir ./path/to/the/deployment/folder/
 ```
 
-Deploy production Wallet - dist/ folder
+Deploy production Wallet (by default at dist/ folder)
 ```shellscript
     npm run build:dist
 ```
 
-Deploy production Wallet - any folder
+Deploy production Wallet at the desired folder
 ```shellscript
     npm run build:prod -- --env.dir ./path/to/the/deployment/folder/
 ```
