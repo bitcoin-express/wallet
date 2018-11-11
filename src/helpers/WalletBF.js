@@ -2365,17 +2365,21 @@ export default class WalletBF {
       const recommendedFees = issuer.currencyInfo.find((elt) => {
         return elt.currencyCode = "XBT";
       }).blockchainInfo;
-      const bitcoinFee = recommendedFees[speed] || 0;
 
+      const bitcoinFee = recommendedFees[speed] || 0;
+      let minValue = parseFloat(recommendedFees.minRedemptionValue || 0);
       let paymentAmount = parseFloat(amount);
       if (paymentAmount <= 0) {
         throw new Error("Amount must be positive");
+        return;
+      } else if (paymentAmount <= minValue) {
+        throw new Error("Transfer amount too small for this blockchain");
         return;
       }
 
       let txAmount = this._round(paymentAmount + bitcoinFee, 8);
       if (txAmount > balance) {
-        throw new Error("Insufficient funds to pay fees");
+        throw new Error("Insufficient funds to pay this blockchain fees");
         return;
       }
 

@@ -259,12 +259,16 @@ class SendDialog extends React.Component {
       refreshCoinBalance("XBT").then(() => {
         if (error.message == "Redeem deferred") {
           snackbarUpdate("Blockchain transfer has been scheduled and is expected to start soon");
+          closeDialog();
         } else if (error.message) {
           snackbarUpdate(error.message, true);
+          this.setState({
+            sendStatus: 'initial',
+          });
         } else {
           snackbarUpdate("Failed to redeem coins", true);
+          closeDialog();
         }
-        closeDialog();
       });
     });
   };
