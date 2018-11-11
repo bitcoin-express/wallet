@@ -2743,6 +2743,13 @@ export default class WalletBF {
       let resp = null;
       let tid;
 
+      if (!request.currency) {
+        if (args.beginResponse && args.beginResponse.issueInfo) {
+          request.currency = args.beginResponse.currency;
+        }
+        request.currency = request.currency || "XBT";
+      }
+
       return this.issuer("issue", request, args).then((issueResponse) => {
         resp = issueResponse;
         if (resp.deferInfo) {
@@ -3741,18 +3748,15 @@ export default class WalletBF {
             issuerResponse,
           } = response;
 
-          // UPDATE BitcoinFees for future use
+          // Update Bitcoin fees for future use
           this._updateBitcoinFees(fn, issuerResponse);
 
-          if (issuerResponse) {
-            if (issuerResponse.status) {
-              resolve(issuerResponse);
-            } else {
-              reject(issuerResponse);
-            }
-          } else {
-            reject(Error("Unexpected response from server"));
+          if (issuerResponse && issuerResponse.status) {
+            return resolve(issuerResponse);
+          } else if (issuerResponse) {
+            return reject(issuerResponse);
           }
+          return reject(Error("Unexpected response from server"));
         },
         error: (xhr, status, err) => {
           console.log(xhr, status, err);
@@ -3760,7 +3764,7 @@ export default class WalletBF {
           if (status === "timeout") {
             message = `Server did not respond within ${localArgs.timeout} sec.`;
           }
-          reject(Error(message));
+          return reject(Error(message));
         }
       });
     });
