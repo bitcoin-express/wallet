@@ -2307,11 +2307,17 @@ export default class WalletBF {
    *
    * @param confirmation [function] (optional) A function to be called to
    *   allow the user to confirm the payment.
+   *
+   * @param refreshBalance [function] (optional) A function to be called
+   *   when refresh wallet currency is needed. It must be called as:
+   *       - refreshBalance(CURRENCY_CODE)
    */
-  transferBitcoin(uri, speed, confirmation) {
+  transferBitcoin(uri, speed, confirmation, refreshBalance) {
     if (this.config.debug) {
       console.log("WalletBF.transferBitcoin");
     }
+
+    confirmation = confirmation || function (_x, _y, fn) { fn(); };
 
     let payment = this._parseBitcoinURI(uri);
 
@@ -2434,11 +2440,10 @@ export default class WalletBF {
         args.inCoinCount = allCoins.length;
         args.outCoinCount = 1;
 
-        confirmation = confirmation || function (_x, _y, fn) { fn(); };
         return new Promise((resolve, reject) => {
           confirmation(parseFloat(amount), bitcoinFee, () => {
             args.firstTimeCalled = true;
-            const params = [allCoins, address, args, "XBT"];
+            const params = [allCoins, address, args, "XBT", refreshBalance];
             this.redeemCoins(...params).then(resolve).catch(reject);
           });
         });
@@ -2888,10 +2893,12 @@ export default class WalletBF {
    * @element beginResponse [Object] Include this if /begin has been called. If not present redeemCoins
    *    will first call /begin to obtain a transaction ID.
    */
-  redeemCoins(coins, address, args, crypto=null) {
+  redeemCoins(coins, address, args, crypto=null, refreshBalance) {
     if (this.config.debug) {
       console.log("WalletBF.redeemCoins",coins,address,args);
     }
+
+    refreshBalance = refreshBalance || (c => Promise.resolve(true));
 
     const {
       blockchainSpeed,
@@ -3013,7 +3020,7 @@ export default class WalletBF {
         });
         let feeExpiryEmail = issuer ? Number.parseFloat(issuer.feeExpiryEmail || "0") : 0;
         let bitcoinFees = issuer.currencyInfo.find((elt) => {
-          return elt.currencyCode == "XBT";
+          return elt.currencyCode == crypto;
         }).blockchainInfo;
         let change = (sumCoins - args.target - bitcoinFees[args.speed]);
         if (change > feeExpiryEmail) {
@@ -3030,10 +3037,16 @@ export default class WalletBF {
       }).then(() => {
         return this.extractCoins(base64Coins, tid, "localhost", "XBT");
       }).then((removedCoins) => {
-        console.log(`Removed ${removedCoins.length} coins on redeem`)
+        console.log(`Removed ${removedCoins.length} coins on redeem`);
+        return refreshBalance(crypto);
+      }).then((balance) => {
+        console.log(`New balance ${crypto}${balance}.`);
         return this._redeemCoins_inner_(redeemRequest, args, crypto);
       }).then((response) => {
         redeemResponse = response;
+        return refreshBalance(crypto);
+      }).then((balance) => {
+        console.log(`Final balance ${crypto}${balance}.`);
         return storage.sessionEnd();
       }).then(() => {
         return redeemResponse;
@@ -3062,7 +3075,13 @@ export default class WalletBF {
 
         return this.issuer("exist", existParams, params).then((resp) => {
           if (resp.coin && resp.coin.length > 0) {
-            return this.includeCoinsInStore(resp.coin);
+            let numCoins = 0
+            return this.includeCoinsInStore(resp.coin).then((resp) => {
+              numCoins = resp;
+              return refreshBalance(crypto);
+            }).then(() => {
+              return numCoins;
+            });
           }
           return 0;
         }).then((numCoins) => {

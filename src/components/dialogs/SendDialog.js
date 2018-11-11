@@ -252,7 +252,7 @@ class SendDialog extends React.Component {
         loadingMessage: "Preparing the Bitcoin transfer...",
       });
 
-      return wallet.transferBitcoin(uri, speed, this._confirmTransfer);
+      return wallet.transferBitcoin(uri, speed, this._confirmTransfer, refreshCoinBalance);
     }).then((resp) => {
       this._successTransfer(resp);
     }).catch((error) => {
