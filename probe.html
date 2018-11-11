@@ -1,0 +1,17 @@
+<!DOCTYPE HTML>
+<html>
+  <head>    
+  <script>
+    // Check in localStorage to populate this message:
+    let message = {
+      fn: "probe",
+      displayName: "Bitcoin-e-swap",
+      active: localStorage.getItem("loggedIn") == 'true',
+      walletName: "/wallet_swap/wallet.html",
+    };
+    parent.postMessage(message, "*");
+  </script>
+  </head>
+  <body>
+  </body>
+</html>

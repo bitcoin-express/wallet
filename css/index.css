@@ -1,0 +1,379 @@
+body {
+  margin: 0px;
+  background-color: transparent;
+}
+
+#app-bar {
+  z-index: 1 !important;
+}
+
+.desktop .welcome-appear {
+  opacity: 0.01;
+}
+
+.desktop .welcome-appear.welcome-appear-active {
+  opacity: 1;
+  transition: opacity .5s ease-in;
+}
+
+.welcome-page {
+  text-align: center;
+  color: darkslateblue;
+  background-color: #a8baf8;
+  height: 580px;
+}
+
+.payment-request {
+  text-align: center;
+  color: darkslateblue;
+  background-color: white;
+  height: 580px;
+}
+
+.desktop .welcome-page {
+  width: calc(100vw - 50px);
+  height: calc(100% - 26px);
+  min-height: calc(100vh - 26px);
+  padding: 0 25px 26px 25px;
+}
+
+.welcome-page .name {
+  color: white;
+  font-family: 'Anton', impact;
+  font-style: italic;
+  font-weight: 100;
+  margin: 5px 0 5px 0;
+}
+
+.welcome-page img {
+  max-width: 150px;
+  max-height: 150px;
+}
+
+.welcome-page small {
+  color: white;
+}
+
+/* PAGINATION STYLES */
+
+.paginate {
+  text-align: center;
+  margin-top: 20px;
+  user-select: none;
+  -webkit-user-select: none;        
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.paginate ul {
+  display: inline-block;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.paginate li {
+  display: inline-block;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.paginate li.active {
+  color: #fff !important;
+  background-color: #8081ff !important;
+  border-radius: 5px;
+}
+
+.paginate a {
+  cursor: pointer;
+  float: left;
+  padding: 8px 16px;
+  font-family: Roboto, sans-serif;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.paginate a:focus {
+  outline: 0;
+}
+
+.paginate .break a {
+  cursor: default;
+}
+
+.dialog {
+  padding-top: 0vh !important;
+}
+
+.appbar.minimized {
+  padding: 0 10px 0 5px !important;
+}
+
+/* MEDIA QUERIES */
+
+
+@media screen and (max-height: 410px) and (max-device-height: 410px) {
+  .welcome-page .wp-header {
+    display: none;
+  }
+}
+
+.tabLabel {
+  font-size: 18px !important;
+}
+
+@media screen and (max-width: 350px) {
+  .hide-mini {
+    display: none !important;
+  }
+  .full-size-mini {
+    width: 100vw;
+  }
+  .purchase-item-list > div > div {
+    padding: 20px 56px 20px 20px !important;
+  }
+  .tabLabel {
+    font-size: 15px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .hide-device {
+    margin: 0;
+    padding: 0;
+    display: none;
+  }
+
+  .dialog > div {
+    height: 100%;
+  }
+
+  .dialog > div > div {
+    width: 100% !important;
+    height: 100% !important;
+    transform: translate(0px, 0px) !important;
+  }
+
+  .dialog > div > div > div {
+    height: 100% !important;
+    background-color: #d8dff7 !important;
+  }
+
+  .dialog > div > div > div > div:nth-child(2) {
+    max-height: calc(100% - 142px) !important;
+    min-height: 250px;
+  }
+
+  .dialog > div > div > div > div:nth-child(3) {
+    position: absolute;
+    bottom: 0;
+  }
+
+  .dialog > div > div > div > div:nth-child(2) {
+    padding: 8px !important;
+  }
+}
+
+@media (min-width: 560px) {
+  .show-device {
+    margin: 0;
+    padding: 0;
+    display: none;
+  }
+}
+
+@media screen and (max-width: 780px) {
+  .mainsection {
+    width: 100%;
+    min-height: 250px;
+  }
+  .mainsection2 {
+    background-color: transparent !important;
+    min-height: 250px;
+  }
+  .mainsection4 {
+    display: none;
+  }
+  .mainsection.fs {
+    padding: 20px 0;
+    min-height: calc(100vh - 164px) !important;
+  }
+  .hide-mainsection {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 780px) and (min-device-width: 780px) {
+  .mainsection {
+    float: left;
+    padding: 10px;
+  }
+  .mainsection1 {
+    width: calc(50% - 20px);
+    min-width: 230px;
+    margin: 40px 30px 60px 0;
+  }
+  .mainsection2 {
+    width: calc(50% - 10px);
+    min-width: 230px;
+    margin: 40px 0 60px 0;
+  }
+  .mainsection3 {
+    width: calc(70% - 40px);
+    margin: 40px 15px 60px 0;
+  }
+  .mainsection4 {
+    width: calc(30% - 5px);
+    margin: 40px 0 60px 0;
+    padding: 0 !important;
+  }
+  .mainsection.fs {
+    padding: 5px 0 0 0;
+  }
+}
+
+@media screen and (max-width: 850px) and (max-device-width: 850px) {
+  .addFundsGrid {
+    display: inherit;
+  }
+}
+
+@media screen and (min-width: 850px) and (min-device-width: 850px) {
+  .addFundsGrid {
+    display: grid;
+    grid-template-columns: calc(100% - 290px) 280px;
+    grid-template-areas: "info qr";
+    grid-gap: 10px;
+  }
+}
+
+
+.desktop .tabsbar > div:nth-child(3) {
+  position: absolute;
+  top: 88px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  bottom: 0;
+  margin-bottom: 36px;
+}
+
+@media (max-width: 560px) {
+  .desktop .appbar.top {
+    padding: 0 24px 0 24px !important;
+  }
+  .desktop .appbar.bottom {
+    padding: 0 5px 0 0 !important;
+  }
+  .desktop .tabsbar > div {
+    padding: 0;
+  }
+  .fullscreen {
+    padding-left: 0;
+  }
+  .widescreen {
+    display: none;
+  }
+}
+
+@media (min-width: 560px) and (max-width: 780px) {
+  .desktop .appbar.top {
+    padding: 0 24px !important;
+  }
+  .desktop .appbar.bottom {
+    padding: 0 5px 0 0 !important;
+  }
+  .desktop .tabsbar > div {
+    padding: 0;
+  }
+  .fullscreen {
+    padding-left: 0;
+  }
+  .widescreen {
+    display: none;
+  }
+}
+
+@media (min-width: 780px) and (max-width: 1200px) {
+  .desktop .appbar {
+    padding: 0 calc(5vw + 24px) !important;
+  }
+  .desktop .appbar.bottom {
+    padding: 0 calc(5vw + 24px) 0 0 !important;
+  }
+  .desktop .tabsbar > div {
+    padding: 0 5vw;
+    width: inherit !important;
+  }
+  .fullscreen {
+    padding-left: 5vw;
+  }
+  .narrowscreen {
+    display: none;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1600px) {
+  .desktop .appbar {
+    padding: 0 calc(15vw + 24px) !important;
+  }
+  .desktop .appbar.bottom {
+    padding: 0 calc(15vw + 24px) 0 0 !important;
+  }
+  .desktop .tabsbar > div {
+    padding: 0 15vw;
+    width: inherit !important;
+  }
+  .fullscreen {
+    padding-left: 15vw;
+  }
+  .narrowscreen {
+    display: none;
+  }
+}
+
+@media (min-width: 1600px) {
+  .desktop .appbar {
+    padding: 0 calc(20vw + 24px) !important;
+  }
+  .desktop .appbar.bottom {
+    padding: 0 calc(15vw + 24px) 0 0 !important;
+  }
+  .desktop .tabsbar > div {
+    padding: 0 20vw;
+    width: inherit !important;
+  }
+  .fullscreen {
+    padding-left: 20vw;
+  }
+  .narrowscreen {
+    display: none;
+  }
+}
+
+.submenu-item div div {
+  color: #6d86ca !important;
+  font-size: 16px !important;
+  margin-top: 5px;
+}
+.submenu-item-selected div div {
+  color: #ecf1ff !important;
+  font-size: 16px !important;
+  margin-top: 5px;
+}
+
+.react-tabs__tab--selected {
+  background: transparent !important;
+  border-bottom: 1px solid #d8dff7 !important;
+}
+
+.react-tabs__tab-list {
+  margin: 0 0 30px !important;
+}
+
+.textArea textarea:nth-child(2) {
+  color: white !important;
+}
+
+.snackbar button {
+  color: grey !important;
+  min-width: 15px !important;
+  margin: 0px -30px 0px 0px !important;
+}

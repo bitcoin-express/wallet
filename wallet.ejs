@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <link href="https://fonts.googleapis.com/css?family=Anton|Roboto" rel="stylesheet">
+  </head>
+  <body>
+    <div id="wallet"></div>
+
+    <script type="text/javascript" src="js/vendor/jQuery-v3.1.1.js"></script>
+    <script type="text/javascript" src="js/vendor/state-machine.min.js"></script>
+    <script type="text/javascript" src="js/vendor/BitcoinExpress.min.js"></script>
+    <script type="text/javascript" src="js/vendor/jquery-qrcode-0.14.0.js"></script>
+    <script type="text/javascript" src="js/vendor/sjcl.js"></script>
+    <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+    <script type="text/javascript">
+      window.version='<%= htmlWebpackPlugin.options.version %>';
+    </script>
+  </body>
+</html>

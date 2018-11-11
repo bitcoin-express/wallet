@@ -1,0 +1,25 @@
+<svg stroke-width="0.501" stroke-linejoin="bevel" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="18pt" height="18pt" viewBox="0 0 18 18">
+ <g id="Document" fill="none" stroke="black" transform="scale(1 -1)">
+  <g id="Spread" transform="translate(0 -18)">
+   <g id="Layer 1">
+    <path d="M -1.863,17.836 L -1.863,0.448 L 15.525,0.448 L 15.525,17.836 L -1.863,17.836 Z" stroke-linejoin="miter" stroke-linecap="round" stroke="none" stroke-width="0.003" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+    <g id="Group" stroke-linecap="round">
+     <path d="M 0.599,18.056 L 0.599,-0.151 L 18.806,-0.151 L 18.806,18.056 L 0.599,18.056 Z" stroke="none" stroke-width="0.003" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+     <g id="Group_1" fill="#333333">
+      <path d="M 2.477,1.823 L 2.477,13.525 C 2.477,14.395 3.183,15.1 4.052,15.1 L 8.674,15.1 C 8.535,14.71 8.453,14.302 8.429,13.892 L 4.169,13.892 C 3.926,13.892 3.729,13.695 3.729,13.453 L 3.729,1.896 C 3.729,1.653 3.926,1.456 4.169,1.456 L 11.881,1.456 C 12.124,1.456 12.321,1.653 12.321,1.896 L 12.321,9.292 C 12.738,9.248 13.159,9.263 13.573,9.339 L 13.573,1.823 C 13.573,0.954 12.867,0.247 11.998,0.247 L 4.052,0.247 C 3.183,0.247 2.477,0.954 2.477,1.823 Z" stroke="none" stroke-width="0.001" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+      <g id="Group_2" stroke="#333333" stroke-linejoin="round" stroke-width="0.932" stroke-miterlimit="79.8403193612775">
+       <path d="M 5.652,9.555 L 10.322,9.555" fill="none"/>
+       <path d="M 5.652,7.01 L 10.322,7.01" fill="none"/>
+       <path d="M 5.652,4.243 L 10.322,4.243" fill="none"/>
+      </g>
+      <g id="Group_3">
+       <path d="M 10.181,10.911 C 8.638,12.454 8.638,14.957 10.181,16.5 C 11.724,18.043 14.228,18.043 15.771,16.5 C 17.314,14.957 17.314,12.454 15.771,10.911 C 14.228,9.368 11.724,9.368 10.181,10.911 Z M 15.177,11.505 C 16.391,12.719 16.391,14.692 15.177,15.906 C 13.962,17.121 11.99,17.121 10.775,15.906 C 9.56,14.692 9.56,12.719 10.775,11.505 C 11.99,10.29 13.962,10.29 15.177,11.505 Z" stroke="none" stroke-width="0.001" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+       <path d="M 10.719,13.679 L 13.06,13.679" fill="none" stroke="#333333" stroke-width="0.932" stroke-linejoin="round" stroke-miterlimit="79.8403193612775"/>
+       <path d="M 13.055,13.79 L 13.055,15.695" fill="none" stroke="#333333" stroke-width="0.932" stroke-linejoin="round" stroke-miterlimit="79.8403193612775"/>
+      </g>
+     </g>
+    </g>
+   </g>
+  </g>
+ </g>
+</svg>

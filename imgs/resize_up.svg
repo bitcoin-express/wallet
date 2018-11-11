@@ -1,0 +1,12 @@
+<svg stroke-width="0.501" stroke-linejoin="white" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="144pt" height="144pt" viewBox="0 0 144 144">
+ <defs>
+	</defs>
+ <g id="Document" fill="none" stroke="white" font-family="Times New Roman" font-size="16" transform="scale(1 -1)">
+  <g id="Spread" transform="translate(0 -144)">
+   <g id="Layer 1">
+    <path d="M 3.145,142.496 L 3.145,-1.503 L 147.144,-1.503 L 147.144,142.496 L 3.145,142.496 Z" stroke-linecap="round" stroke-width="0.682" stroke="none" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+    <path d="M 10.979,23.997 L 10.979,55.497 L 23.917,55.497 L 23.917,37.765 L 60.145,37.765 L 60.145,23.997 L 10.979,23.997 Z M 90.144,23.997 L 90.144,37.765 L 125.31,37.765 L 125.31,55.497 L 139.31,55.497 L 139.31,23.997 L 90.144,23.997 Z M 10.979,85.496 L 10.979,116.996 L 60.145,116.996 L 60.145,103.996 L 23.917,103.996 L 23.917,85.496 L 10.979,85.496 Z M 125.31,85.496 L 125.31,103.996 L 90.144,103.996 L 90.144,116.996 L 139.31,116.996 L 139.31,85.496 L 125.31,85.496 Z" stroke-width="13.82" stroke-linejoin="miter" stroke-linecap="round" fill="#ffffff" stroke="none" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+   </g>
+  </g>
+ </g>
+</svg>

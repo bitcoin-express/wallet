@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Bitcoin-express Sandbox</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="../js/vendor/jQuery-v3.1.1.js"></script>
+    <script type="text/javascript" src="../js/vendor/BitcoinExpress.min.js"></script>
+  </head>
+  <body>
+ 
+  <ul>
+    <li>
+      <a id="open_wallet_1" href="#">
+        Open wallet full-screen
+      </a>
+    </li>
+    <li>
+      <a id="open_wallet_2" href="#">
+        Open wallet retracted
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_1" href="#">
+        Mock payment 0.0000123 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_2" href="#">
+        Mock payment 0.0004 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_2_bis" href="#">
+        Mock payment 0.0006 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_3" href="#">
+        Mock payment 0.0000095 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_4" href="#">
+        Mock payment 0.00002 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_5" href="#">
+        Mock payment 1.00 XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_6" href="#">
+        Error payment: amount and currency parameters swapped - 0.000002XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_7" href="#">
+        Error payment: without issuer list - 0.000002XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_8" href="#">
+        Error payment: issuer list string instead array - 0.000002XBT
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_9" href="#">
+        Error payment: Memo undefined
+      </a>
+    </li>
+    <li>
+      <a id="mock_payment_10" href="#">
+        Payment expires not defined
+      </a>
+    </li>
+  </ul>
+
+  <script defer="defer" type="text/javascript">
+    function showWallet(fullSize) {
+      BitcoinExpress.Wallet.Open({
+        fullScreen: fullSize,
+      });
+    };
+
+    var req = {
+      fullScreen: false,
+      PaymentRequest: {
+        payment_details_version: "1",
+        PaymentDetails: {
+          payment_url: "https://be.ap.rmp.net/Bitcoin-express/v1/issuer/mockPayment",
+          currency: "XBT",
+          issuers: ["be.ap.rmp.net", "eu.carrotpay.com"],
+          merchant_data: "9992645143674",
+          memo: "The art of asking",
+          email: {
+            contact: "sales@merchant.com",
+            receipt: true,
+            refund: false
+          },
+          time: "2017-06-01T00:00:00Z",
+          expires: "2018-07-27T00:00:00Z"
+        }
+      }
+    }
+
+    function startPayment (price) {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = price || 0.0000123;
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              //return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+    };
+
+    document.getElementById("open_wallet_1").addEventListener('click', function () {
+      showWallet(true);
+    });
+    document.getElementById("open_wallet_2").addEventListener('click', function () {
+      showWallet(false);
+    });
+    document.getElementById("mock_payment_1").addEventListener('click', function () {
+      startPayment(0.0000123);
+    });
+    document.getElementById("mock_payment_2").addEventListener('click', function () {
+      startPayment(0.0004);
+    })
+    document.getElementById("mock_payment_2_bis").addEventListener('click', function () {
+      startPayment(0.0006);
+    });;
+    document.getElementById("mock_payment_3").addEventListener('click', function () {
+      startPayment(0.0000095);
+    });
+    document.getElementById("mock_payment_4").addEventListener('click', function () {
+      startPayment(0.00002);
+    });
+    document.getElementById("mock_payment_5").addEventListener('click', function () {
+      startPayment(1);
+    });
+    document.getElementById("mock_payment_6").addEventListener('click', function () {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = "XBT";
+      copyReq.PaymentRequest.PaymentDetails['currency'] = 0.000002;
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+
+    });
+    document.getElementById("mock_payment_7").addEventListener('click', function () {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
+      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
+      delete copyReq.PaymentRequest.PaymentDetails.issuers;
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+
+    });
+    document.getElementById("mock_payment_8").addEventListener('click', function () {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
+      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
+      copyReq.PaymentRequest.PaymentDetails.issuers = "be.ap.rmp.net";
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+
+    });
+    document.getElementById("mock_payment_9").addEventListener('click', function () {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
+      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
+      delete copyReq.PaymentRequest.PaymentDetails.memo;
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+
+    });
+    document.getElementById("mock_payment_10").addEventListener('click', function () {
+      var copyReq = Object.assign({}, req);
+      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
+      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
+      delete copyReq.PaymentRequest.PaymentDetails.expires;
+      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
+        // an object containing the PaymentAck
+        if ("PaymentAck" in container) {
+          let PaymentAck = container.PaymentAck;
+          if ("status" in PaymentAck) {
+            console.log("Status is "+PaymentAck.status);
+            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+              return window.location.replace(PaymentAck.return_url);
+            }
+          }
+        }
+      }).catch(function(err) {
+        console.log("PaymentRequest returned ", err);
+      });
+
+    });
+  </script>
+
+  </body>
+</html>

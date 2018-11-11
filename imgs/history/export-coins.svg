@@ -1,0 +1,37 @@
+<svg stroke-width="0.501" stroke-linejoin="bevel" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="18pt" height="18pt" viewBox="0 0 18 18">
+ <defs>
+  <marker id="DefaultArrowScaled" markerUnits="strokeWidth" viewBox="0 0 1 1" markerWidth="13" markerHeight="13" overflow="visible" orient="auto">
+   <g transform="scale(0.0092592592)">
+    <path d="M -9,0 L -9,-45 C -9,-51.708 2.808,-56.580 9,-54 L 117,-9 C 120.916,-7.369 126.000,-4.242 126,0 C 126,4.242 120.916,7.369 117,9 L 9,54 C 2.808,56.580 -9,51.708 -9,45 z"/>
+   </g>
+  </marker>
+ </defs>
+ <g id="Document" fill="none" stroke="black" transform="scale(1 -1)">
+  <g id="Spread" transform="translate(0 -18)">
+   <g id="Layer 1">
+    <g id="Group" stroke-linecap="round">
+     <path d="M 0.535,17.836 L 0.535,0.448 L 17.923,0.448 L 17.923,17.836 L 0.535,17.836 Z" stroke="none" stroke-width="2.623" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+     <g id="Group_1" fill="#333333">
+      <path d="M 9.966,10.246 L 12.352,12.632" fill="none" stroke="#333333" stroke-width="2.672" stroke-linejoin="round" stroke-miterlimit="79.8403193612775"/>
+      <path d="M 14.43,10.613 L 10.423,14.576 C 9.709,15.283 10.019,16.071 11.115,16.336 L 15.704,17.443 C 16.799,17.708 17.485,17.032 17.234,15.936 L 16.178,11.321 C 15.927,10.224 15.144,9.906 14.43,10.613 Z" stroke="none" stroke-width="0.041" marker-end="url(#DefaultArrowScaled)" stroke-linejoin="miter" marker-start="none" stroke-miterlimit="79.8403193612775"/>
+     </g>
+     <g id="Group_2" fill="#333333" stroke-linejoin="miter" stroke="none" stroke-width="0.644" stroke-miterlimit="79.8403193612775">
+      <path d="M 3.044,7.143 C 1.428,7.402 0.534,8.274 1.048,9.088 C 1.563,9.902 3.292,10.353 4.907,10.093 C 6.049,9.911 6.832,9.421 7.011,8.863 C 6.246,8.544 5.643,8.066 5.344,7.473 C 5.3,7.384 5.263,7.295 5.235,7.205 C 4.568,7.055 3.795,7.023 3.044,7.143 Z" marker-start="none" marker-end="none"/>
+      <path d="M 3.044,2.947 C 1.553,3.187 0.675,3.948 0.953,4.704 C 1.401,4.423 1.957,4.204 2.598,4.075 C 3.502,3.893 4.432,3.918 5.258,4.111 C 5.316,3.953 5.398,3.8 5.5,3.652 C 5.441,3.568 5.39,3.481 5.344,3.391 C 5.281,3.262 5.231,3.133 5.199,3.002 C 4.541,2.859 3.781,2.828 3.044,2.947 Z" marker-start="none" marker-end="none"/>
+      <path d="M 3.044,5.046 C 1.553,5.284 0.675,6.046 0.953,6.801 C 1.401,6.522 1.957,6.301 2.598,6.171 C 3.489,5.993 4.403,6.015 5.221,6.199 C 5.273,6.025 5.353,5.855 5.459,5.693 C 5.417,5.628 5.378,5.561 5.344,5.493 C 5.278,5.362 5.23,5.232 5.198,5.1 C 4.541,4.956 3.78,4.926 3.044,5.046 Z" marker-start="none" marker-end="none"/>
+     </g>
+     <g id="Group_3" stroke-linejoin="miter" stroke="none" stroke-width="0.644" fill="#333333" stroke-miterlimit="79.8403193612775">
+      <path d="M 6.255,7.135 C 6.769,7.95 8.499,8.4 10.115,8.141 C 11.731,7.882 12.626,7.01 12.111,6.196 C 11.597,5.381 9.868,4.93 8.252,5.19 C 6.635,5.449 5.741,6.321 6.255,7.135 Z" marker-start="none" marker-end="none"/>
+      <path d="M 8.253,0.994 C 6.76,1.233 5.884,1.995 6.16,2.751 C 6.608,2.47 7.165,2.251 7.805,2.122 C 9.41,1.798 11.097,2.131 12.144,2.884 C 12.299,2.604 12.299,2.298 12.112,2.001 C 11.597,1.186 9.867,0.735 8.253,0.994 Z" marker-start="none" marker-end="none"/>
+      <path d="M 8.253,3.092 C 6.76,3.332 5.884,4.093 6.16,4.849 C 6.608,4.569 7.165,4.348 7.805,4.219 C 9.41,3.896 11.097,4.23 12.144,4.983 C 12.299,4.703 12.299,4.397 12.112,4.098 C 11.597,3.284 9.867,2.832 8.253,3.092 Z" marker-start="none" marker-end="none"/>
+     </g>
+     <g id="Group_4" fill="#333333" stroke-linejoin="miter" stroke="none" stroke-width="0.644" stroke-miterlimit="79.8403193612775">
+      <path d="M 13.458,5.093 C 13.403,5.1 13.347,5.111 13.294,5.122 C 13.243,5.318 13.156,5.508 13.039,5.692 C 13.08,5.757 13.119,5.823 13.152,5.891 C 13.503,6.59 13.364,7.311 12.859,7.91 C 13.581,8.118 14.468,8.181 15.322,8.043 C 16.939,7.784 17.833,6.913 17.319,6.099 C 16.805,5.283 15.075,4.833 13.458,5.093 Z" marker-start="none" marker-end="none"/>
+      <path d="M 13.458,2.995 C 13.403,3.003 13.346,3.013 13.291,3.025 C 13.235,3.24 13.136,3.451 12.997,3.651 C 13.055,3.735 13.108,3.823 13.152,3.912 C 13.18,3.969 13.206,4.026 13.229,4.083 C 14.766,3.828 16.352,4.165 17.352,4.885 C 17.506,4.604 17.506,4.3 17.319,4 C 16.805,3.185 15.075,2.735 13.458,2.995 Z" marker-start="none" marker-end="none"/>
+     </g>
+    </g>
+    <path d="M -1.863,17.836 L -1.863,0.448 L 15.525,0.448 L 15.525,17.836 L -1.863,17.836 Z" stroke-linejoin="miter" stroke-linecap="round" stroke="none" stroke-width="0.003" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+   </g>
+  </g>
+ </g>
+</svg>

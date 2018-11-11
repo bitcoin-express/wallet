@@ -1,0 +1,24 @@
+<svg stroke-width="0.501" stroke-linejoin="bevel" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="18pt" height="18pt" viewBox="0 0 18 18">
+ <defs>
+  <marker id="DefaultArrowScaled" markerUnits="strokeWidth" viewBox="0 0 1 1" markerWidth="13" markerHeight="13" overflow="visible" orient="auto">
+   <g transform="scale(0.0092592592)">
+    <path d="M -9,0 L -9,-45 C -9,-51.708 2.808,-56.580 9,-54 L 117,-9 C 120.916,-7.369 126.000,-4.242 126,0 C 126,4.242 120.916,7.369 117,9 L 9,54 C 2.808,56.580 -9,51.708 -9,45 z"/>
+   </g>
+  </marker>
+ </defs>
+ <g id="Document" fill="none" stroke="black" transform="scale(1 -1)">
+  <g id="Spread" transform="translate(0 -18)">
+   <g id="Layer 1">
+    <path d="M -1.863,17.836 L -1.863,0.448 L 15.525,0.448 L 15.525,17.836 L -1.863,17.836 Z" stroke-linejoin="miter" stroke-linecap="round" stroke="none" stroke-width="0.003" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+    <g id="Group" stroke-linecap="round">
+     <path d="M -0.001,17.757 L -0.001,-0.301 L 18.057,-0.301 L 18.057,17.757 L -0.001,17.757 Z" stroke="none" stroke-width="2.724" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+     <g id="Group_1" fill="#333333">
+      <path d="M 16.501,16.161 L 14.024,13.685" fill="none" stroke="#333333" stroke-width="2.776" stroke-linejoin="round" stroke-miterlimit="79.8403193612775"/>
+      <path d="M 11.866,15.781 L 16.027,11.665 C 16.769,10.931 16.447,10.113 15.309,9.838 L 10.543,8.688 C 9.405,8.413 8.693,9.115 8.954,10.254 L 10.05,15.046 C 10.311,16.185 11.125,16.515 11.866,15.781 Z" stroke="none" stroke-width="0.044" marker-end="url(#DefaultArrowScaled)" stroke-linejoin="miter" marker-start="none" stroke-miterlimit="79.8403193612775"/>
+     </g>
+     <path d="M 0.332,2.398 L 0.332,12.529 C 0.332,13.632 1.225,14.527 2.329,14.527 L 8.949,14.527 L 8.542,12.74 L 3.611,12.74 C 2.787,12.74 2.118,12.072 2.118,11.247 L 2.118,3.68 C 2.118,2.855 2.787,2.187 3.611,2.187 L 11.178,2.187 C 12.003,2.187 12.671,2.855 12.671,3.68 L 12.671,8.079 L 14.457,8.51 L 14.457,2.398 C 14.457,1.295 13.563,0.401 12.459,0.401 L 2.329,0.401 C 1.225,0.401 0.332,1.295 0.332,2.398 Z" stroke="none" fill="#333333" stroke-width="3.414" stroke-linejoin="miter" marker-start="none" marker-end="none" stroke-miterlimit="79.8403193612775"/>
+    </g>
+   </g>
+  </g>
+ </g>
+</svg>
