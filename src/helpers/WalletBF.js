@@ -2753,13 +2753,6 @@ export default class WalletBF {
       let resp = null;
       let tid;
 
-      if (!request.currency) {
-        if (args.beginResponse && args.beginResponse.issueInfo) {
-          request.currency = args.beginResponse.currency;
-        }
-        request.currency = request.currency || "XBT";
-      }
-
       return this.issuer("issue", request, args).then((issueResponse) => {
         resp = issueResponse;
         if (resp.deferInfo) {
