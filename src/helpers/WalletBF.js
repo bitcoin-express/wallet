@@ -2693,7 +2693,8 @@ export default class WalletBF {
           targetValue: args.target,
           expiry: (new Date(args.expiryPeriod_ms)).toISOString(),
           // issuePolicy: args.policy,
-          blockchainAddress: args.beginResponse.issueInfo.blockchainAddress
+          currency: "XBT",
+          blockchainAddress: args.beginResponse.issueInfo.blockchainAddress,
         },
         recovery: {
           // will be persisted but removed before sending to server
