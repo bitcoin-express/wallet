@@ -26,6 +26,7 @@ class CoinSelector extends React.Component {
     this.fixedPos = [8, 5, 2]; // fixed positions
 
     let btcValue = this._updateValues(props);
+    btcValue = props.initialCurrencyDisplay || btcValue;
     this.state = {
       btcValue,
       btcOriginal: btcValue,
@@ -47,7 +48,7 @@ class CoinSelector extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    let btcValue = this._updateValues(nextProps);
+    let btcValue = nextProps.initialCurrencyDisplay || this._updateValues(nextProps);
     this._updateStyles(nextProps);
 
     if (btcValue != this.state.btcOriginal) {
@@ -435,6 +436,7 @@ CoinSelector.propTypes = {
   floatingLabelStyle: PropTypes.object,
   fullSize: PropTypes.bool,
   id: PropTypes.string,
+  initialCurrencyDisplay: PropTypes.number,
   initialValue: PropTypes.string,
   inputStyle: PropTypes.object,
   max: PropTypes.number,
@@ -452,6 +454,7 @@ CoinSelector.defaultProps = {
   floatingLabelFocusStyle: {},
   floatingLabelStyle: {},
   fullSize: true,
+  initialCurrencyDisplay: null,
   inputStyle: {},
   label: "Enter coin value to export",
   max: null,

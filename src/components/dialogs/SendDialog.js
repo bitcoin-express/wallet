@@ -30,6 +30,7 @@ class SendDialog extends React.Component {
       address: "",
       amount: "",
       amountInText: "",
+      initialCurrencyDisplay: null,
       speed: "fastestFee",
       note: "",
       fastestFee: 0,
@@ -110,7 +111,11 @@ class SendDialog extends React.Component {
   }
 
   handleAmountChange(amount, currency, amountInText) {
-    this.setState({ amount, amountInText });
+    this.setState({
+      amount,
+      amountInText,
+      initialCurrencyDisplay: currency
+    });
   }
 
   handleSpeedChange(event, speed) {
@@ -289,6 +294,7 @@ class SendDialog extends React.Component {
       amount,
       amountInText,
       address,
+      initialCurrencyDisplay,
       note,
       fastestFee,
       soonFee,
@@ -472,6 +478,7 @@ class SendDialog extends React.Component {
             floatingLabelStyle={{
               color: styles.colors.secondaryBlue,
             }}
+            initialCurrencyDisplay={ initialCurrencyDisplay }
             inputStyle={{
               color: styles.colors.darkBlue,
             }}
