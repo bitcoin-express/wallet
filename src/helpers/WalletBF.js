@@ -2315,10 +2315,17 @@ export default class WalletBF {
    *   when refresh wallet currency is needed. It must be called as:
    *       - refreshBalance(CURRENCY_CODE)
    */
-  transferBitcoin(uri, speed, confirmation, refreshBalance) {
+  transferBitcoin(uri, speed, args) {
     if (this.config.debug) {
       console.log("WalletBF.transferBitcoin");
     }
+
+    let {
+      confirmation,
+      success,
+      deferredSuccess,
+      refreshBalance,
+    } = args;
 
     confirmation = confirmation || function (_x, _y, fn) { fn(); };
 
@@ -2446,7 +2453,11 @@ export default class WalletBF {
         return new Promise((resolve, reject) => {
           confirmation(parseFloat(amount), bitcoinFee, () => {
             args.firstTimeCalled = true;
-            const params = [allCoins, address, args, "XBT", refreshBalance];
+            const params = [allCoins, address, args, "XBT", {
+              deferredSuccess,
+              refreshBalance,
+              success,
+            }];
             this.redeemCoins(...params).then(resolve).catch(reject);
           });
         });
@@ -2890,12 +2901,14 @@ export default class WalletBF {
    * @element beginResponse [Object] Include this if /begin has been called. If not present redeemCoins
    *    will first call /begin to obtain a transaction ID.
    */
-  redeemCoins(coins, address, args, crypto=null, refreshBalance) {
+  redeemCoins(coins, address, args, crypto=null, params={}) {
     if (this.config.debug) {
-      console.log("WalletBF.redeemCoins",coins,address,args);
+      console.log("WalletBF.redeemCoins",coins,address,args, params);
     }
 
-    refreshBalance = refreshBalance || (c => Promise.resolve(true));
+    let refreshBalance = params.refreshBalance || (b => Promise.resolve(true));
+    args.success = params.success || (resp => Promise.resolve(true));
+    args.deferredSuccess = params.deferredSuccess || (resp => Promise.resolve(true));
 
     const {
       blockchainSpeed,
@@ -3201,6 +3214,12 @@ export default class WalletBF {
           domain: args.domain,
         });
       }).then(() => {
+        if (!args.firstTimeCalled && args.deferredSuccess) {
+          return args.deferredSuccess(resp);
+        }
+        if (args.firstTimeCalled && args.success) {
+          return args.success(resp);
+        }
         return resp;
       });
     };

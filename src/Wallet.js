@@ -597,7 +597,6 @@ class Wallet extends React.Component {
 
   _successRecoveryTx(resp) {
     if (resp.verifyInfo) {
-      // TO_DO
       debugger;
       this.checkCoinsExist(true, true).then(() => {
         this.handleNotificationUpdate([

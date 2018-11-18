@@ -151,7 +151,7 @@ class SendDialog extends React.Component {
         loadingMessage: "Transfer success. Refreshing balance...",
       });
 
-      refreshCoinBalance("XBT").then((balance) => {
+      return refreshCoinBalance("XBT").then((balance) => {
         const amount = parseFloat(payment.amount);
         const initialBalance = parseFloat(balance) + totalFee + amount;
 
@@ -168,14 +168,17 @@ class SendDialog extends React.Component {
           sendSuccessProps,
           sendStatus: 'success',
         });
+
+        return issuerResponse;
       }).catch((err) => {
         snackbarUpdate("Problem on updating the balance", true);
         this.setState({
           sendStatus: 'initial',
         });
       });
+    }
 
-    } else if (issuerResponse.deferInfo) {
+    if (issuerResponse.deferInfo) {
       const {
         reason,
         after,
@@ -190,6 +193,7 @@ class SendDialog extends React.Component {
       });
       snackbarUpdate("Redeem response did not return expected result", true);
     }
+    return issuerResponse;
   }
 
   _confirmTransfer(amount, blockchainFee = 0, executePayment) {
@@ -257,9 +261,17 @@ class SendDialog extends React.Component {
         loadingMessage: "Preparing the Bitcoin transfer...",
       });
 
-      return wallet.transferBitcoin(uri, speed, this._confirmTransfer, refreshCoinBalance);
-    }).then((resp) => {
-      this._successTransfer(resp);
+      const args = {
+        confirmation: this._confirmTransfer,
+        deferredSuccess: (resp) => {
+          snackbarUpdate(`Send of XBT${parseFloat(amount).toFixed(8)} to now started.`);
+          return resp;
+        },
+        success: this._successTransfer,
+        refreshBalance: refreshCoinBalance,
+      };
+      return wallet.transferBitcoin(uri, speed, args);
+    }).then(() => {
     }).catch((error) => {
       refreshCoinBalance("XBT").then(() => {
         if (error.message == "Redeem deferred") {
