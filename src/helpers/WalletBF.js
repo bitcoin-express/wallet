@@ -116,7 +116,10 @@ export default class WalletBF {
       TRANSACTION_EXPIRE_VALUE: "transactionExpireValue",
       SPREAD_COIN_COUNT: 6,
       MAX_COINS_PER_TRANSACTION: 25,
-      powerLoss: false, //use only to simulate broken transactions
+      //use only to simulate broken transactions
+      powerLoss: false,
+      //use to force on redeem
+      forceDefer: false,
       debug: true,
       blockchainSpeed: "fastestFee",
       wholeCoinCount: 0,
@@ -2372,8 +2375,8 @@ export default class WalletBF {
         return elt.currencyCode = "XBT";
       }).blockchainInfo;
 
-      const bitcoinFee = recommendedFees[speed] || 0;
-      let minValue = parseFloat(recommendedFees.minRedemptionValue || 0);
+      const bitcoinFee = parseFloat(recommendedFees[speed] || "0.0");
+      let minValue = parseFloat(recommendedFees.minRedemptionValue || "0.0");
       let paymentAmount = parseFloat(amount);
       if (paymentAmount <= 0) {
         throw new Error("Amount must be positive");
@@ -3016,7 +3019,7 @@ export default class WalletBF {
         let bitcoinFees = issuer.currencyInfo.find((elt) => {
           return elt.currencyCode == crypto;
         }).blockchainInfo;
-        let change = (sumCoins - args.target - bitcoinFees[args.speed]);
+        let change = (sumCoins - args.target - parseFloat(bitcoinFees[args.speed]));
         if (change > feeExpiryEmail) {
           redeemRequest.issuerRequest.expiryEmail = args.expiryEmail;
           redeemRequest.recovery.expiryEmail = args.expiryEmail;
@@ -3113,12 +3116,19 @@ export default class WalletBF {
         COIN_STORE,
         CRYPTO,
         debug,
+        forceDefer,
         SESSION,
         storage,
       } = this.config;
 
       if (!crypto) {
         crypto = this.getPersistentVariable(CRYPTO, "XBT");
+      }
+
+      if (forceDefer) {
+        request.issuerRequest.atomic = true;
+      } else {
+        delete request.issuerRequest.atomic;
       }
 
       return this.issuer("redeem", request, args).then((redeemResponse) => {

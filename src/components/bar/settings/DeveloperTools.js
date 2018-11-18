@@ -18,25 +18,26 @@ export default class DeveloperTools extends React.Component {
 
     this.state = {
       disabled: true,
-      powerloss: props.wallet.config.powerLoss,
       settings: props.settings,
     };
 
     this.setPowerLoss = this.setPowerLoss.bind(this);
     this.setDebugMode = this.setDebugMode.bind(this);
+    this.setForceDefer = this.setForceDefer.bind(this);
     this.checkRecoveryCoins = this.checkRecoveryCoins.bind(this);
     this.recoverRecoveryCoins = this.recoverRecoveryCoins.bind(this);
   }
 
   setPowerLoss(ev, isInputChecked) {
-    this.props.wallet.config.powerLoss = isInputChecked;
-    this.setState({
-      powerloss: isInputChecked
-    });
+    this.props.wallet.config["powerLoss"] = isInputChecked;
+  }
+
+  setForceDefer(ev, isInputChecked) {
+    this.props.wallet.config["forceDefer"] = isInputChecked;
   }
 
   setDebugMode(ev, isInputChecked) {
-    this.props.wallet.config.debug = isInputChecked;
+    this.props.wallet.config["debug"] = isInputChecked;
   }
 
   checkRecoveryCoins() {
@@ -88,14 +89,20 @@ export default class DeveloperTools extends React.Component {
           <Toggle
             label="Simulate Power loss"
             labelPosition="right"
-            defaultToggled={ this.state.powerloss }
+            defaultToggled={ wallet.config.powerloss || false }
             onToggle={ this.setPowerLoss }
           />
           <Toggle
             label="Activate debug mode"
             labelPosition="right"
-            defaultToggled={ wallet.config.debug }
+            defaultToggled={ wallet.config.debug || false }
             onToggle={ this.setDebugMode }
+          />
+          <Toggle
+            label="Activate force redeem defer"
+            labelPosition="right"
+            defaultToggled={  wallet.config.forceDefer || false }
+            onToggle={ this.setForceDefer }
           />
         </div>
         <Divider />
