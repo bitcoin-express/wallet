@@ -883,7 +883,7 @@ export default class WalletBF {
       console.log("WalletBF exportFile", exportAmount, args);
     }
 
-    const crypto = this.getPersistentVariable(CRYPTO, "XBT");
+    const crypto = args.currency || this.getPersistentVariable(CRYPTO, "XBT");
     let targetValue = Number.parseFloat(exportAmount);
 
     if (Number.isNaN(targetValue)) {
@@ -3157,7 +3157,7 @@ export default class WalletBF {
             },
           }, resp);
 
-          if (resp.coin && Array.isArray(resp.coin) && resp.coin.length > 0) {
+          if (resp.coin && Array.isArray(resp.coin) && resp.coin.length > 0 && args.firstTimeCalled) {
             console.log("Deferred but got change from issuer", resp.coin);
             args.firstTimeCalled = false;
             promise = this.includeCoinsInStore(resp.coin).then(() => {

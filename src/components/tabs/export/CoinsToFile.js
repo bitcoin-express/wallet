@@ -5,6 +5,8 @@ import PropTypes from 'prop-types';
 
 import TextField from 'material-ui/TextField';
 
+import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
+
 import CoinSelector from '../../CoinSelector';
 import EncryptSelector from '../../EncryptSelector';
 import FormArea from '../../FormArea';
@@ -14,6 +16,83 @@ import Title from '../../Title';
 import styles from '../../../helpers/Styles';
 import Tools from '../../../helpers/Tools';
 
+class CurrencyRadioGroup extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.tools = new Tools();
+
+    this.styles = {
+      iconStyle: {
+        fill: styles.colors.mainTextColor,
+      },
+      labelRadio: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        color: styles.colors.mainTextColor,
+        fontSize: '16px',
+        width: 'inherit',
+        zIndex: '3',
+      },
+      radioButton: {
+        width: 'auto',
+        margin: '10px 0',
+      },
+      radioGroup: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+      },
+      radioLabel: {
+        display: 'flex',
+        flexWrap: 'nowrap',
+        marginRight: '10px',
+      },
+    };
+  }
+
+  render() {
+    let {
+      currency,
+      onChange,
+    } = this.props;
+
+    if (currency == 'BTC') {
+      currency = "XBT";
+    }
+
+    return <RadioButtonGroup
+      name="currency-type"
+      defaultSelected={ currency }
+      onChange={ onChange }
+      style={ this.styles.radioGroup }
+    >
+      <RadioButton
+        value="XBT"
+        label={ this.tools.getImageComponent("btce.png", 25, 25, "currencies/") }
+        labelStyle={ this.styles.labelRadio }
+        iconStyle={ this.styles.iconStyle }
+        style={ this.styles.radioButton }
+      />
+      <RadioButton
+        value="BCH"
+        label={ this.tools.getImageComponent("bche.png", 25, 25, "currencies/") }
+        labelStyle={ this.styles.labelRadio }
+        iconStyle={ this.styles.iconStyle }
+        style={ this.styles.radioButton }
+      />
+      <RadioButton
+        value="ETH"
+        label={ this.tools.getImageComponent("ethe.png", 25, 25, "currencies/") }
+        labelStyle={ this.styles.labelRadio }
+        iconStyle={ this.styles.iconStyle }
+        style={ this.styles.radioButton }
+      />
+    </RadioButtonGroup>;
+  }
+}
+
 class CoinsToFile extends React.Component {
 
   constructor(props) {
@@ -22,6 +101,7 @@ class CoinsToFile extends React.Component {
     this.state = {
       amount: "",
       amountInText: "",
+      crypto: props.wallet.getPersistentVariable(props.wallet.config.CRYPTO),
       currency: 1,
       password: "",
       encrypted: false,
@@ -81,6 +161,7 @@ class CoinsToFile extends React.Component {
     const {
       amount,
       currency,
+      crypto,
       comment,
       encrypted,
       password,
@@ -94,8 +175,6 @@ class CoinsToFile extends React.Component {
       wallet,
     } = this.props;
 
-    const crypto = wallet.getPersistentVariable(wallet.config.CRYPTO) || "BTC";
-
     loading(true);
     this.setState({
       exported: true,
@@ -105,6 +184,7 @@ class CoinsToFile extends React.Component {
       encrypt: encrypted,
       passphrase: encrypted ? password : "",
       comment: comment,
+      currnecy: crypto,
       // expiryPeriod_ms: (1000 * 60 * 60 * 3) - 1000,
     }).then((exportObj) => {
       const { callerArgs } = exportObj;
@@ -151,6 +231,7 @@ class CoinsToFile extends React.Component {
       amount,
       amountInText,
       comment,
+      crypto,
       currency,
       encrypted,
       exported,
@@ -163,8 +244,7 @@ class CoinsToFile extends React.Component {
       wallet,
     } = this.props;
 
-    let crypto = wallet.getPersistentVariable(wallet.config.CRYPTO) || "btc";
-    crypto = crypto == "XBT" ? "btc" : crypto.toLowerCase();
+    let cvalue = crypto == "XBT" ? "btc" : crypto.toLowerCase();
 
     const disabled = exported || this.state.amount.length == 0 ||
       parseFloat(this.state.amount) <= 0 || (encrypted && !password);
@@ -177,7 +257,7 @@ class CoinsToFile extends React.Component {
         <div style={{ padding: '10px 20px' }}>
           <Title
             isFullScreen={ isFullScreen }
-            label="Coins to file"
+            label={ crypto + " to file" }
             labelRightWidth={ 100 }
             labelRight={ <div
               style={{
@@ -188,7 +268,7 @@ class CoinsToFile extends React.Component {
               }}
             >
               <img
-                src={ `css/img/currencies/${crypto}e.png` }
+                src={ `css/img/currencies/${cvalue}e.png` }
                 width={ 35 }
                 height={ 35 }
               />
@@ -197,8 +277,17 @@ class CoinsToFile extends React.Component {
             </div> }
           />
 
-          <CoinSelector
+          <CurrencyRadioGroup
             currency={ crypto }
+            onChange={(ev, crypto) => {
+              this.setState({
+                crypto,
+              });
+            }}
+          />
+
+          <CoinSelector
+            currency={ cvalue }
             floatingLabelFocusStyle={{
               color: styles.colors.secondaryTextColor,
             }}
