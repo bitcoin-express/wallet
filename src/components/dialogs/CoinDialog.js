@@ -127,7 +127,7 @@ class CoinDialog extends Component {
           let value = oldBalance - newBalance;
           return wallet.recordTransaction({
             headerInfo: {
-              fn: "export inexistent coin",
+              fn: "extract failed coin",
               domain: "localhost",
             },
             exportInfo: {

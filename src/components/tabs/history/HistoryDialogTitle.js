@@ -140,7 +140,7 @@ class HistoryDialogTitle extends React.Component {
         };
 
       case 'export coin':
-      case 'export inexistent coin':
+      case 'extract failed coin':
       case 'export coin file':
         return {
           firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
