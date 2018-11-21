@@ -227,7 +227,7 @@ class CoinsToFile extends React.Component {
   }
 
   render() {
-    const {
+    let {
       amount,
       amountInText,
       comment,
@@ -244,6 +244,7 @@ class CoinsToFile extends React.Component {
       wallet,
     } = this.props;
 
+    crypto = crypto || "XBT";
     let cvalue = crypto == "XBT" ? "btc" : crypto.toLowerCase();
 
     const disabled = exported || this.state.amount.length == 0 ||

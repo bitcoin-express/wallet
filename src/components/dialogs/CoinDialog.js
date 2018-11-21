@@ -93,10 +93,13 @@ class CoinDialog extends Component {
 
   handleExist() {
     const {
-      coin,
       refreshCoinBalance,
       snackbarUpdate,
       wallet,
+    } = this.props;
+
+    let {
+      coin,
     } = this.props;
 
     this.setState({
@@ -125,10 +128,16 @@ class CoinDialog extends Component {
         return refreshCoinBalance().then((resp) => {
           newBalance = resp;
           let value = oldBalance - newBalance;
+
+          if (typeof coin == "string") {
+            coin = wallet.Coin(coin);
+          }
+          const domain = coin.d;
+
           return wallet.recordTransaction({
             headerInfo: {
               fn: "extract failed coin",
-              domain: "localhost",
+              domain,
             },
             exportInfo: {
               faceValue: value,
@@ -136,7 +145,7 @@ class CoinDialog extends Component {
               fee: 0,
               newValue: 0,
             },
-            currency: "XBT",
+            currency: coin.c,
           });
         }).then((resp) => {
           return newBalance;

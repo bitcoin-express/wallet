@@ -85,6 +85,7 @@ class Wallet extends React.Component {
         titleStyle: null,
       },
       exchangeRates: {},
+      balance: 0,
       initialIndex: props.paymentRequest ? 5 : 0,
       isFlipped: false,
       loading: false,
@@ -355,6 +356,7 @@ class Wallet extends React.Component {
       this._saveSettings(settings);
       return settings;
     }).catch((err) => {
+      console.log(err);
       this.handleNotificationUpdate(err.message || "Problem on initializing settings", true);
       return Promise.reject(Error("Problem on initializing settings"));
     });
@@ -410,6 +412,7 @@ class Wallet extends React.Component {
         status: states.WELCOME
       });
     }).catch(({ error, warning }) => {
+      console.log(error);
       if (localStorage.getItem('loggedIn') == 'true') {
         // attempt to login
         this.autoLogin();
@@ -516,6 +519,7 @@ class Wallet extends React.Component {
       }
       return true;
     }).catch((err) => {
+      console.log(err);
       this.handleNotificationUpdate(err.message, true);
       return this._authenticate(initialize);
     });
@@ -542,6 +546,7 @@ class Wallet extends React.Component {
         }).then(() => {
           this.loading(false);
         }).catch((err) => {
+          console.log(err);
           this.loading(false);
           return Promise.reject(err);
         });
@@ -588,7 +593,8 @@ class Wallet extends React.Component {
         });
       }
       return true;
-    }).catch(() => {
+    }).catch((err) => {
+      console.log(err);
       return this.refreshSettings();
     }).then((balance) => {
       return this.refreshCoinBalance();
@@ -622,6 +628,7 @@ class Wallet extends React.Component {
             this.showReceiveFundsDialog(histObj, "Receive funds complete");
             return this.refreshCoinBalance("XBT");
           }).catch((err) => {
+            console.log(err);
             this.loading(false);
             this.handleNotificationUpdate(err.message || "Issue collect unsuccessful", true);
           });
@@ -708,6 +715,7 @@ class Wallet extends React.Component {
     }).then(() => {
       return this.refreshCoinBalance(crypto);
     }).catch((err) => {
+      console.log(err);
       !notify || this.handleNotificationUpdate(err.message, true);
       return this.refreshCoinBalance(crypto);
     });
@@ -734,6 +742,7 @@ class Wallet extends React.Component {
       }
       return response;
     }).catch((err) => {
+      console.log(err);
       if (notify) {
         this.loading(false);
       }
@@ -772,9 +781,14 @@ class Wallet extends React.Component {
 
     return this.wallet.Balance(crypto).then((balance) => {
       if (crypto == null || crypto == wCrypto) {
-        this.setState({
-          balance,
-        });
+        try {
+          this.setState({
+            balance,
+          });
+        } catch (err) {
+          console.log("Error on refreshCoinBalance", err);
+          return balance;
+        }
       }
       return balance;
     }).catch((err) => {
@@ -825,6 +839,7 @@ class Wallet extends React.Component {
     return this.importFile(accepted, args).then(() => {
       this.loading(false);
     }).catch((err) => {
+      console.log(err);
       this.loading(false);
     });
   }
@@ -1235,6 +1250,7 @@ class Wallet extends React.Component {
       }
       return this._authorizeGDrive(coinsToMove);
     }).catch((stillAuthorize) => {
+      console.log(err);
       // error, shall we still try to authorize?
       if (stillAuthorize) {
         this._authorizeGDrive(coinsToMove);
@@ -1281,6 +1297,7 @@ class Wallet extends React.Component {
         });
         return true;
       }).catch((err) => {
+        console.log(err);
         storage.sessionEnd();
         return Promise.reject(err);
       });
@@ -1431,6 +1448,7 @@ class Wallet extends React.Component {
             });
             return reject(errs);
           }).catch((err) => {
+            console.log(err);
             storage.sessionEnd();
             return reject(err);
           });
@@ -1554,6 +1572,7 @@ class Wallet extends React.Component {
       this.forceTabClick(0);
       return result;
     }).catch((error) => {
+      console.log(err);
       let msg = typeof error == "object" ? this.wallet.getResponseError(error) : error;
       this.handleNotificationUpdate(msg, true);
 
@@ -1587,6 +1606,7 @@ class Wallet extends React.Component {
             });
           }, 500);
         }).catch((err) => {
+          console.log(err);
           storage.sessionEnd();
           return Promise.reject(err);
         });
@@ -1627,6 +1647,7 @@ class Wallet extends React.Component {
       this.handleNotificationUpdate("Connected to Google Drive");
       return true;
     }).catch((err) => {
+      console.log(err);
       this.openDialog({
         onClickOk: () => {
           this.clearDialog();
@@ -1728,6 +1749,7 @@ class Wallet extends React.Component {
 
       //this.showAlertWalletName();
     }).catch((error) => {
+      console.log(err);
       let cKeys = Object.keys(coins);
 
       if (cKeys.length == 0) {
@@ -2007,6 +2029,7 @@ class Wallet extends React.Component {
       }
       return true;
     }).catch((err) => {
+      console.log(err);
       if (loading) {
         this.loading(false);
       }
@@ -2104,6 +2127,7 @@ class Wallet extends React.Component {
 
       this.handleClickAddFunds();
     }).catch((err) => {
+      console.log(err);
       this.loading(false);
       let message = "Unexpected error when removing deposit reference";
       if (err && err.message) {
@@ -2472,6 +2496,7 @@ class Wallet extends React.Component {
       }
       this.handleNotificationUpdate(messages, false);
     }).catch((err) => {
+      console.log(err);
       this.handleNotificationUpdate(err.message || 'Not possible to sync', true);
     });
   }
