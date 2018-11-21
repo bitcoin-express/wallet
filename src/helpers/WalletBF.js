@@ -927,7 +927,7 @@ export default class WalletBF {
         verifyArgs.expiryPeriod_ms = callerArgs.expiryPeriod_ms
       }
       // TO_DO let expiryEmail = this._fillEmailArray(); ?? why here?
-      return this._getCoinsExactValue(targetValue, verifyArgs, false);
+      return this._getCoinsExactValue(targetValue, verifyArgs, false, crypto);
     }).then((coins) => {
       auxCoins = coins;
       if (coins == null || coins.length == 0) {
@@ -959,7 +959,7 @@ export default class WalletBF {
     }).then((coin) => {
       coinObj = coin;
       exportRef = `Export ${callerArgs.filename} ${now}`;
-      return this.extractCoins(auxCoins, exportRef, "wallet");
+      return this.extractCoins(auxCoins, exportRef, "wallet", crypto);
     }).then((coinsRemoved) => {
       return this.recordTransaction({
         headerInfo: {
@@ -2068,7 +2068,7 @@ export default class WalletBF {
   /**
    * Extract the specified coin from the coinStore.
    */
-  extractCoin(coin, message, other = {}) {
+  extractCoin(coin, message, other = {}, crypto = null) {
     const {
       debug,
       COIN_STORE,
@@ -2080,7 +2080,7 @@ export default class WalletBF {
       console.log("WalletBF.extractCoin", coin);
     }
 
-    const crypto = this.getPersistentVariable(CRYPTO, "XBT");
+    crypto = crypto || this.getPersistentVariable(CRYPTO, "XBT");
     return storage.sessionStart(message).then(() => {
       return this.extractCoins([coin], message, 'user');
     }).then((coinRemoved) => {
@@ -3336,9 +3336,7 @@ export default class WalletBF {
       console.log("WalletBF.verifyCoins", coins, args);
     }
 
-    if (!crypto) {
-      crypto = this.getPersistentVariable(CRYPTO, "XBT");
-    }
+    crypto = crypto || this.getPersistentVariable(CRYPTO, "XBT");
 
     if (!Array.isArray(coins) || coins.length === 0) {
       return Promise.reject(Error("No Coins provided"));

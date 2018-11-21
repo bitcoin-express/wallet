@@ -184,7 +184,7 @@ class CoinsToFile extends React.Component {
       encrypt: encrypted,
       passphrase: encrypted ? password : "",
       comment: comment,
-      currnecy: crypto,
+      currency: crypto,
       // expiryPeriod_ms: (1000 * 60 * 60 * 3) - 1000,
     }).then((exportObj) => {
       const { callerArgs } = exportObj;
