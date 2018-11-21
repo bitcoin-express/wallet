@@ -2004,6 +2004,15 @@ export default class WalletBF {
   }
 
 
+  /***
+   * When args include the key values:
+   *   - replace as true
+   *   - transationId string
+   *   - obj
+   *
+   * Instead of recording a new transaction, it replaces the transaction
+   * with id == transationId with the coming data from obj.
+   */
   recordTransaction(response, args) {
     const {
       CRYPTO,
@@ -2018,13 +2027,36 @@ export default class WalletBF {
     let {
       currency,
     } = response;
+    let tx = null;
     delete response.currency;
 
     if (!currency) {
       currency = this.getPersistentVariable(CRYPTO, "XBT");
     }
 
-    let tx;
+    if (args && args.replace && args.transactionId && args.obj) {
+      // Do not create a new transaction, replace an old one with obj info
+      const {
+        obj,
+        transactionId,
+      } = args;
+
+      let historyList = this.config.storage.get(HISTORY, {[currency]: []})[currency];
+
+      historyList = historyList.map((t) => {
+        if (t.id == transactionId) {
+          tx = t;
+          Object.keys(obj).forEach((k) => {
+            t[k] = obj[k];
+          });
+        }
+        return t;
+      });
+
+      this.config.storage.set(HISTORY, historyList, currency);
+      return tx;
+    }
+
     return this.Balance(currency).then((balance) => {
       tx = new Transaction(response, balance, args);
       return this.config.storage.addFirst(HISTORY, tx.get(), currency);
@@ -3149,7 +3181,6 @@ export default class WalletBF {
 
         if (resp.deferInfo) {
 
-          let promise = Promise.resolve(true);
           const txObj = Object.assign({}, {
             headerInfo: {
               fn: `send XBT${args.target} deferred`,
@@ -3157,15 +3188,25 @@ export default class WalletBF {
             },
           }, resp);
 
+          let promise = Promise.resolve(true);
+
           if (resp.coin && Array.isArray(resp.coin) && resp.coin.length > 0 && args.firstTimeCalled) {
             console.log("Deferred but got change from issuer", resp.coin);
             args.firstTimeCalled = false;
             promise = this.includeCoinsInStore(resp.coin).then(() => {
               return this.recordTransaction(txObj);
+            }).then((tx) => {
+              console.log("Saving deferred transaction with id", tx.id);
+              args.transactionId = tx.id;
+              return tx;
             });
           } else if (args.firstTimeCalled) {
             args.firstTimeCalled = false;
-            promise = this.recordTransaction(txObj);
+            promise = this.recordTransaction(txObj).then((tx) => {
+              console.log("Saving deferred transaction with id", tx.id);
+              args.transactionId = tx.id;
+              return tx;
+            });
           }
 
           return promise.then(() => {
@@ -3201,6 +3242,16 @@ export default class WalletBF {
         }
         resp.other = Object.assign({}, args.other || {}, resp.redeemInfo);
         resp.currency = crypto;
+        if (!args.firsTimeCalled && args.transactionId) {
+          const params = {
+            replace: true,
+            transactionId: args.transactionId,
+            obj: {
+              action: `send XBT${args.target}`,
+            }
+          };
+          return this.recordTransaction(resp, params);
+        }
         return this.recordTransaction(resp);
       }).then(() => {
         return storage.removeFrom(SESSION, resp.headerInfo.tid);
