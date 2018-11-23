@@ -1170,6 +1170,7 @@ class Wallet extends React.Component {
       return (args = null) => {
         const body = <CoinDialog
           { ...args }
+          closeDialog={ this.clearDialog }
           coin={ coin }
           currency={ args.crypto }
           isFlipped={ this.state.isFlipped }

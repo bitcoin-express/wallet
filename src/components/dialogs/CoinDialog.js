@@ -93,6 +93,7 @@ class CoinDialog extends Component {
 
   handleExist() {
     const {
+      closeDialog,
       refreshCoinBalance,
       snackbarUpdate,
       wallet,
@@ -148,6 +149,7 @@ class CoinDialog extends Component {
             currency: coin.c,
           });
         }).then((resp) => {
+          closeDialog();
           return newBalance;
         });
       } else {

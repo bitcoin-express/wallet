@@ -19,7 +19,7 @@ class CoinRow extends Component {
 
   handleShowCoin() {
     const {
-      clearDialog,
+      closeDialog,
       coin,
       openDialog,
     } = this.props;
@@ -29,7 +29,7 @@ class CoinRow extends Component {
         padding: "0",
       },
       showCancelButton: false,
-      onClickOk: clearDialog,
+      onClickOk: closeDialog,
       title: "",
       body: <CoinDialog
         { ...this.props }
