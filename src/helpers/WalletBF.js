@@ -872,7 +872,7 @@ export default class WalletBF {
    * If no element is provided the 'File Save' dialog will automatically be triggered.
    * @return A Promise that resolves to a JSON object with the contents of the export file OR an error.
    */
-  exportFile(exportAmount, args) {
+  exportFile(amount, args) {
     const {
       CRYPTO,
       debug,
@@ -880,24 +880,24 @@ export default class WalletBF {
     } = this.config;
 
     if (debug) {
-      console.log("WalletBF exportFile", exportAmount, args);
+      console.log("WalletBF exportFile", amount, args);
     }
 
     const crypto = args.currency || this.getPersistentVariable(CRYPTO, "XBT");
-    let targetValue = Number.parseFloat(exportAmount);
+    let target = parseFloat(amount);
 
-    if (Number.isNaN(targetValue)) {
+    if (isNaN(target)) {
       return Promise.reject(Error("Export amount is not a number"));
     }
 
-    if (targetValue <= 0) {
+    if (target <= 0) {
       return Promise.reject(Error("Export amount must be positive"));
     }
 
     let callerArgs = Object.assign({
       passphrase: "",
       expandCoins: false,
-      filename: crypto + parseFloat(targetValue).toFixed(8),
+      filename: `${crypto}${target.toFixed(8)}`,
     }, args);
 
     if (callerArgs.encrypt && callerArgs.passphrase.trim().length == 0) {
@@ -905,62 +905,78 @@ export default class WalletBF {
     }
 
     let now = new Date().toISOString();
+    let auxCoins, coinObj, exportRef;
 
-    const params = {
-      issuerRequest: {
-        fn: "verify"
-      }
-    };
 
-    let auxCoins, coinObj, exportRef, verifyArgs;
-    return this.issuer("begin", params, callerArgs).then((response) => {
+    const startTransaction = () => {
+      return this.issuer("begin", {
+        issuerRequest: {
+          fn: "verify"
+        }
+      }, callerArgs);
+    }
+
+
+    const getCoins = (response) => {
       if (response.status == "defer") {
         return Promise.reject(Error("Issuer begin status response is deferred"));
       }
-      verifyArgs = {
+
+      let verifyArgs = {
         beginResponse: response,
         action: "export split"
       };
-      return storage.sessionStart("Export split");
-    }).then((result) => {
-      if ("expiryPeriod_ms" in callerArgs) {
+
+      if (callerArgs.expiryPeriod_ms) {
         verifyArgs.expiryPeriod_ms = callerArgs.expiryPeriod_ms
       }
-      // TO_DO let expiryEmail = this._fillEmailArray(); ?? why here?
-      return this._getCoinsExactValue(targetValue, verifyArgs, false, crypto);
-    }).then((coins) => {
+
+      return this._getCoinsExactValue(target, verifyArgs, false, crypto);
+    }
+
+
+    const prepareCoins = (coins) => {
       auxCoins = coins;
+
       if (coins == null || coins.length == 0) {
-        const msg = `Cannot create export file with the requested value ${crypto}${targetValue}`;
+        const msg = "Cannot create export file with the " +
+          "requested value " + `${crypto}${target.toFixed(8)}`;
         return Promise.reject(Error(msg));
       }
 
       if (callerArgs.encrypt) {
         return this.encryptCoins(coins, callerArgs.passphrase);
-      } else {
-        let outCoins = {};
-        outCoins[crypto] = []
-        // ensure that the coins are in the correct expanded state for output
-        try {
-          coins.forEach((elt) => {
-            if (callerArgs.expandCoins) {
-              outCoins[crypto].push((typeof elt == "string") ? this.Coin(elt) : this.Coin(elt.base64));
-            } else {
-              outCoins[crypto].push((typeof elt == "string") ? elt : elt.base64);
-            }
-          });
-          auxCoins = coins;
-          return outCoins;
-        }
-        catch(err) {
-          return Promise.reject(Error("Coin has no base64 definition"));
-        }
       }
-    }).then((coin) => {
+
+      let outCoins = {
+        [crypto]: []
+      };
+      try {
+        coins.forEach((elt) => {
+          const isString = typeof elt == "string";
+          if (callerArgs.expandCoins) {
+            outCoins[crypto].push(isString ? this.Coin(elt) : this.Coin(elt.base64));
+          } else {
+            outCoins[crypto].push(isString ? elt : elt.base64);
+          }
+        });
+        auxCoins = coins;
+        return outCoins;
+      }
+      catch(err) {
+        throw new Error("Coin has no base64 definition");
+      }
+    };
+
+
+    const extractCoinsFromStore = (coin) => {
       coinObj = coin;
       exportRef = `Export ${callerArgs.filename} ${now}`;
       return this.extractCoins(auxCoins, exportRef, "wallet", crypto);
-    }).then((coinsRemoved) => {
+    };
+
+
+    const recordTransaction = (coinsRemoved) => {
       return this.recordTransaction({
         headerInfo: {
           fn: `export ${auxCoins.length > 1 ? "file" : "coin file"}`,
@@ -968,38 +984,54 @@ export default class WalletBF {
         },
         exportInfo: {
           comment: callerArgs.comment,
-          faceValue: targetValue,
-          actualValue: targetValue,
+          faceValue: target,
+          actualValue: target,
           reference: exportRef,
-          newValue: -targetValue,
+          newValue: -target,
           fee: 0,
         },
         other: {
           file: {
             encrypt: callerArgs.encrypt,
             filename: `${callerArgs.filename}.json`,
-            targetValue,
+            target,
           },
           recovery: coinsRemoved,
         },
         currency: crypto,
       });
-    }).then(() => {
-      return storage.sessionEnd();
-    }).then(() => {
-      return {
-        fileType: auxCoins.length > 1 ? "export" : "coin",
-        reference: exportRef,
-        value: targetValue,
-        date: now,
-        comment: callerArgs.comment,
-        coins: coinObj,
-        callerArgs: callerArgs,
-      };
-    }).catch((err) => {
+    }
+
+
+    const sessionEnd = () => {
+      return storage.sessionEnd().then(() => {
+        return {
+          fileType: auxCoins.length > 1 ? "export" : "coin",
+          reference: exportRef,
+          value: target,
+          date: now,
+          comment: callerArgs.comment,
+          coins: coinObj,
+          callerArgs: callerArgs,
+        };
+      });
+    };
+
+
+    const handleError = (err) => {
       storage.sessionEnd();
       return Promise.reject(err);
-    });
+    };
+
+
+    return storage.sessionStart("Export split")
+      .then(startTransaction)
+      .then(getCoins)
+      .then(prepareCoins)
+      .then(extractCoinsFromStore)
+      .then(recordTransaction)
+      .then(sessionEnd)
+      .catch(handleError);
   }
 
   _generateUUID() {
@@ -1083,7 +1115,7 @@ export default class WalletBF {
     }).then((response) => {
       tid = response.headerInfo.tid;
 
-      const expiryEmail = this._fillEmailArray();
+      const expiryEmail = this._fillEmailArray(0, true, currency);
       const policy = this.getSettingsVariable(ISSUE_POLICY, defPolicy);
 
       let verifyArgs = {
@@ -2208,8 +2240,9 @@ export default class WalletBF {
         return elt.domain == coin.d;
       });
 
+      let currency = coin.c || "XBT";
       let currencyInfo = issuer.currencyInfo.find((elt) => {
-        return elt.currencyCode == coin.c;
+        return elt.currencyCode == currency;
       });
 
       let feeExpiryEmail = 0;
@@ -2233,14 +2266,14 @@ export default class WalletBF {
 
       // If expiryEmail is defined and the fee is less than the
       // value of coins, add it to the args
-      let expiryEmail = this._fillEmailArray();
+      let expiryEmail = this._fillEmailArray(0, true, currency);
       if (Array.isArray(expiryEmail) && expiryEmail.length > 0) {
         if (coin.verifiedValue > feeExpiryEmail) {
           args.expiryEmail = expiryEmail;
         }
       }
 
-      return this.verifyCoins([coin], args, true, coin.c);
+      return this.verifyCoins([coin], args, true, currency);
     }).then((issuerResponse) => {
       if (issuerResponse.coin && issuerResponse.coin.length == 0) {
         // Something went wrong
@@ -2517,7 +2550,7 @@ export default class WalletBF {
 
     // Split required
     return this.issuer("begin", params).then((beginResponse) => {
-      const expiryEmail = this._fillEmailArray();
+      const expiryEmail = this._fillEmailArray(0, true, crypto);
 
       let args = {
         beginResponse,
@@ -2600,7 +2633,7 @@ export default class WalletBF {
     }
 
     // Do we need it?
-    let email = this._fillEmailArray(parseFloat(args.target));
+    let email = this._fillEmailArray(parseFloat(args.target), true, "XBT");
     if (email) {
       params.issuerRequest.expiryEmail = email;
     }
@@ -2636,7 +2669,7 @@ export default class WalletBF {
     });
   }
 
-  _fillEmailArray(target = 0, persistent = true) {
+  _fillEmailArray(target = 0, persistent = true, crypto = "XBT") {
     const {
       EMAIL,
       EMAIL_RECOVERY,
@@ -2650,7 +2683,9 @@ export default class WalletBF {
 
     let email = [this.getSettingsVariable(EMAIL)];
     const emailRecovery = this.getSettingsVariable(EMAIL_RECOVERY);
-    const minTransaction = parseFloat(this.getSettingsVariable(MIN_TRANSACTION_VALUE));
+
+    const minTxObject = this.getSettingsVariable(MIN_TRANSACTION_VALUE);
+    const minTransaction = parseFloat(minTxObject[crypto]);
 
     if (!emailRecovery || target < minTransaction || !email) {
       return null;
@@ -3004,7 +3039,11 @@ export default class WalletBF {
       }
     });
 
-    let expiryEmail = this._fillEmailArray(sumCoins);
+    if (!crypto) {
+      crypto = this.getPersistentVariable(CRYPTO, "XBT");
+    }
+
+    let expiryEmail = this._fillEmailArray(sumCoins, true, crypto);
     if (expiryEmail != null) {
       args.expiryEmail = expiryEmail;
     }
@@ -3024,10 +3063,6 @@ export default class WalletBF {
       const redeemExp = parseFloat(this.getSettingsVariable(REDEEM_EXPIRE)) * (1000 * 60 * 60);
       const now = new Date().getTime();
       const newExpiry = isNaN(args.expiryPeriod) ? now + redeemExp : args.expiryPeriod;
-
-      if (!crypto) {
-        crypto = this.getPersistentVariable(CRYPTO, "XBT");
-      }
 
       let redeemRequest = {
         issuerRequest: {
@@ -3385,7 +3420,7 @@ export default class WalletBF {
       return Promise.reject(Error("Verify requires Coin or base64 string"));
     }
 
-    let expiryEmail = this._fillEmailArray(sumCoins);
+    let expiryEmail = this._fillEmailArray(sumCoins, true, crypto);
     if (expiryEmail != null) {
       args.expiryEmail = expiryEmail;
     }
@@ -5483,7 +5518,7 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
 
     return promise.then(() => {
       if (emailRecovery) {
-        const expiryEmail = this._fillEmailArray(targetValue);
+        const expiryEmail = this._fillEmailArray(targetValue, true, sourceCurrency);
         if (expiryEmail) {
           params.issuerRequest["expiryEmail"] = expiryEmail;
         }
@@ -5821,9 +5856,10 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
       domain: this.getSettingsVariable(DEFAULT_ISSUER),
     };
 
-    return storage.sessionStart("Swap with other").then(() => {
+
+    const startSwapTransaction = () => {
       if (emailRecovery) {
-        const expiryEmail = this._fillEmailArray(targetValue);
+        const expiryEmail = this._fillEmailArray(targetValue, true, targetCurrency);
         if (expiryEmail) {
           params.issuerRequest["expiryEmail"] = expiryEmail;
         }
@@ -5845,7 +5881,10 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
         }
       };
       return this.issuer("begin", beginArgs, {});
-    }).then((response) => {
+    };
+
+
+    const callSwapIssuer = (response) => {
       let msg = "Issuer begin atomic swap response is deferred";
       if (response.status == "defer") {
         return Promise.reject(Error(msg));
@@ -5869,7 +5908,10 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
       return this.issuer("atomicSwap", params, {
         domain: this.getSettingsVariable(DEFAULT_ISSUER),
       });
-    }).then((response) => {
+    };
+
+
+    const handleResponse = (response) => {
       // Must return a deferInfo
       if (debug) {
         console.log("WalletBF.atomicSwap", response);
@@ -5940,11 +5982,17 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
           currency: sourceCurrency,
         });
       });
-    }).then(() => {
-      return storage.sessionEnd();
-    }).then(() => {
-      return result;
-    }).catch((err) => {
+    };
+
+
+    const endSession = () => {
+      return storage.sessionEnd().then(() => {
+        return result;
+      });
+    };
+
+
+    const handleError = (err) => {
 
       let errorList = [
         "Bad request [invalid coins]",
@@ -6019,7 +6067,15 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
       return storage.sessionEnd().then(() => {
         return Promise.reject(err);
       });
-    });
+    };
+
+
+    return storage.sessionStart("Swap with other")
+      .then(startSwapTransaction)
+      .then(callSwapIssuer)
+      .then(handleResponse)
+      .then(endSession)
+      .catch(handleError);
   }
 
   /**
@@ -6050,7 +6106,7 @@ console.log(faceValue+"|"+verificationFee.totalFee+"|"+verifiedValue+"|"+realTar
     }
 
     const expiryPeriod_ms = this.getExpiryPeriod(VERIFY_EXPIRE);
-    const expiryEmail = this._fillEmailArray(target, false);
+    const expiryEmail = this._fillEmailArray(target, false, currency);
     let args = {
       singleCoin: true,
       issuerService,

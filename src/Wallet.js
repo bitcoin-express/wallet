@@ -167,7 +167,7 @@ class Wallet extends React.Component {
     this._closeDialog = this._closeDialog.bind(this);
     this.clearDialog = this.clearDialog.bind(this);
 
-    this.checkNeedsAuthentication = this.checkNeedsAuthentication.bind(this);
+    this.loadAuthenticationDialog = this.loadAuthenticationDialog.bind(this);
 
     this.showMoveCoinsAlert =  this.showMoveCoinsAlert.bind(this);
     this._moveCoins = this._moveCoins.bind(this);
@@ -184,7 +184,7 @@ class Wallet extends React.Component {
     // all about settings
     this.refreshSettings = this.refreshSettings.bind(this);
     this.setSettingsKey = this.setSettingsKey.bind(this);
-    this._saveSettings = this._saveSettings.bind(this);
+    this.updateSettingsState = this.updateSettingsState.bind(this);
 
     this.showAlertWalletName = this.showAlertWalletName.bind(this);
 
@@ -214,50 +214,45 @@ class Wallet extends React.Component {
     this.setWalletPassword = this.setWalletPassword.bind(this);
 
     this.loading = this.loading.bind(this);
+
+    this.interceptError = this.interceptError.bind(this);
   }
 
-  loading(loading=true) {
-    this.setState({ loading });
-  }
+  componentWillMount() {
 
-  checkNeedsAuthentication() {
-    const {
-      needsAuthentication,
-      setPassword,
-    } = this.wallet.config.storage;
-
-    return needsAuthentication().then((auth) => {
-
-      if (!auth) {
-        this.setState({
-          password: "",
-        });
-        return true;
+    const login = () => {
+      if (localStorage.getItem('loggedIn') == 'true') {
+        // Attempt to login
+        this.autoLogin();
+        return;
       }
 
-      return new Promise((resolve, reject) => {
-        this.openDialog({
-          onClickOk: (password) => {
-            setPassword(this.state.password).then((success) => {
-              if (!success) {
-                return reject(new Error("Invalid password"));
-              }
-              this._closeDialog();
-              return resolve(true);
-            });
-          },
-          showCancelButton: false,
-          title: "Needs password authentication",
-          body: <AuthenticateDialog
-            onPasswordChange={(password) => {
-              this.setState({
-                password,
-              });
-            }}
-          />,
-        });
+      this.setState({
+        status: states.WELCOME
       });
-    });
+    };
+
+    const handleError = ({ error, warning }) => {
+      if (this.wallet.config.debug == true) {
+        console.log(error);
+      }
+
+      if (localStorage.getItem('loggedIn') == 'true') {
+        // TO_DO: Try again to login, this should not be
+        // possible to happen.
+        this.autoLogin();
+        return;
+      }
+
+      this.setState({
+        status: states.WELCOME
+      });
+      this.handleNotificationUpdate(warning, true);
+    };
+
+    this.xr.refreshExchangeRates()
+      .then(login)
+      .catch(handleError);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -316,6 +311,142 @@ class Wallet extends React.Component {
     }
   }
 
+
+  /**
+   * Intercepts and prints the error if wallet is in debug mode.
+   *
+   * @param err [object] error object type returned by the catch.
+   * @param fn [function] must return a promise, called if defined
+   *    with the err object as parameter.
+   */
+  interceptError(err, fn) {
+
+    if (this.wallet.config.debug) {
+      console.log(err);
+    }
+
+    if (fn && typeof fn == "function") {
+      return fn(err);
+    }
+
+    return Promise.reject(err);
+  }
+
+  loading(loading=true) {
+    this.setState({
+      loading,
+    });
+  }
+
+
+  /**
+   * Prepares the wallet to be authenticated by the user. Afterwards,
+   * it should encrypt/decrypt the settings and the wallet object in
+   * order to continue with the process normally.
+   *
+   * @param initialize [boolean] if requires initialization of the wallet,
+   *    used when just opened the wallet.
+   * @param changeState [boolean] TO_DO.
+   *
+   * @return Promise to be resolved.
+   */
+  _authenticate(initialize = false, changeState = true) {
+
+    const handleError = (err) => {
+
+      if (err.message == "Timeout triggered setting the password") {
+        // If timeout triggered, return to the welcome page.
+        this.handleNotificationUpdate(err.message);
+        this.setState({
+          status: states.WELCOME,
+        });
+        return false;
+      }
+
+      // Password is incorrect, let's try again.
+      this.handleNotificationUpdate(err.message, true);
+      return this._authenticate(initialize);
+    };
+
+    const initializeWallet = () => {
+      return initialize ? this._initializeWallet(changeState) : true;
+    }
+
+    return this.loadAuthenticationDialog()
+      .then(initializeWallet)
+      .catch(handleError);
+  }
+
+
+  /**
+   * If authentication is required, opens the input password dialog.
+   *
+   * @return A promise that will be resolved after the user set the
+   *   correct/incorrect password, if required.
+   */
+  loadAuthenticationDialog() {
+    const {
+      needsAuthentication,
+      setPassword,
+    } = this.wallet.config.storage;
+
+    const showDialogIfAuthRequired = (walletHasAuth) => {
+
+      if (!walletHasAuth) {
+        this.setState({
+          password: "",
+        });
+        return Promise.resolve(true);
+      }
+
+      return new Promise((resolve, reject) => {
+
+        let timeout = setTimeout(() => {
+          this._closeDialog();
+          return reject(new Error("Timeout triggered setting the password"));
+        }, 5 * 60000);
+
+        const okClicked = () => {
+          const {
+            password,
+          } = this.state;
+
+          const success = (resp) => {
+            clearTimeout(timeout);
+            this._closeDialog();
+            return resolve(true);
+          }
+
+          const failure = (success) => {
+            return reject(new Error("Invalid password"));
+          }
+
+          setPassword(password)
+            .then(success)
+            .catch(failure);
+        };
+
+        const onPwdChanged = (password) => {
+          this.setState({
+            password,
+          });
+        }
+
+        this.openDialog({
+          onClickOk: okClicked,
+          showCancelButton: false,
+          title: "Needs password authentication",
+          body: <AuthenticateDialog
+            onPasswordChange={ onPwdChanged }
+          />,
+        });
+      });
+    }
+
+    return needsAuthentication()
+      .then(showDialogIfAuthRequired);
+  }
+
   forceTabClick(tabIndex) {
     const el = document.getElementsByClassName("tabsbar");
     el[0].children[0].children[tabIndex].click();
@@ -343,45 +474,98 @@ class Wallet extends React.Component {
     } = this.wallet.config;
 
     let settings = DEFAULT_SETTINGS;
+    const walletSettings = this.wallet.getPersistentVariable(SETTINGS);
+
     if (settings) {
-      settings = Object.assign({}, DEFAULT_SETTINGS, this.wallet.getPersistentVariable(SETTINGS));
-      this._saveSettings(settings);
+      settings = Object.assign({}, DEFAULT_SETTINGS, walletSettings);
+      this.updateSettingsState(settings);
       return Promise.resolve(settings);
     }
 
-    settings = Object.assign({}, DEFAULT_SETTINGS);
-    return this.executeInSession("Initialize settings", false, () => {
-      return this.wallet.setPersistentVariable(SETTINGS, DEFAULT_SETTINGS);
-    }).then(() => {
-      this._saveSettings(settings);
-      return settings;
-    }).catch((err) => {
-      console.log(err);
-      this.handleNotificationUpdate(err.message || "Problem on initializing settings", true);
-      return Promise.reject(Error("Problem on initializing settings"));
-    });
+    console.log("ALERT!! Does it arrive here??");
+
+    const storeSettings = () => {
+      settings = Object.assign({}, DEFAULT_SETTINGS);
+      return this.executeInSession("Initialize settings", false, () => {
+        return this.wallet.setPersistentVariable(SETTINGS, DEFAULT_SETTINGS);
+      }).then(() => {
+        this.updateSettingsState(settings);
+        return settings;
+      });
+      };
+
+    const handleError = (err) => {
+      return this.interceptError(err, (err) => {
+        const errMsg = err.message || "Problem on initializing settings";
+        this.handleNotificationUpdate(errMsg, true);
+        return Promise.reject(err);
+      });
+    }
+
+    return storeSettings()
+      .catch(handleError);
   }
 
+
+  /**
+   * Update the component state and the xr (ExchangeRate) object with the
+   * settings object.
+   *
+   * @param settings [object] the settings object.
+   *
+   * @return A boolean indicating if there was an update of the state.
+   */
+  updateSettingsState(settings) {
+
+    const {
+      BTC_DISPLAY,
+      CURRENCY,
+      SEPARATOR,
+    } = this.wallet.config;
+
+    this.xr.setSeparator(settings[SEPARATOR]);
+    this.xr.setCurrency(settings[CURRENCY]);
+    this.xr.setBTCDisplay(settings[BTC_DISPLAY]);
+
+    if (JSON.stringify(settings) == JSON.stringify(this.state.settings)) {
+      // Nothing to do as there is no modification on settings
+      return false;
+    }
+
+    this.setState({
+      settings,
+    });
+    return true;
+  }
+
+
+  /**
+   * Updates the settings key with the given value..
+   *
+   * @param key [string] the settings key.
+   * @param value [string] value that will be used.
+   *
+   * @return A promise returning the settings object.
+   */
   setSettingsKey(key, value) {
+
     if (!this.wallet.config.storage) {
-      return Promise.reject(Error("No storage in wallet"));
+      return Promise.reject(Error("setSettingsKey - No storage in wallet"));
     }
-    let { settings } = this.state;
-    settings[key] = value;
 
-    return this.wallet.setSettings(settings).then((result) => {
-      this._saveSettings(settings);
+    let {
+      settings,
+    } = this.state;
+
+    const updateComponentState = (result) => {
+      settings[key] = value;
+      this.updateSettingsState(settings);
       return settings;
-    });
-  }
+    };
 
-  _saveSettings(settings) {
-    this.xr.setSeparator(settings[this.wallet.config.SEPARATOR]);
-    this.xr.setCurrency(settings[this.wallet.config.CURRENCY]);
-    this.xr.setBTCDisplay(settings[this.wallet.config.BTC_DISPLAY]);
-    if (JSON.stringify(settings) !== JSON.stringify(this.state.settings)) {
-      this.setState({ settings });
-    }
+    return this.wallet.setSettings(settings)
+      .then(updateComponentState)
+      .catch(this.interceptError);
   }
 
   autoLogin() {
@@ -399,30 +583,6 @@ class Wallet extends React.Component {
 
   logout() {
     localStorage.setItem('loggedIn', 'false');
-  }
-
-  componentWillMount() {
-    this.xr.refreshExchangeRates().then(() => {
-      if (localStorage.getItem('loggedIn') == 'true') {
-        // attempt to login
-        this.autoLogin();
-        return;
-      }
-      this.setState({
-        status: states.WELCOME
-      });
-    }).catch(({ error, warning }) => {
-      console.log(error);
-      if (localStorage.getItem('loggedIn') == 'true') {
-        // attempt to login
-        this.autoLogin();
-        return;
-      }
-      this.setState({
-        status: states.WELCOME
-      });
-      this.handleNotificationUpdate(warning, true);
-    });
   }
 
   /**
@@ -509,20 +669,6 @@ class Wallet extends React.Component {
     this.login();
     this.wallet.config.storage.setType('googleDrive');
     return this._authenticate(true);
-  }
-
-  _authenticate(initialize = false, changeState = true) {
-    return this.checkNeedsAuthentication().then(() => {
-      this._closeDialog();
-      if (initialize) {
-        return this._initializeWallet(changeState);
-      }
-      return true;
-    }).catch((err) => {
-      console.log(err);
-      this.handleNotificationUpdate(err.message, true);
-      return this._authenticate(initialize);
-    });
   }
 
   // Initialize settings for a new Wallet + Asks for Wallet name

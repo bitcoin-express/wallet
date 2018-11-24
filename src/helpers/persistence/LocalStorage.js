@@ -27,7 +27,7 @@ export default class LocalStorage {
   setPassword(pwd="") {
     this.encryption = pwd;
     if (!this._getWallet()) {
-      return Promise.resolve(false);
+      return Promise.reject(new Error("Can not read wallet object"));
     }
     return Promise.resolve(true);
   }

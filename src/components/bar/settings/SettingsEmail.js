@@ -11,6 +11,163 @@ import MenuItem from 'material-ui/MenuItem';
 import BitcoinCurrency from '../../BitcoinCurrency';
 import CoinSelector from '../../CoinSelector';
 
+
+function getExpiryEmailFee(info, settings, config) {
+  const {
+    MIN_TRANSACTION_VALUE,
+  } = config;
+
+  let fee = parseFloat(info.feeExpiryEmail) * 20;
+  const settingsValue = settings[MIN_TRANSACTION_VALUE];
+
+  if (settingsValue != 1 && settingsValue[info.currencyCode]) {
+    fee = settingsValue[info.currencyCode];
+  }
+
+  return fee;
+}
+
+class NetworkFee extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const {
+      currency,
+      isFlipped,
+      isFullScreen,
+      feeExpiry,
+      settings,
+      showValuesInCurrency,
+      wallet,
+      xr,
+    } = this.props;
+
+    return <div>
+      <small
+        style={{
+          marginLeft: isFullScreen ? '40px' : '0',
+        }}
+      >
+        ( Fee. <BitcoinCurrency
+          centered={ false }
+          currency={ currency }
+          color="rgba(0, 0, 0, 0.87)"
+          isFlipped={ isFlipped }
+          tiny={ true }
+          style={{
+            display: 'inline-block',
+            overflow: 'inherit',
+          }}
+          labelStyle={{
+            marginTop: '7px',
+          }}
+          displayStorage={ false }
+          showValuesInCurrency={ showValuesInCurrency }
+          value={ parseFloat(feeExpiry) *
+            Math.floor(settings[wallet.config.VERIFY_EXPIRE])
+          }
+          wallet={ wallet }
+          xr={ xr }
+        />&nbsp;)
+      </small>
+    </div>;
+  }
+}
+
+
+class MinTransactionAmount extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const {
+      currency,
+      isFlipped,
+      isFullScreen,
+      feeExpiryEmail,
+      settings,
+      showValuesInCurrency,
+      wallet,
+      xr,
+    } = this.props;
+
+    return <div style={{
+      fontSize: 'small',
+      marginTop: isFullScreen ? '0' : '-10px',
+      marginLeft: isFullScreen ? '40px' : '0',
+    }}>
+      ( Min. <BitcoinCurrency
+        centered={ false }
+        currency={ currency }
+        color="rgba(0, 0, 0, 0.87)"
+        isFlipped={ isFlipped }
+        tiny={ true }
+        style={{
+          display: 'inline-block',
+          overflow: 'inherit',
+        }}
+        labelStyle={{
+          marginTop: '7px',
+        }}
+        displayStorage={ false }
+        showValuesInCurrency={ showValuesInCurrency }
+        value={ parseFloat(feeExpiryEmail) }
+        wallet={ wallet }
+        xr={ xr }
+      />&nbsp;)
+    </div>;
+  }
+}
+
+class FeeExpiryEmail extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const {
+      currency,
+      isFlipped,
+      isFullScreen,
+      feeExpiryEmail,
+      settings,
+      showValuesInCurrency,
+      wallet,
+      xr,
+    } = this.props;
+
+    const isRecovery = settings[wallet.config.EMAIL_RECOVERY];
+
+    return <div>
+      <small style={{ marginLeft: isFullScreen ? '40px' : '0' }}>
+        ( Fee <BitcoinCurrency
+          centered={ false }
+          color="rgba(0, 0, 0, 0.87)"
+          currency={ currency }
+          isFlipped={ isFlipped }
+          tiny={ true }
+          style={{
+            display: 'inline-block',
+            overflow: 'inherit',
+          }}
+          labelStyle={{
+            marginTop: '7px',
+          }}
+          displayStorage={ false }
+          showValuesInCurrency={ showValuesInCurrency }
+          value={ isRecovery ? parseFloat(feeExpiryEmail) : 0 }
+          wallet={ wallet }
+          xr={ xr }
+        />&nbsp;)
+      </small>
+    </div>;
+  }
+}
+
+
 export default class SettingsEmail extends React.Component {
 
   constructor(props) {
@@ -20,6 +177,7 @@ export default class SettingsEmail extends React.Component {
       errorEmail: "",
       errorMinTx: null,
       minTransaction: 0,
+      currencyInfo: [],
       feeExpiryEmail: 0,
       feeExpiry: 0,
       pwdType: 0,
@@ -43,7 +201,7 @@ export default class SettingsEmail extends React.Component {
         // marginBottom: '15px',
         fontSize: 'small',
       },
-      infoIcon: function (top='-15px') {
+      infoIcon: function (top='-6.5em') {
         return {
           cursor: 'pointer',
           color: 'black',
@@ -79,18 +237,23 @@ export default class SettingsEmail extends React.Component {
       DEFAULT_ISSUER,
     } = wallet.config;
 
+    const updateState = (resp) => {
+      if (!resp.issuer || resp.issuer.length == 0) {
+        return;
+      }
+
+      // TO_DO: Shall we show different issuers?
+      this.setState({
+        currencyInfo: resp.issuer[0].currencyInfo,
+      });
+    }
+
     const args = {
       domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
     };
 
-    wallet.issuer("info", {}, args, "GET").then((resp) => {
-      if (resp.issuer && resp.issuer.length > 0) {
-        this.setState({
-          feeExpiryEmail: parseFloat(resp.issuer[0].feeExpiryEmail),
-          feeExpiry: parseFloat(resp.issuer[0].feeExpiry),
-        });
-      }
-    });
+    wallet.issuer("info", {}, args, "GET")
+      .then(updateState);
   }
 
   validateAmount(s) {
@@ -146,23 +309,37 @@ export default class SettingsEmail extends React.Component {
     } = this.props;
 
     let {
-      feeExpiryEmail,
+      currencyInfo,
       settings,
     } = this.state;
 
-    if (checked && !settings[wallet.config.MIN_TRANSACTION]) {
-      setSettingsKey(wallet.config.MIN_TRANSACTION, 1);
-      setSettingsKey(wallet.config.MIN_TRANSACTION_VALUE, 20 * feeExpiryEmail);
-      settings[wallet.config.MIN_TRANSACTION] = 1;
-      settings[wallet.config.MIN_TRANSACTION_VALUE] = 20 * feeExpiryEmail;
+    const {
+      EMAIL_RECOVERY,
+      MIN_TRANSACTION,
+      MIN_TRANSACTION_VALUE,
+      TRANSACTION_EXPIRE_VALUE,
+    } = wallet.config;
+
+    if (checked && !settings[MIN_TRANSACTION]) {
+      let minTxValue = {};
+      currencyInfo.forEach((info) => {
+        minTxValue[info.currencyCode] = 20 * parseFloat(info.feeExpiryEmail);
+      });
+
+      setSettingsKey(MIN_TRANSACTION, 1);
+      setSettingsKey(MIN_TRANSACTION_VALUE, minTxValue);
+      settings[MIN_TRANSACTION] = 1;
+      settings[MIN_TRANSACTION_VALUE] = minTxValue;
     }
 
-    setSettingsKey(wallet.config.EMAIL_RECOVERY, checked);
-    settings[wallet.config.EMAIL_RECOVERY] = checked;
+    setSettingsKey(EMAIL_RECOVERY, checked);
+    settings[EMAIL_RECOVERY] = checked;
+
     this.setState({
       settings,
     });
-    if (settings[wallet.config.TRANSACTION_EXPIRE_VALUE] == 0) {
+
+    if (settings[TRANSACTION_EXPIRE_VALUE] == 0) {
       this._setAutoTimes();
     }
   }
@@ -264,45 +441,70 @@ export default class SettingsEmail extends React.Component {
     } = this.props;
 
     let {
-      feeExpiryEmail,
+      currencyInfo,
       settings,
     } = this.state;
 
+    const {
+      MIN_TRANSACTION,
+      MIN_TRANSACTION_VALUE,
+    } = wallet.config;
+
     if (type == 1) {
-      setSettingsKey(wallet.config.MIN_TRANSACTION_VALUE, 20 * feeExpiryEmail);
-      settings[wallet.config.MIN_TRANSACTION_VALUE] = 20 * feeExpiryEmail;
+      let minTxValue = {};
+      currencyInfo.forEach((info) => {
+        minTxValue[info.currencyCode] = 20 * info.feeExpiryEmail;
+      });
+
+      setSettingsKey(MIN_TRANSACTION_VALUE, minTxValue);
+      settings[MIN_TRANSACTION_VALUE] = minTxValue;
     }
-    setSettingsKey(wallet.config.MIN_TRANSACTION, type);
-    settings[wallet.config.MIN_TRANSACTION] = type;
+    setSettingsKey(MIN_TRANSACTION, type);
+    settings[MIN_TRANSACTION] = type;
+
     this.setState({
       settings,
     });
   }
 
-  handleMinTransactionChange(value) {
-    const {
-      setSettingsKey,
-      wallet,
-    } = this.props;
+  handleMinTransactionChange(currency) {
+    return (value) => {
+      const {
+        setSettingsKey,
+        wallet,
+      } = this.props;
 
-    let {
-      feeExpiryEmail,
-      settings,
-    } = this.state;
+      let {
+        feeExpiryEmail,
+        settings,
+      } = this.state;
 
-    if (parseFloat(value) < feeExpiryEmail) {
+      const {
+        MIN_TRANSACTION_VALUE,
+      } = wallet.config;
+
+      if (parseFloat(value) < feeExpiryEmail) {
+        this.setState({
+          errorMinTx: "lower than recovery fee",
+        });
+        return;
+      }
+
+      let minTxValue = wallet.getSettingsVariable(MIN_TRANSACTION_VALUE);
+      if (typeof minTxValue != "object") {
+        minTxValue = { [currency]: value };
+      } else {
+        minTxValue[currency] = value;
+      }
+
+      setSettingsKey(MIN_TRANSACTION_VALUE, minTxValue);
+      settings[MIN_TRANSACTION_VALUE] = minTxValue;
+
       this.setState({
-        errorMinTx: "lower than recovery fee",
+        settings,
+        errorMinTx: null,
       });
-      return;
-    }
-
-    setSettingsKey(wallet.config.MIN_TRANSACTION_VALUE, value);
-    settings[wallet.config.MIN_TRANSACTION_VALUE] = value;
-    this.setState({
-      settings,
-      errorMinTx: null,
-    });
+    };
   }
 
   handleChangePasswordEncrypt(event, pwd) {
@@ -428,11 +630,25 @@ export default class SettingsEmail extends React.Component {
       errorEmail,
       feeExpiry,
       feeExpiryEmail,
+      currencyInfo,
       settings,
     } = this.state;
 
     const showPwdField = settings[wallet.config.ENCRYPT_TYPE] == 1
       && settings[wallet.config.EMAIL_ENCRYPT];
+
+    const isAutoMinTx = settings[wallet.config.MIN_TRANSACTION] == 1;
+
+    const displayMinTxFee = (info) => {
+      let fee = getExpiryEmailFee(info, settings, wallet.config) * 20;
+      return <MinTransactionAmount 
+        { ...this.props }
+        key={ "minTransactionAmount" + info.currencyCode }
+        currency={ info.currencyCode }
+        feeExpiryEmail={ fee.toString() }
+        settings={ settings }
+      />
+    };
 
     return (
       <section style={{ 
@@ -519,31 +735,20 @@ export default class SettingsEmail extends React.Component {
           disabled={ !this._checkIfEmailInString(settings[wallet.config.EMAIL]) }
           onCheck={ this.handleSetEmailRecovery }
         />
-        <small style={{ marginLeft: isFullScreen ? '40px' : '0' }}>
-          ( Fee <BitcoinCurrency
-            centered={ false }
-            color="rgba(0, 0, 0, 0.87)"
-            isFlipped={ isFlipped }
-            tiny={ true }
-            style={{
-              display: 'inline-block',
-              overflow: 'inherit',
-            }}
-            labelStyle={{
-              marginTop: '7px',
-            }}
-            displayStorage={ false }
-            showValuesInCurrency={ showValuesInCurrency }
-            value={ settings[wallet.config.EMAIL_RECOVERY] ? feeExpiryEmail : 0 }
-            wallet={ wallet }
-            xr={ xr }
-          />&nbsp;)
-        </small>
+        { currencyInfo.map((info) => {
+            return <FeeExpiryEmail 
+              { ...this.props }
+              key={ "feeEmail" + info.currencyCode }
+              currency={ info.currencyCode }
+              feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
+              settings={ settings }
+            />
+        }) }
         <div>
           <i
             className="fa fa-question-circle"
             onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon('-45px') }
+            style={ this.styles.infoIcon('-6em') }
           />
         </div>
         <div style={ this.styles.info }>
@@ -619,52 +824,39 @@ export default class SettingsEmail extends React.Component {
             />
           </SelectField>
         </div>
-        { settings[wallet.config.MIN_TRANSACTION] == 1 ? null : <CoinSelector
-          id="min-transaction"
-          label=""
-          labelCurrency=""
-          fullSize={ false }
-          xr={ xr }
-          disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
-          style={{
-            margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
-            width: 'calc(100% - 60px)',
-          }}
-          initialValue={ (settings[wallet.config.MIN_TRANSACTION_VALUE] || feeExpiryEmail * 20).toString() }
-          error={ this.state.errorMinTx }
-          onAmountChange={ this.handleMinTransactionChange }
-        /> }
-        <div style={{
-          fontSize: 'small',
-          marginTop: isFullScreen ? '0' : '-10px',
-          marginLeft: isFullScreen ? '40px' : '0',
-        }}>
-          ( Min. <BitcoinCurrency
-            centered={ false }
-            color="rgba(0, 0, 0, 0.87)"
-            isFlipped={ isFlipped }
-            tiny={ true }
-            style={{
-              display: 'inline-block',
-              overflow: 'inherit',
-            }}
-            labelStyle={{
-              marginTop: '7px',
-            }}
-            displayStorage={ false }
-            showValuesInCurrency={ showValuesInCurrency }
-            value={ settings[wallet.config.MIN_TRANSACTION] == 1 ? feeExpiryEmail * 20 :
-              parseFloat(settings[wallet.config.MIN_TRANSACTION_VALUE] || 0)
-            }
-            wallet={ wallet }
-            xr={ xr }
-          />&nbsp;)
-        </div>
+
+        { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
+              const {
+                EMAIL_RECOVERY,
+              } = wallet.config;
+
+              const fee = getExpiryEmailFee(info, settings, wallet.config);
+
+              return <CoinSelector
+                currency={ info.currencyCode }
+                id={ "minTransactionSel" + info.currencyCode }
+                key={ "minTransactionSel" + info.currencyCode }
+                label=""
+                labelCurrency=""
+                fullSize={ false }
+                xr={ xr }
+                disabled={ !settings[EMAIL_RECOVERY] }
+                style={{
+                  margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
+                  width: 'calc(100% - 60px)',
+                }}
+                initialValue={ fee.toString() }
+                error={ this.state.errorMinTx }
+                onAmountChange={ this.handleMinTransactionChange(info.currencyCode) }
+              />;
+          }) }
+        </div> }
+
         <div>
           <i
             className="fa fa-question-circle"
             onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon() }
+            style={ this.styles.infoIcon(isAutoMinTx ? '-6.5em' : '-12em') }
           />
         </div>
         <div style={ this.styles.info }>
@@ -836,30 +1028,16 @@ export default class SettingsEmail extends React.Component {
           checked={ settings[wallet.config.TRANSACTION_EXPIRE] || false }
           onCheck={ this.handleSetTransactionExpire }
         /> }
-        <small
-          style={{
-            marginLeft: isFullScreen ? '40px' : '0',
-          }}
-        >
-          ( Fee. <BitcoinCurrency
-            centered={ false }
-            color="rgba(0, 0, 0, 0.87)"
-            isFlipped={ isFlipped }
-            tiny={ true }
-            style={{
-              display: 'inline-block',
-              overflow: 'inherit',
-            }}
-            labelStyle={{
-              marginTop: '7px',
-            }}
-            displayStorage={ false }
-            showValuesInCurrency={ showValuesInCurrency }
-            value={ feeExpiry * Math.floor(settings[wallet.config.VERIFY_EXPIRE]) }
-            wallet={ wallet }
-            xr={ xr }
-          />&nbsp;)
-        </small>
+        { currencyInfo.map((info) => {
+            console.log(info.currencyCode, info.feeExpiry, parseFloat(info.feeExpiry));
+            return <NetworkFee 
+              { ...this.props }
+              key={ "networkFee" + info.currencyCode }
+              currency={ info.currencyCode }
+              feeExpiry={ parseFloat(info.feeExpiry) }
+              settings={ settings }
+            />
+        }) }
 
       </section>
     );

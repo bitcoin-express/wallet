@@ -82,7 +82,7 @@ export default class GoogleDrive {
 
   setPasswordAndUpdate(pwd="") {
     return this._readWallet().then((success) => {
-      this.encrypt = pwd != "";
+      this.isEncrypted = pwd != "";
       this.encryption = pwd;
       return this.flush();
     }).then((fileId) => {
@@ -93,10 +93,37 @@ export default class GoogleDrive {
   setPassword(pwd="") {
     this.encryption = pwd;
     return this._readWallet();
+    /*
+    return this._readWallet().then((resp) => {
+      if (!resp) {
+        throw new Error("Can not read wallet object");
+      }
+      return true;
+    });
+    */
   }
 
   needsAuthentication() {
-    return this._readWallet(true);
+    // Return true if needs authentication
+
+    const isEncrypted = (content) => {
+      if (!content) {
+        return Promise.reject("Wallet has no content");
+      }
+
+      if (typeof content == "string") {
+        content = JSON.parse(content);
+      }
+
+      const keys = Object.keys(content);
+      this.isEncrypted = keys.indexOf("iv") > -1 &&
+        keys.indexOf("cipher") > -1;
+
+      return this.isEncrypted;
+    };
+
+    return this.getFileContent(this.walletId)
+      .then(isEncrypted);
   }
 
   /**
@@ -251,23 +278,9 @@ export default class GoogleDrive {
   /**
    * read the wallet file from Drive and update the localStorage images 
    */
-  _readWallet(checkAuth = false) {
+  _readWallet() {
     return this.getFileContent(this.walletId).then((content) => {
-      if (checkAuth) {
-        // Return true if needs authentication
-        if (!content) {
-          return false;
-        }
-        if (typeof content == "string") {
-          content = JSON.parse(content);
-        }
-        const keys = Object.keys(content);
-        this.encrypt = keys.indexOf("iv") > -1 && keys.indexOf("cipher") > -1;
-        return this.encrypt;
-      }
-
-      // Return true if read wallet success 
-      if (this.encrypt) {
+      if (this.isEncrypted) {
         content = decrypt(content, this.encryption);
       }
       if (typeof content == "string") {
@@ -660,7 +673,7 @@ export default class GoogleDrive {
 
   flush() {
     let wallet = JSON.stringify(this.wallet);
-    if (this.encrypt) {
+    if (this.isEncrypted) {
       wallet = encrypt(wallet, this.encryption);
     }
     return new Promise((resolve, reject) => {
