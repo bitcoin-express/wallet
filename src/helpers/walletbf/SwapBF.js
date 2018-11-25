@@ -45,12 +45,11 @@ export default class SwapBF {
       targetCurrency,
     } = target;
 
-    const defPolicy = DEFAULT_SETTINGS.issuePolicy;
-
     const expiryPeriod_ms = this.getExpiryPeriod(VERIFY_EXPIRE);
     const coinList = this.getStoredCoins(false, sourceCurrency);
-    // this.getSettingsVariable(ISSUE_POLICY, defPolicy);
-    const issuePolicy = "single";
+
+    const defaultPolicy = DEFAULT_SETTINGS.issuePolicy;
+    const issuePolicy = this.getSettingsVariable(ISSUE_POLICY, defaultPolicy);
 
     let toRemove = coinList;
     if (!maxSelected) {
@@ -292,8 +291,8 @@ export default class SwapBF {
       targetCurrency,
     } = target;
 
-    const defPolicy = DEFAULT_SETTINGS.issuePolicy;
-    const issuePolicy = this.getSettingsVariable(ISSUE_POLICY, defPolicy);
+    const defaultPolicy = DEFAULT_SETTINGS.issuePolicy;
+    const issuePolicy = this.getSettingsVariable(ISSUE_POLICY, defaultPolicy);
     const attempt = tid != null;
 
     let toRemove = [];
