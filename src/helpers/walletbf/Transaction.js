@@ -109,10 +109,6 @@ export default class Transaction {
 
     switch (this.type) {
 
-      case "redeemInfo":
-        this.history.type = "redeem";
-        break;
-
       case "exportInfo":
         this.history.type = "export";
         break;
@@ -121,8 +117,9 @@ export default class Transaction {
         this.history.type = "import";
         break;
 
+      case "redeemInfo":
       case "issueInfo":
-        this.history.type = "issue";
+        this.history.type = this.type == "issueInfo" ? "issue" : "redeem";
         let {
           blockchainAddress,
           blockchainFee,
@@ -139,10 +136,13 @@ export default class Transaction {
         this.history.info.blockchainFee = this._number(blockchainFee);
         this.history.info.lostValue = this._number(lostValue);
 
-        args.issuer.actualValue = this._number(issueValue + lostValue);
-        args.issuer.faceValue = this._number(issueValue + lostValue); // this._number(actualValue + blockchainFee);
-        args.issuer.newValue = this._number(issueValue);
-        args.issuer.fee = "0.00000000";
+        if (this.type == "issueInfo") {
+          args.issuer.actualValue = this._number(issueValue + lostValue);
+          args.issuer.faceValue = this._number(issueValue + lostValue);
+          // this._number(actualValue + blockchainFee);
+          args.issuer.newValue = this._number(issueValue);
+          args.issuer.fee = "0.00000000";
+        }
 
         if (blockchainTxid) {
           this.history.info.blockchainTxid = blockchainTxid;

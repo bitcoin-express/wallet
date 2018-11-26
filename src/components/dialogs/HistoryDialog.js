@@ -131,307 +131,309 @@ class HistoryDialog extends React.Component {
       xr,
     } = this.props;
 
-    if (transaction) {
-      let {
-        actualValue,
-        faceValue,
-        fee,
-      } = transaction.issuer;
+    if (!transaction) {
+      return null;
+    }
 
-      const {
-        recovered,
-      } = this.state;
+    let {
+      actualValue,
+      faceValue,
+      fee,
+    } = transaction.issuer;
 
-      let {
-        blockchainTxid,
-        copyCoinString,
-        recovery,
-        isRecovered,
-        file,
-      } = transaction.info;
+    const {
+      recovered,
+    } = this.state;
 
-      const change = parseFloat(transaction.balance) - oldBalance;
+    let {
+      blockchainTxid,
+      copyCoinString,
+      recovery,
+      isRecovered,
+      file,
+    } = transaction.info;
 
-      if (this.state.loading) {
-        return <section style={{ textAlign: 'center', margin: '20px 0 15px 0' }}>
-          <CircularProgress
-            size={ 150 }
-            thickness={ 5 }
-          />
-          <p>
-            <small>recovering coin(s)...</small>
-          </p>
-        </section>;
-      }
+    const change = parseFloat(transaction.balance) - oldBalance;
+    const isDeferred = transaction.action.endsWith("deferred");
 
-      return <section style={{ marginTop: '20px' }}>
-        <Tabs>
-
-          <TabList>
-            <Tab>Info</Tab>
-            { !transaction.action.endsWith("deferred") ? <Tab>Details</Tab> : null }
-            <Tab>Balance</Tab>
-            { transaction.comment ? <Tab>Note</Tab> : null }
-          </TabList>
-
-          <TabPanel>
-            <p style={{ textAlign: 'center' }}>
-              <b>Domain</b>: { transaction.domain }
-            </p>
-
-            { blockchainTxid ? <div style={{
-              textAlign: 'center',
-              margin: '10px 0 0 0',
-            }}>
-              <a
-                href={ `https://blockchain.info/tx/${blockchainTxid}` }
-                target="_blank"
-                style={{
-                  textDecoration: 'inherit',
-                  color: '#966600',
-                  fontWeight: 'bold',
-                }}
-                title="Blockchain.info"
-              >
-                Track progress
-              </a>
-            </div> : null }
-
-            { transaction.action.endsWith("deferred") ? <div
-              style={{
-                color: '#966600',
-                fontWeight: 'bold',
-                textAlign: 'center',
-              }}
-            >
-              Blockchain transfer has been scheduled and is expected to start soon.
-            </div> : null }
-
-            { copyCoinString ? <p
-              style={{
-                textAlign: 'center',
-              }}
-            >
-              <i className="fa fa-clipboard" /> Copied in clipboard
-            </p> : null }
-
-            { file ? <p
-              style={{
-                textAlign: 'center',
-              }}
-            >
-              <i className="fa fa-file" /> Extracted in file
-            </p> : null }
-
-            { recovery && !recovered ? <p
-              style={{
-                textAlign: 'center',
-                color: styles.colors.mainBlue,
-                cursor: 'pointer',
-              }}
-              onClick={ this.handleRecovery }
-            >
-              <i className="fa fa-undo" /> Recover coin
-            </p> : null }
-
-            { isRecovered || recovered ? <p
-              style={{
-                textAlign: 'center',
-                color: styles.colors.mainGreen,
-              }}
-            >
-              <i className="fa fa-recycle" /> Amount recovered and already in the wallet
-            </p> : null }
-          </TabPanel>
-
-          { !transaction.action.endsWith("deferred") ? <TabPanel>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  <HelpTooltip
-                    note={
-                      <span>
-                        <b>Face value</b> is the value written in the
-                        coins used for this transaction.
-                      </span>
-                    }
-                    style={ this.styles.bullet }
-                  /> Face value:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  labelStyle={{ color: styles.colors.darkBlue }}
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ parseFloat(faceValue) }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  <HelpTooltip
-                    note={
-                      <span>
-                        <b>Actual value</b> is the value of the coins
-                        as reported by the Issuer.
-                      </span>
-                    }
-                    style={ this.styles.bullet }
-                  /> Actual value:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  labelStyle={{ color: styles.colors.darkBlue }}
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ parseFloat(actualValue) }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  <HelpTooltip
-                    note={
-                      <span>
-                        <b>Fee</b> is the amount deducted by the
-                        Issuer for verifying the actual value.
-                      </span>
-                    }
-                    style={ this.styles.bullet }
-                  /> Fee:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  labelStyle={{
-                    color: fee > 0 ? styles.colors.mainRed : styles.colors.mainGreen,
-                  }}
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ parseFloat(fee) }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-          </TabPanel> : null }
-
-          <TabPanel>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  Initial balance:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ parseFloat(oldBalance) }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  Change in balance:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  labelStyle={{
-                    color: change < 0 ? styles.colors.mainRed : 'inherit',
-                  }}
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ change }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-            <div style={ this.styles.row }>
-              <div style={ this.styles.left }>
-                <div style={ this.styles.label }>
-                  New balance:
-                </div>
-              </div>
-              <div style={ this.styles.right }>
-                <BitcoinCurrency
-                  color="rgba(0, 0, 0, 0.87)"
-                  displayStorage={ false }
-                  isFlipped={ isFlipped }
-                  removeInitialSpaces={ true }
-                  showValuesInCurrency={ showValuesInCurrency }
-                  small={ true }
-                  style={{ display: 'inline-block' }}
-                  value={ parseFloat(transaction.balance) }
-                  wallet={ wallet }
-                  xr={ xr }
-                />
-              </div>
-            </div>
-
-          </TabPanel>
-
-          { transaction.comment ? <TabPanel>
-            <p
-              style={{
-                textAlign: 'center',
-                color: styles.colors.mainBlue,
-                fontStyle: 'italic',
-              }}
-            >
-              { transaction.comment }
-            </p>
-          </TabPanel> : null }
-
-        </Tabs>
+    if (this.state.loading) {
+      return <section style={{ textAlign: 'center', margin: '20px 0 15px 0' }}>
+        <CircularProgress
+          size={ 150 }
+          thickness={ 5 }
+        />
+        <p>
+          <small>recovering coin(s)...</small>
+        </p>
       </section>;
     }
-    return null;
+
+    return <section style={{ marginTop: '20px' }}>
+      <Tabs>
+
+        <TabList>
+          <Tab>Info</Tab>
+          { !isDeferred ? <Tab>Details</Tab> : null }
+          <Tab>Balance</Tab>
+          { transaction.comment ? <Tab>Note</Tab> : null }
+        </TabList>
+
+        <TabPanel>
+          <p style={{ textAlign: 'center' }}>
+            <b>Domain</b>: { transaction.domain }
+          </p>
+
+          { blockchainTxid && !isDeferred ? <div style={{
+            textAlign: 'center',
+            margin: '10px 0 0 0',
+          }}>
+            <a
+              href={ `https://blockchain.info/tx/${blockchainTxid}` }
+              target="_blank"
+              style={{
+                textDecoration: 'inherit',
+                color: '#966600',
+                fontWeight: 'bold',
+              }}
+              title="Blockchain.info"
+            >
+              Track progress
+            </a>
+          </div> : null }
+
+          { transaction.action.endsWith("deferred") ? <div
+            style={{
+              color: '#966600',
+              fontWeight: 'bold',
+              textAlign: 'center',
+            }}
+          >
+            Blockchain transfer has been scheduled and is expected to start soon.
+          </div> : null }
+
+          { copyCoinString ? <p
+            style={{
+              textAlign: 'center',
+            }}
+          >
+            <i className="fa fa-clipboard" /> Copied in clipboard
+          </p> : null }
+
+          { file ? <p
+            style={{
+              textAlign: 'center',
+            }}
+          >
+            <i className="fa fa-file" /> Extracted in file
+          </p> : null }
+
+          { recovery && !recovered ? <p
+            style={{
+              textAlign: 'center',
+              color: styles.colors.mainBlue,
+              cursor: 'pointer',
+            }}
+            onClick={ this.handleRecovery }
+          >
+            <i className="fa fa-undo" /> Recover coin
+          </p> : null }
+
+          { isRecovered || recovered ? <p
+            style={{
+              textAlign: 'center',
+              color: styles.colors.mainGreen,
+            }}
+          >
+            <i className="fa fa-recycle" /> Amount recovered and already in the wallet
+          </p> : null }
+        </TabPanel>
+
+        { !isDeferred ? <TabPanel>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                <HelpTooltip
+                  note={
+                    <span>
+                      <b>Face value</b> is the value written in the
+                      coins used for this transaction.
+                    </span>
+                  }
+                  style={ this.styles.bullet }
+                /> Face value:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                labelStyle={{ color: styles.colors.darkBlue }}
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ parseFloat(faceValue) }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                <HelpTooltip
+                  note={
+                    <span>
+                      <b>Actual value</b> is the value of the coins
+                      as reported by the Issuer.
+                    </span>
+                  }
+                  style={ this.styles.bullet }
+                /> Actual value:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                labelStyle={{ color: styles.colors.darkBlue }}
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ parseFloat(actualValue) }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                <HelpTooltip
+                  note={
+                    <span>
+                      <b>Fee</b> is the amount deducted by the
+                      Issuer for verifying the actual value.
+                    </span>
+                  }
+                  style={ this.styles.bullet }
+                /> Fee:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                labelStyle={{
+                  color: fee > 0 ? styles.colors.mainRed : styles.colors.mainGreen,
+                }}
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ parseFloat(fee) }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+        </TabPanel> : null }
+
+        <TabPanel>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                Initial balance:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ parseFloat(oldBalance) }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                Change in balance:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                labelStyle={{
+                  color: change < 0 ? styles.colors.mainRed : 'inherit',
+                }}
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ change }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+          <div style={ this.styles.row }>
+            <div style={ this.styles.left }>
+              <div style={ this.styles.label }>
+                New balance:
+              </div>
+            </div>
+            <div style={ this.styles.right }>
+              <BitcoinCurrency
+                color="rgba(0, 0, 0, 0.87)"
+                displayStorage={ false }
+                isFlipped={ isFlipped }
+                removeInitialSpaces={ true }
+                showValuesInCurrency={ showValuesInCurrency }
+                small={ true }
+                style={{ display: 'inline-block' }}
+                value={ parseFloat(transaction.balance) }
+                wallet={ wallet }
+                xr={ xr }
+              />
+            </div>
+          </div>
+
+        </TabPanel>
+
+        { transaction.comment ? <TabPanel>
+          <p
+            style={{
+              textAlign: 'center',
+              color: styles.colors.mainBlue,
+              fontStyle: 'italic',
+            }}
+          >
+            { transaction.comment }
+          </p>
+        </TabPanel> : null }
+
+      </Tabs>
+    </section>;
   }
 }
 

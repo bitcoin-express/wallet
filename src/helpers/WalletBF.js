@@ -1941,65 +1941,111 @@ export default class WalletBF extends SwapBF {
   }
 
 
-  /***
-   * When args include the key values:
-   *   - replace as true
-   *   - transationId string
-   *   - obj
-   *
-   * Instead of recording a new transaction, it replaces the transaction
-   * with id == transationId with the coming data from obj.
+
+  /**
+   * @return the null or the modified transaction.
    */
+  modifyHistoryItem(transactionId, transaction, currency) {
+    const {
+      debug,
+      HISTORY,
+      storage,
+    } = this.config;
+
+    const defaultList = {
+      [currency]: []
+    };
+
+    let result = null;
+
+    let historyList = storage.get(HISTORY, defaultList);
+    historyList = historyList[currency];
+
+    historyList = historyList.map((histTx) => {
+
+      if (histTx.id == transactionId) {
+        if (debug) {
+          console.log("WalletBF - replacing from to ", histTx, transaction)
+        }
+
+        Object.keys(transaction).forEach((k) => {
+          histTx[k] = transaction[k];
+        });
+        result = histTx;
+        return histTx;
+      }
+
+      return histTx;
+    });
+
+    storage.set(HISTORY, historyList, currency);
+    return result;
+  }
+
+
+  /**
+   * @return the null or the transaction if it was correctly replaced.
+   */
+  replaceHistoryItem(transactionId, transaction, currency) {
+    const {
+      debug,
+      HISTORY,
+      storage,
+    } = this.config;
+
+    const defaultList = {
+      [currency]: []
+    };
+
+    let result = null;
+
+    let historyList = storage.get(HISTORY, defaultList);
+    historyList = historyList[currency];
+
+    historyList = historyList.map((histTx) => {
+      if (histTx.id == transactionId) {
+        if (debug) {
+          console.log("WalletBF - replacing from to ", histTx, transaction)
+        }
+        result = transaction;
+        return transaction;
+      }
+      return histTx;
+    });
+
+    storage.set(HISTORY, historyList, currency);
+    return result;
+  }
+
+
   recordTransaction(response, args) {
     const {
       CRYPTO,
       debug,
       HISTORY,
+      storage,
     } = this.config;
 
     if (debug) {
-      console.log("recordTransaction", response);
+      console.log("WalletBF - recordTransaction", response);
     }
 
     let {
       currency,
     } = response;
-    let tx = null;
+
     delete response.currency;
+    currency = currency || this.getPersistentVariable(CRYPTO, "XBT");
 
-    if (!currency) {
-      currency = this.getPersistentVariable(CRYPTO, "XBT");
-    }
+    let result = null;
+    const appendNewTransaction = (balance) => {
+      result = new Transaction(response, balance, args);
+      return storage.addFirst(HISTORY, result.get(), currency);
+    };
 
-    if (args && args.replace && args.transactionId && args.obj) {
-      // Do not create a new transaction, replace an old one with obj info
-      const {
-        obj,
-        transactionId,
-      } = args;
-
-      let historyList = this.config.storage.get(HISTORY, {[currency]: []})[currency];
-
-      historyList = historyList.map((t) => {
-        if (t.id == transactionId) {
-          tx = t;
-          Object.keys(obj).forEach((k) => {
-            t[k] = obj[k];
-          });
-        }
-        return t;
-      });
-
-      this.config.storage.set(HISTORY, historyList, currency);
-      return tx;
-    }
-
-    return this.Balance(currency).then((balance) => {
-      tx = new Transaction(response, balance, args);
-      return this.config.storage.addFirst(HISTORY, tx.get(), currency);
-    }).then(() => {
-      return tx.get();
-    });
+    return this.Balance(currency)
+      .then(appendNewTransaction)
+      .then(() => result.get());
   }
 
   /**
@@ -3116,27 +3162,41 @@ export default class WalletBF extends SwapBF {
         delete request.issuerRequest.atomic;
       }
 
-      return this.issuer("redeem", request, args).then((redeemResponse) => {
+
+      const handleResponse = (redeemResponse) => {
         resp = redeemResponse;
+
+        const hasCoins = resp.coin && Array.isArray(resp.coin) &&
+          resp.coin.length > 0;
 
         if (resp.deferInfo) {
 
           const txObj = Object.assign({}, {
+            currency: crypto,
             headerInfo: {
               fn: `send XBT${args.target} deferred`,
               domain: args.domain,
             },
+            other: Object.assign({}, args.other || {}, resp.redeemInfo),
           }, resp);
+
+          if (debug) {
+            console.log("WalletBF - redeem deferred transaction object ", txObj);
+          }
 
           let promise = Promise.resolve(true);
 
-          if (resp.coin && Array.isArray(resp.coin) && resp.coin.length > 0 && args.firstTimeCalled) {
-            console.log("Deferred but got change from issuer", resp.coin);
+          if (hasCoins && args.firstTimeCalled) {
+            if (debug) {
+              console.log("WalletBF - Deferred but got change from issuer", resp.coin);
+            }
             args.firstTimeCalled = false;
             promise = this.includeCoinsInStore(resp.coin).then(() => {
               return this.recordTransaction(txObj);
             }).then((tx) => {
-              console.log("Saving deferred transaction with id", tx.id);
+              if (debug) {
+                console.log("WalletBF - Saving deferred transaction with id", tx.id);
+              }
               args.transactionId = tx.id;
               return tx;
             });
@@ -3172,47 +3232,78 @@ export default class WalletBF extends SwapBF {
           resp.headerInfo.fn = args.action;
         }
 
-        if (resp.coin && resp.coin.length > 0) {
+        if (hasCoins) {
           return storage.addAllIfAbsent(COIN_STORE, resp.coin, false, crypto);
         }
         return 0;
-      }).then((numCoins) => {
+      };
+
+
+      const recordResponse = (numCoins) => {
         if (debug && numCoins == 0) {
-          console.log("Redeem zero coins");
+          console.log("WalletBF - Redeem zero coins");
         }
         resp.other = Object.assign({}, args.other || {}, resp.redeemInfo);
         resp.currency = crypto;
-        if (!args.firsTimeCalled && args.transactionId) {
-          const params = {
-            replace: true,
-            transactionId: args.transactionId,
-            obj: {
-              action: `send XBT${args.target}`,
-            }
+
+        const {
+          firsTimeCalled,
+          target,
+          transactionId,
+        } = args;
+
+        if (!firsTimeCalled && transactionId) {
+          const auxTx = new Transaction(resp, 0, {}).get();
+          if (debug) {
+            console.log("WalletBF- modify redeem history item", auxTx);
+          }
+
+          const modifiedTx = {
+            action: `send XBT${target}`,
+            info: auxTx.info,
+            issuer: auxTx.issuer,
           };
-          return this.recordTransaction(resp, params);
+
+          return this.modifyHistoryItem(transactionId, modifiedTx, crypto);
         }
+
         return this.recordTransaction(resp);
-      }).then(() => {
-        return storage.removeFrom(SESSION, resp.headerInfo.tid);
-      }).then(() => {
+      };
+
+
+      const finishTransaction = () => {
+        const tid = resp.headerInfo.tid;
+
         const context = {
           issuerRequest: {
-            tid: resp.headerInfo.tid,
+            tid,
           }
         };
-        return this.issuer("end", context, {
+        const params = {
           domain: args.domain,
-        });
-      }).then(() => {
-        if (!args.firstTimeCalled && args.deferredSuccess) {
-          return args.deferredSuccess(resp);
-        }
+        };
+
+        return storage.removeFrom(SESSION, tid)
+          .then(() => this.issuer("end", context, params));
+      };
+
+
+      const walletCallback = () => {
         if (args.firstTimeCalled && args.success) {
           return args.success(resp);
         }
+        if (!args.firstTimeCalled && args.deferredSuccess) {
+          return args.deferredSuccess(resp);
+        }
         return resp;
-      });
+      }
+
+
+      return this.issuer("redeem", request, args)
+        .then(handleResponse)
+        .then(recordResponse)
+        .then(finishTransaction)
+        .then(walletCallback);
     };
 
     return redeem();
