@@ -19,8 +19,9 @@ function getExpiryEmailFee(info, settings, config) {
 
   let fee = parseFloat(info.feeExpiryEmail) * 20;
   const settingsValue = settings[MIN_TRANSACTION_VALUE];
+  const currencyCode = info.currencyCode || "XBT";
 
-  if (settingsValue != 1 && settingsValue[info.currencyCode]) {
+  if (settingsValue != 1 && typeof settingsValue == "object" && settingsValue[info.currencyCode]) {
     fee = settingsValue[info.currencyCode];
   }
 
