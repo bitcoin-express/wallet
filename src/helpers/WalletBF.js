@@ -2636,6 +2636,9 @@ export default class WalletBF extends SwapBF {
     const emailRecovery = this.getSettingsVariable(EMAIL_RECOVERY);
 
     const minTxObject = this.getSettingsVariable(MIN_TRANSACTION_VALUE);
+    if (!minTxObject) {
+      return null;
+    }
     const minTransaction = parseFloat(minTxObject[crypto]);
 
     if (!emailRecovery || target < minTransaction || !email) {
