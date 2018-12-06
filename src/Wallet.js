@@ -790,11 +790,17 @@ class Wallet extends React.Component {
   }
 
   _failureRecoveryTx(resp) {
+    const {
+      debug,
+      storage,
+    } = this.wallet.config;
+
     if (resp.deferInfo) {
       console.log(`Attempted to recover transaction but found 
         '${resp.deferInfo.reason}'. Try again after ${resp.deferInfo.after}`);
       return;
     }
+
     if (resp.headerInfo) {
       switch (resp.headerInfo.fn) {
         case "issue":
@@ -813,9 +819,18 @@ class Wallet extends React.Component {
           this.handleNotificationUpdate(this.wallet.getResponseError(resp), true);
           break;
       }
-    } else {
-      this.handleNotificationUpdate("Auto recovery attempt failed", true);
+      return;
     }
+
+    if (debug) {
+      console.log(resp)
+    }
+
+    let messages = ["Auto recovery attempt failed"];
+    if (resp.message) {
+      messages.push(resp.message);
+    }
+    this.handleNotificationUpdate(messages, true);
   }
   
   _recoverTransactionsInProgress() {

@@ -835,10 +835,6 @@ export default class WalletBF extends SwapBF {
       transactions,
     } = DEFAULT_SETTINGS;
 
-    if (debug) {
-      console.log("WalletBF getHistoryList");
-    }
-
     const crypto = this.getPersistentVariable(CRYPTO, "XBT");
     let hist = storage.get(HISTORY, {});
     hist = hist[crypto] || [];
@@ -1476,6 +1472,7 @@ export default class WalletBF extends SwapBF {
               }));
               return;
             } catch (err) {
+              console.log(err);
               promises.push(Promise.reject(Error("No base64 definition in Coin")));
               return;
             }
@@ -1495,6 +1492,7 @@ export default class WalletBF extends SwapBF {
         }).then(() => {
           return resolve(result);
         }).catch((err) => {
+          console.log(err);
           storage.sessionEnd();
           return reject(err);
         });
@@ -2636,7 +2634,7 @@ export default class WalletBF extends SwapBF {
     const emailRecovery = this.getSettingsVariable(EMAIL_RECOVERY);
 
     const minTxObject = this.getSettingsVariable(MIN_TRANSACTION_VALUE);
-    if (!minTxObject) {
+    if (!minTxObject || !minTxObject[crypto]) {
       return null;
     }
     const minTransaction = parseFloat(minTxObject[crypto]);
@@ -2669,12 +2667,20 @@ export default class WalletBF extends SwapBF {
     return email;
   }
 
+  /**
+   * Check returns the expiry period time.
+   *
+   * @param type [string] Type of the expiry time to retrieve.
+   * @param isDate [boolean] If true, return it as a date adding now time.
+   *    Otherwise, return the milliseconds to expire.
+   *
+   * @return [float] sum of the coins values
+   */
   getExpiryPeriod(type, isDate=false) {
-    const issueExpire = parseFloat(
-      this.getSettingsVariable(type, DEFAULT_SETTINGS[type])
-    );
-    let result = issueExpire * (1000 * 60 * 60);
-    return isDate ? (new Date()).getTime() + result : result;
+    let expiryPeriod = this.getSettingsVariable(type, DEFAULT_SETTINGS[type]);
+    expiryPeriod = parseFloat(expiryPeriod) * (1000 * 60 * 60);
+
+    return isDate ? (new Date()).getTime() + expiryPeriod : expiryPeriod;
   }
 
   /**
@@ -2701,17 +2707,19 @@ export default class WalletBF extends SwapBF {
     }
 
     if (!storage) {
-      return reject(Error("Persistent storage has not been installed"));
+      const err = Error("Persistent storage has not been installed");
+      return Promise.reject(err);
     }
+
     if (args.beginResponse === null) {
-      return reject(Error("Couldn't find a reference to collect issued coins"));
+      const err = Error("Couldn't find a reference to collect issued coins");
+      return Promise.reject(err);
     }
 
-    let tid, issueRequest, issueResponse = null;
-    const expiryPeriod_ms = this.getExpiryPeriod(ISSUE_EXPIRE, true);
-    const policy = this.getSettingsVariable(ISSUE_POLICY);
+    const prepareRequestAndStartSession = (beginResponse) => {
+      const expiryPeriod_ms = this.getExpiryPeriod(ISSUE_EXPIRE, true);
+      const policy = this.getSettingsVariable(ISSUE_POLICY);
 
-    return this.getDepositRef().then((beginResponse) => {
       args = Object.assign({
         action: "issue",
         beginResponse,
@@ -2738,22 +2746,32 @@ export default class WalletBF extends SwapBF {
         }
       };
       return storage.sessionStart("Issue collect");
-    }).then(() => {
-      return storage.setToPromise(SESSION, tid, issueRequest);
-    }).then(() => {
-      return storage.flush();
-    }).then(() => {
-      return this._issueCollect_inner_(issueRequest, args);
-    }).then((response) => {
+    };
+
+    const saveResponseAndCloseSession = (response) => {
       issueResponse = response;
-      return this.config.storage.sessionEnd();
-    }).then(() => {
-      return issueResponse;
-    }).catch((err) => {
-      return storage.sessionEnd().then(() => {
-        return Promise.reject(err);
-      });
-    });
+      return storage.sessionEnd();
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        print(err);
+      }
+      return storage.sessionEnd()
+        .then(() => Promise.reject(err));
+    };
+
+
+    let tid, issueRequest, issueResponse = null;
+
+    return this.getDepositRef()
+      .then(prepareRequestAndStartSession)
+      .then(() => storage.setToPromise(SESSION, tid, issueRequest))
+      .then(() => storage.flush())
+      .then(() => this._issueCollect_inner_(issueRequest, args))
+      .then(saveResponseAndCloseSession)
+      .then(() => issueResponse)
+      .catch(handleError);
   }
 
   /**
@@ -2923,13 +2941,15 @@ export default class WalletBF extends SwapBF {
    *    will first call /begin to obtain a transaction ID.
    */
   redeemCoins(coins, address, args, crypto=null, params={}) {
+
     if (this.config.debug) {
       console.log("WalletBF.redeemCoins",coins,address,args, params);
     }
 
-    let refreshBalance = params.refreshBalance || (b => Promise.resolve(true));
-    args.success = params.success || (resp => Promise.resolve(true));
-    args.deferredSuccess = params.deferredSuccess || (resp => Promise.resolve(true));
+    const dummyFn = resp => Promise.resolve(true);
+    let refreshBalance = params.refreshBalance || dummyFn;
+    args.success = params.success || dummyFn;
+    args.deferredSuccess = params.deferredSuccess || dummyFn;
 
     const {
       blockchainSpeed,
@@ -2954,7 +2974,6 @@ export default class WalletBF extends SwapBF {
     args = $.extend({}, defaults, args);
 
     if (typeof(address) !== 'string') {
-      // Cannot recover
       if (debug) {
         console.log("WalletBF.redeemCoins - Bitcoin address was not a String");
       }
@@ -3014,9 +3033,8 @@ export default class WalletBF extends SwapBF {
       args.beginResponse = args.beginResponse || beginResponse;
 
       const tid = beginResponse.headerInfo.tid;
-      const redeemExp = parseFloat(this.getSettingsVariable(REDEEM_EXPIRE)) * (1000 * 60 * 60);
-      const now = new Date().getTime();
-      const newExpiry = isNaN(args.expiryPeriod) ? now + redeemExp : args.expiryPeriod;
+      const redeemExp = this.getExpiryPeriod(REDEEM_EXPIRE, true);
+      const newExpiry = isNaN(args.expiryPeriod) ? redeemExp : args.expiryPeriod;
 
       let redeemRequest = {
         issuerRequest: {
@@ -3043,9 +3061,10 @@ export default class WalletBF extends SwapBF {
         redeemRequest.recovery.comment = args.comment;
       }
 
-      // if expiryEmail is defined and the fee is less than the sum of coins,
+      // If expiryEmail is defined and the fee is less than the sum of coins,
       // add it to the request 
       if (Array.isArray(args.expiryEmail) && args.expiryEmail.length > 0) {
+
         let issuer = args.beginResponse.issuer.find((elt) =>  {
           return elt.relationship == "home";
         });
@@ -3060,38 +3079,60 @@ export default class WalletBF extends SwapBF {
         }
       }
 
-      let redeemResponse;
-      return storage.sessionStart("Redeem coins").then(() => {
-        return storage.setToPromise(SESSION, tid, redeemRequest);
-      }).then(() => {
-        return storage.flush();
-      }).then(() => {
-        return this.extractCoins(base64Coins, tid, "localhost", "XBT");
-      }).then((removedCoins) => {
-        console.log(`Removed ${removedCoins.length} coins on redeem`);
+      const refreshWalletBalance = (removedCoins) => {
+        if (debug) {
+          console.log(`Removed ${removedCoins.length} coins on redeem`);
+        }
         return refreshBalance(crypto);
-      }).then((balance) => {
-        console.log(`New balance ${crypto}${balance}.`);
+      }
+
+      const redeemIssuerCoins = (balance) => {
+        if (debug) {
+          console.log(`New balance ${crypto}${balance}.`);
+        }
         return this._redeemCoins_inner_(redeemRequest, args, crypto);
-      }).then((response) => {
+      }
+
+      const saveResponseAndRefreshBalance = (response) => {
         redeemResponse = response;
         return refreshBalance(crypto);
-      }).then((balance) => {
-        console.log(`Final balance ${crypto}${balance}.`);
-        return storage.sessionEnd();
-      }).then(() => {
-        return redeemResponse;
-      }).catch((err) => {
+      };
+
+      const handleError = (err) => {
         if (debug) {
-          console.log(`WalletBF.redeemCoins - Error: ${err.message}`);
+          console.log(err);
           console.log("WalletBF.redeemCoins - Adding coins back to store");
         }
 
+        // Coins are lost, and no longer available so no need to put them
+        // back in the store.
         if (err.message == "Redeem deferred") {
-          // Coins are lost, and no longer available so no need to put them back in the store.
-          return storage.sessionEnd().then(() => {
-            return Promise.reject(err);
-          });
+          return storage.sessionEnd()
+            .then(() => Promise.reject(err));
+        }
+
+        const storeCoinsIfRequired = (resp) => {
+          if (!resp.coin || resp.coin.length == 0) {
+            return 0;
+          }
+
+          let numCoins = 0;
+          const storeNumCoins = (resp) => {
+            numCoins = resp;
+            return refreshBalance(crypto);
+          }
+
+          return this.includeCoinsInStore(resp.coin)
+            .then(storeNumCoins)
+            .then(() => numCoins);
+        }
+
+        const handleRecoverError = (err) => {
+          if (debug) {
+            console.log(err);
+          }
+          storage.sessionEnd();
+          return Promise.reject(err);
         }
 
         const existParams = {
@@ -3100,42 +3141,43 @@ export default class WalletBF extends SwapBF {
             coin: base64Coins
           }
         };
+
         const params = {
           domain: beginResponse.headerInfo.domain,
         };
 
-        return this.issuer("exist", existParams, params).then((resp) => {
-          if (resp.coin && resp.coin.length > 0) {
-            let numCoins = 0
-            return this.includeCoinsInStore(resp.coin).then((resp) => {
-              numCoins = resp;
-              return refreshBalance(crypto);
-            }).then(() => {
-              return numCoins;
-            });
-          }
-          return 0;
-        }).then((numCoins) => {
-          return storage.sessionEnd();
-        }).then(() => {
-          return Promise.reject(err);
-        }).catch((err) => {
-          storage.sessionEnd();
-          return Promise.reject(err);
-        });
-      });
+        return this.issuer("exist", existParams, params)
+          .then(storeCoinsIfRequired)
+          .then(() => storage.sessionEnd())
+          .then(() => Promise.reject(err))
+          .catch(handleRecoverError);
+      };
+
+      let redeemResponse;
+      return storage.sessionStart("Redeem coins")
+        .then(() => storage.setToPromise(SESSION, tid, redeemRequest))
+        .then(() => storage.flush())
+        .then(() => this.extractCoins(base64Coins, tid, "localhost", "XBT"))
+        .then(refreshWalletBalance)
+        .then(redeemIssuerCoins)
+        .then(saveResponseAndRefreshBalance)
+        .then(() => storage.sessionEnd())
+        .then(() => redeemResponse)
+        .catch(handleError);
     };
 
     if (args.beginResponse) {
       return startRedeem(args.beginResponse);
-    } else {
-      const params = {
-        issuerRequest: {
-          fn: "redeem"
-        }
-      };
-      return this.issuer("begin", params, args).then(startRedeem);
     }
+
+    const beginParams = {
+      issuerRequest: {
+        fn: "redeem"
+      }
+    };
+
+    return this.issuer("begin", beginParams, args)
+      .then(startRedeem);
   }
 
   _redeemCoins_inner_(request, args, crypto = null) {

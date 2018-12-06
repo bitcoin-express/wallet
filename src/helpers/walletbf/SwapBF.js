@@ -428,20 +428,25 @@ export default class SwapBF {
         return true;
       }
 
+      // No defer, we should include coins
       if (Object.keys(response).indexOf("deferInfo") == -1) {
-        // No defer, we should include coins
-        return this.includeSwapCoins(response, []).then(() => {
+
+        const removeSessionAndSwapCoins = () => {
           if (debug) {
             console.log("SwapBF.exportSwapCode", response);
           }
-          let tid = response.headerInfo.tid;
+
+          const { tid } = response.headerInfo;
+
           return Promise.all([
             storage.removeFrom(COIN_SWAP, tid),
             storage.removeFrom(SESSION, tid),
           ]);
-        }).then(() => {
-          return this.issuer("end", endParams, endArgs);
-        });
+        };
+
+        return this.includeSwapCoins(response, [])
+          .then(removeSessionAndSwapCoins)
+          .then(() => this.issuer("end", endParams, endArgs));
       }
 
       const { tid } = response.deferInfo;
@@ -449,19 +454,17 @@ export default class SwapBF {
         args,
         issuerService,
       });
-      return Promise.all([
-        storage.setToPromise(COIN_SWAP, tid, toRemove),
-        storage.set(SESSION, {
-          [tid]: session,
-        })
-      ]).then(() => {
+
+      const extractCoins = () => {
         if (attempt) {
           // Coins already extracted
           return [];
         }
         let extParams = [toRemove, "Atomic Swap", "wallet", sourceCurrency];
         return this.extractCoins(...extParams);
-      }).then((listCoins) => {
+      }
+
+      const recordTransaction = (listCoins) => {
         if (listCoins.length == 0) {
           return true;
         }
@@ -483,16 +486,19 @@ export default class SwapBF {
           coin: toRemove,
           currency: sourceCurrency,
         });
-      });
+      };
+
+      const promises = [
+        storage.setToPromise(COIN_SWAP, tid, toRemove),
+        storage.set(SESSION, {
+          [tid]: session,
+        })
+      ];
+
+      return Promise.all(promises)
+        .then(extractCoins)
+        .then(recordTransaction);
     };
-
-
-    const endSession = () => {
-      return storage.sessionEnd().then(() => {
-        return result;
-      });
-    };
-
 
     const handleError = (err) => {
 
@@ -506,11 +512,7 @@ export default class SwapBF {
         let existingCoins;
         let totalExistingCoins = 0;
 
-        return Promise.all([
-          storage.removeFrom(COIN_SWAP, tid),
-          storage.removeFrom(SESSION, tid),
-        ]).then(() => {
-
+        const checkCoinsExist = () => {
           const params = {
             issuerRequest: {
               fn: "exist",
@@ -519,7 +521,9 @@ export default class SwapBF {
           };
 
           return this.issuer("exist", params);
-        }).then((response) => {
+        };
+
+        const addExistingCoins = (response) => {
           if (response.deferInfo || response.status !== "ok") {
             // Save coin list in recovery store just in case
             let params = [COIN_RECOVERY, toRemove, false, sourceCurrency];
@@ -536,10 +540,13 @@ export default class SwapBF {
 
           let params = [COIN_STORE, existingCoins, false, sourceCurrency];
           return storage.addAllIfAbsent(...params);
-        }).then(() => {
+        };
+
+        const recordTransaction = () => {
           if (totalExistingCoins == 0) {
-            return true;
+            return null;
           }
+
           return this.recordTransaction({
             walletInfo: {
               faceValue: totalExistingCoins,
@@ -557,26 +564,31 @@ export default class SwapBF {
             coin: existingCoins,
             currency: sourceCurrency,
           });
-        }).then(() => {
-          return storage.sessionEnd();
-        }).then(() => {
-          return {
-            cancelled: true,
-          };
-        });
+        };
+
+        const removePromises = [
+          storage.removeFrom(COIN_SWAP, tid),
+          storage.removeFrom(SESSION, tid),
+        ];
+
+        return Promise.all(removePromises)
+          .then(checkCoinsExist)
+          .then(addExistingCoins)
+          .then(recordTransaction)
+          .then(() => storage.sessionEnd())
+          .then(() => { cancelled: true });
       }
 
-      return storage.sessionEnd().then(() => {
-        return Promise.reject(err);
-      });
+      return storage.sessionEnd()
+        .then(() => Promise.reject(err));
     };
-
 
     return storage.sessionStart("Swap with other")
       .then(startSwapTransaction)
       .then(callSwapIssuer)
       .then(handleResponse)
-      .then(endSession)
+      .then(() => storage.sessionEnd())
+      .then(() => result)
       .catch(handleError);
   }
 
@@ -668,7 +680,7 @@ export default class SwapBF {
       };
 
       return this.issuer("end", context, args)
-        .then(storage.sessionEnd)
+        .then(() => storage.sessionEnd())
         .then(() => result);
     };
 

@@ -254,17 +254,37 @@ class Bar extends React.Component {
       backupSettings,
     } = this.state;
 
-    let newSettings = wallet.getPersistentVariable(wallet.config.SETTINGS);
+    const {
+      storage,
+      PERSISTENT,
+      SETTINGS,
+    } = wallet.config;
+
+    let newSettings = storage.getFrom(PERSISTENT, SETTINGS);
+
+    if (!newSettings) {
+      return this.setState({
+        open: false,
+        backupSettings: null,
+      });
+    }
+
+    if (!this._isEquivalent(backupSettings, newSettings)) {
+      return executeInSession("save settings", true, () => {
+        return wallet.setPersistentVariable(SETTINGS, newSettings).then(() => {
+          this.setState({
+            open: false,
+            backupSettings: null,
+          });
+          return true;
+        });
+      });
+    }
 
     this.setState({
       open: false,
       backupSettings: null,
     });
-    if (!this._isEquivalent(backupSettings, newSettings)) {
-      executeInSession("save settings", true, () => {
-        return wallet.setPersistentVariable(wallet.config.SETTINGS, newSettings);
-      });
-    }
   }
 
   render() {
