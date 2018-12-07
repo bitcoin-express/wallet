@@ -2391,10 +2391,7 @@ export default class WalletBF extends SwapBF {
         return;
       }
 
-      let issuer = beginResponse.issuer[0];
-      const recommendedFees = issuer.currencyInfo.find((elt) => {
-        return elt.currencyCode = "XBT";
-      }).blockchainInfo;
+      const recommendedFees = this.getBlockchainCurrencyInfo(beginResponse, "XBT");
 
       const bitcoinFee = parseFloat(recommendedFees[speed] || "0.0");
       let minValue = parseFloat(recommendedFees.minRedemptionValue || "0.0");
@@ -3069,9 +3066,7 @@ export default class WalletBF extends SwapBF {
           return elt.relationship == "home";
         });
         let feeExpiryEmail = issuer ? Number.parseFloat(issuer.feeExpiryEmail || "0") : 0;
-        let bitcoinFees = issuer.currencyInfo.find((elt) => {
-          return elt.currencyCode == crypto;
-        }).blockchainInfo;
+        let bitcoinFees = this.getBlockchainCurrencyInfo(issuer, crypto);
         let change = (sumCoins - args.target - parseFloat(bitcoinFees[args.speed]));
         if (change > feeExpiryEmail) {
           redeemRequest.issuerRequest.expiryEmail = args.expiryEmail;
@@ -3192,7 +3187,6 @@ export default class WalletBF extends SwapBF {
         COIN_STORE,
         CRYPTO,
         debug,
-        forceDefer,
         SESSION,
         storage,
       } = this.config;
@@ -3200,13 +3194,6 @@ export default class WalletBF extends SwapBF {
       if (!crypto) {
         crypto = this.getPersistentVariable(CRYPTO, "XBT");
       }
-
-      if (forceDefer) {
-        request.issuerRequest.atomic = true;
-      } else {
-        delete request.issuerRequest.atomic;
-      }
-
 
       const handleResponse = (redeemResponse) => {
         resp = redeemResponse;
@@ -3892,20 +3879,63 @@ export default class WalletBF extends SwapBF {
    * timeout      [integer]    Number of seconds to wait for a server response. Defaults to 30s. 
    */
   issuer(fn, params, args, method="POST") {
-    return new Promise((resolve, reject) => {
-      if (this.config.debug) {
-        console.log(`WalletBF.issuer -> ${fn}`);
-      }
 
-      let defaults = {
-        timeout: 30,
+    const {
+      debug,
+      forceDefer,
+    } = this.config;
+
+    const forceDeferFns = ["issue", "exist", "recover", "redeem", "atomicSwap", "verify"];
+
+    if (forceDefer && forceDeferFns.indexOf(fn) > -1) {
+      params.issuerRequest.atomic = true;
+    }
+
+    if (debug) {
+      console.log(`WalletBF.issuer -> ${fn}`);
+    }
+
+    let localArgs = Object.assign({ timeout: 30 }, args);
+    this._ensureDomainIsSet(localArgs, params.coin);
+
+    const endpoint = this._getIssuerEndpoint(fn, localArgs.domain);
+    const bodyData = method == "POST" ? JSON.stringify(params || {}) : null;
+
+    return new Promise((resolve, reject) => {
+
+      const handleSuccess = (response) => {
+        const {
+          issuerResponse,
+        } = response;
+
+        // Update Bitcoin fees for future use
+        this._updateBitcoinFees(fn, issuerResponse);
+
+        if (issuerResponse && issuerResponse.status) {
+          return resolve(issuerResponse);
+        }
+        if (issuerResponse) {
+          return reject(issuerResponse);
+        }
+        return reject(Error("Unexpected response from server"));
       };
-      let localArgs = Object.assign({}, defaults, args);
-      this._ensureDomainIsSet(localArgs, params.coin);
+
+      const handleError = (xhr, status, err) => {
+        if (debug) {
+          console.log(xhr, status, err);
+        }
+
+        let message = "Can't connect to the issuer";
+        if (status === "timeout") {
+          message = `Server did not respond within ${localArgs.timeout} sec.`;
+        }
+
+        return reject(Error(message));
+      };
 
       $.ajax({
-        url: this._getIssuerEndpoint(fn, localArgs.domain),
-        data: method == "POST" ? JSON.stringify(params || {}) : null,
+        url: endpoint,
+        data: bodyData,
         type: method,
         accepts: {
           json: "application/json",
@@ -3914,29 +3944,8 @@ export default class WalletBF extends SwapBF {
         dataType: "json",
         timeout: (localArgs.timeout * 1000),
         async: true,
-        success: (response) => {
-          const {
-            issuerResponse,
-          } = response;
-
-          // Update Bitcoin fees for future use
-          this._updateBitcoinFees(fn, issuerResponse);
-
-          if (issuerResponse && issuerResponse.status) {
-            return resolve(issuerResponse);
-          } else if (issuerResponse) {
-            return reject(issuerResponse);
-          }
-          return reject(Error("Unexpected response from server"));
-        },
-        error: (xhr, status, err) => {
-          console.log(xhr, status, err);
-          let message = "Can't connect to the issuer";
-          if (status === "timeout") {
-            message = `Server did not respond within ${localArgs.timeout} sec.`;
-          }
-          return reject(Error(message));
-        }
+        success: handleSuccess,
+        error: handleError
       });
     });
   }
@@ -3963,17 +3972,20 @@ export default class WalletBF extends SwapBF {
   }
 
   _updateBitcoinFees(fn, resp) {
-    if ((fn == "begin" || fn == "info") && resp.issuer && resp.issuer[0] && resp.issuer[0].currencyInfo) {
-      let { blockchainInfo } = resp.issuer[0].currencyInfo.find((elt) => {
-        return elt.currencyCode == "XBT";
-      });
+    if (["begin", "info"].indexOf(fn) == -1) {
+      return;
+    }
 
-      if (this.config.debug) {
-        console.log("WalletBF._updateBitcoinFees -> bitcoin fees updated until",
-          Date(blockchainInfo.expiry), blockchainInfo);
-      }
-      this.bitcoinFees = blockchainInfo;
-    } 
+    if (!resp.issuer || !resp.issuer[0] || !resp.issuer[0].currencyInfo) {
+      return;
+    }
+
+    if (this.config.debug) {
+      console.log("WalletBF._updateBitcoinFees");
+    }
+
+    // Update the class object
+    this.bitcoinFees = this.getBlockchainCurrencyInfo(resp, "XBT");
   }
 
   getBitcoinFees(reload=false) {
@@ -3987,12 +3999,20 @@ export default class WalletBF extends SwapBF {
       }
     }
 
-    return this.issuer("info", {}, null, "GET").then((resp) => {
-      let issuer = resp.issuer[0];
-      return issuer.currencyInfo.find((elt) => {
-        return elt.currencyCode == "XBT";
-      }).blockchainInfo;
+    return this.issuer("info", {}, null, "GET")
+      .then((resp) => this.getBlockchainCurrencyInfo(resp, "XBT"));
+  }
+
+  getBlockchainCurrencyInfo(issuerInfo, currency) {
+    let issuer = issuerInfo;
+    if (issuerInfo.issuer) {
+      issuer = issuerInfo.issuer[0];
+    }
+
+    const { blockchainInfo } = issuer.currencyInfo.find((elt) => {
+      return elt.currencyCode == currency;
     });
+    return blockchainInfo;
   }
 
   getIssuerExchangeRates() {
