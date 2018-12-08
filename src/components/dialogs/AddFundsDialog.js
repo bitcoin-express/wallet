@@ -37,6 +37,11 @@ class AddFundsDialog extends React.Component {
         textAlign: 'center',
         margin: '10px',
       },
+      note: {
+        color: '#b96f13',
+        textAlign: 'center',
+        fontWeight: 'bold',
+      },
       gridQR: {
         gridArea: 'qr',
         margin: '20px 0 20px 0',
@@ -60,12 +65,15 @@ class AddFundsDialog extends React.Component {
   }
 
   componentWillMount() {
-    this.props.wallet.getDepositRef().then((depositRef) => {
+    const updateStateWithDeposit = (depositRef) => {
       this.setState({
         depositRef,
         ready: true,
       });
-    });
+    };
+
+    this.props.wallet.getDepositRef()
+      .then(updateStateWithDeposit);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -73,17 +81,19 @@ class AddFundsDialog extends React.Component {
       depositRef,
     } = nextProps;
 
-    if (this.props.depositRef != depositRef) {
-      this.setState({
-        depositRef,
-      });
-      this._updateQR();
+    if (this.props.depositRef == depositRef) {
+      return;
+    }
 
-      if (!depositRef) {
-        this.setState({
-          qr: false,
-        });
-      }
+    this.setState({
+      depositRef,
+    });
+    this._updateQR();
+
+    if (!depositRef) {
+      this.setState({
+        qr: false,
+      });
     }
   }
 
@@ -97,8 +107,8 @@ class AddFundsDialog extends React.Component {
       qrLabel,
     } = this.props;
 
-    this.props.wallet.getDepositRef().then((depositRef) => {
-      if (!depositRef || !depositRef.issueInfo) {
+    const updateQR = (depositRef) => {
+      if (!depositRef || !depositRef.issueInfo || !depositRef.isDefaultIssuer) {
         return;
       }
 
@@ -137,15 +147,26 @@ class AddFundsDialog extends React.Component {
           qr: true,
         });
       }, 2000);
-    });
+    };
+
+    this.props.wallet.getDepositRef()
+      .then(updateQR);
   }
 
-  renderCreateAddress() {
+  renderCreateAddress(isDefaultIssuer = true) {
     const {
       isTab,
       updateTargetValue,
       xr,
     } = this.props;
+
+    const {
+      depositRef,
+    } = this.state;
+
+    const {
+      domain,
+    } = depositRef.headerInfo;
 
     const stTab = {
       textAlign: "center",
@@ -153,6 +174,9 @@ class AddFundsDialog extends React.Component {
     };
 
     return <div>
+      { isDefaultIssuer ? null : <p style={ this.styles.note }>
+        You have an active deposit reference from another issuer - '{ domain }'
+      </p> }
       <p style={ isTab ? stTab : {} }>
         Please indicate how much you intend to transfer to this Wallet.
         { isTab ? <br /> : null }
@@ -197,12 +221,13 @@ class AddFundsDialog extends React.Component {
     }
 
     const {
+      isDefaultIssuer,
       issueInfo,
       headerInfo
     } = depositRef;
 
-    if (!issueInfo || !headerInfo) {
-      return this.renderCreateAddress();
+    if (!issueInfo || !headerInfo || !isDefaultIssuer) {
+      return this.renderCreateAddress(isDefaultIssuer);
     }
 
     const {

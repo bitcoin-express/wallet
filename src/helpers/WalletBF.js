@@ -1,8 +1,18 @@
 import Transaction from './walletbf/Transaction'
 import SwapBF from './walletbf/SwapBF'
+
+import {
+  depositIntent,
+  getDepositRef,
+  getDepositRefList,
+  removeDepositRef,
+  setDepositRef,
+} from './walletbf/DepositReference'
+
 import FSM from './FSM';
 
-const defaultIssuer = "eu.carrotpay.com"; // "be.ap.rmp.net"; 
+ // "be.ap.rmp.net";
+const defaultIssuer = "eu.carrotpay.com";
 
 export const DEFAULT_SETTINGS = {
   acceptableIssuers: [
@@ -23,10 +33,10 @@ export const DEFAULT_SETTINGS = {
   separator: ".", // ".", ","
   // keep history track for each currency
   transactions: {
-    "BTC": [],
-    "BCH": [],
-    "ETH": [],
-    "CRT": [],
+    BTC: [],
+    BCH: [],
+    ETH: [],
+    CRT: [],
   },
   transactionExpire: false,
   verifyExpire: 0.5,
@@ -128,6 +138,13 @@ export default class WalletBF extends SwapBF {
       issuers: new Object(),
       storage : null,
     };
+
+    // Deposit reference functions
+    this.depositIntent = depositIntent.bind(this);
+    this.getDepositRef = getDepositRef.bind(this);
+    this.getDepositRefList = getDepositRefList.bind(this);
+    this.removeDepositRef = removeDepositRef.bind(this);
+    this.setDepositRef = setDepositRef.bind(this);
   }
 
   isGoogleDrive() {
@@ -586,77 +603,6 @@ export default class WalletBF extends SwapBF {
       const msg = err.message || this.getResponseError(err);
       return Promise.reject(Error(msg));
     });
-  }
-
-  /***********************************************************************************
-   * The deposit reference holds the response of the Issuer and includes the 'tid'
-   * and number of 'confirmations' and expiry. It is held in persistent storage
-   * and will be included in any backup and recovered when WalletBF recovery() is called.
-   * Use set, get and removeDepositRef to manage this value. 
-   */
-  setDepositRef(obj) {
-    if (this.config.debug) {
-      console.log("WalletBF setDepositRef", obj);
-    }
-    let list = this.getPersistentVariable(this.config.DEPOSIT);
-    if (!Array.isArray(list)) {
-      list = new Array();
-    }
-    list.unshift(obj);
-    return this.setPersistentVariable(this.config.DEPOSIT, list).then(() => {
-      return obj;
-    });
-  }
-
-  getDepositRef() {
-    if (this.config.debug) {
-      console.log("WalletBF getDepositRef");
-    }
-
-    if (!this.config.storage) {
-      return Promise.resolve(null);
-    }
-
-    const list = this.getPersistentVariable(this.config.DEPOSIT);
-    if (Array.isArray(list) && list.length > 0 && !list[0].complete) {
-      const now = new Date();
-      let { expiry } = list[0].headerInfo;
-      expiry = new Date(expiry);
-      if (expiry < now) {
-        // Remove deposit reference
-        return this.removeDepositRef().then(() => {
-          return null;
-        });
-      }
-      return Promise.resolve(list[0]);
-    }
-    return Promise.resolve(null);
-  }
-
-  removeDepositRef() {
-    return this.config.storage.sessionStart("Remove deposit reference").then(() => {
-      return this._removeDepositRef();
-    }).then(() => {
-      return this.config.storage.sessionEnd();
-    }).then(() => {
-      return true;
-    });
-  }
-
-  _removeDepositRef(coin = null) {
-    if (!this.config.storage) {
-      return null;
-    }
-
-    let list = this.getPersistentVariable(this.config.DEPOSIT);
-    if (Array.isArray(list) && list.length > 0) {
-      let obj = list[0];
-      delete obj.issuer; // free space
-      obj.coin = coin;
-      obj.complete = true;
-      list[0] = obj;
-    }
-    return this.setPersistentVariable(this.config.DEPOSIT, list);
   }
 
   getStoredCoins(unpack, crypto = null) {
@@ -2531,90 +2477,6 @@ export default class WalletBF extends SwapBF {
     });
   }
 
-  /**
-   * Declare the user's intent to deposit a standard Bitcoin with the
-   * Bitcoin-fast Issuer.
-   *
-   * The Issuer will return a Bitcoin address for the user to send funds.
-   * If the 'args.target' value is defined and is > zero the Issuer
-   * will indicate how many confirmations are required before the fast
-   * coin will be available for collection.
-   *
-   * Finally, either 'success' or 'args.failure' will be called with an
-   * issuerResponse parameter to indicate the Bitcoin address or reason
-   * for failure.
-   *
-   * This is typically the first part of a three part process; intent,
-   * marshall, collect.
-   *
-   * @param success [function] The function to be called when the Bitcoin
-   *   address is available.
-   *
-   * @param args [object] Optional Arguments:
-   *   @element target [string] The decimal target value if the deposit
-   *     amount is known.
-   *   @element domain [string] The Issuer's domain. If domain is
-   *     undefined the default Issuer will be used.
-   *   @element timeout [integer] The number of seconds this function
-   *     should wait for the server to respond. 
-   */
-  depositIntent(args) {
-    const {
-      debug,
-      storage,
-    } = this.config;
-
-    if (!storage) {
-      return Promise.reject(Error("Persistent storage has not been installed"));
-    }
-    
-    let params = {
-      issuerRequest: {
-        fn: "issue"
-      }
-    };
-
-    if (typeof(args.target) === 'string' && args.target) {
-      params.issuerRequest.targetValue = args.target;
-    }
-
-    // Do we need it?
-    let email = this._fillEmailArray(parseFloat(args.target), true, "XBT");
-    if (email) {
-      params.issuerRequest.expiryEmail = email;
-    }
-
-    if (debug) {
-      console.log("WalletBF.depositIntent", params, args);
-    }
-
-    if (!params.issuerRequest.currency) {
-      params.issuerRequest.currency = "XBT";
-    }
-
-    let beginResponse;
-    return this.issuer("begin", params, args).then((response) => {
-      beginResponse = response;
-      if (!response.issueInfo) {
-        throw new Error(response.status);
-        return;
-      }
-      if (email) {
-        beginResponse.expiryEmail = email;
-      }
-      return storage.sessionStart("Deposit intent");
-    }).then(() => {
-      // We persist the Issuer response so that coins can be collected
-      // once the funds have been transferred
-      console.log('depositIntent', beginResponse);
-      return this.setDepositRef(beginResponse);
-    }).then(() => {
-      return storage.sessionEnd();
-    }).then(() => {
-      return beginResponse;
-    });
-  }
-
   _fillEmailArray(target = 0, persistent = true, crypto = "XBT") {
     const {
       EMAIL,
@@ -2842,7 +2704,7 @@ export default class WalletBF extends SwapBF {
         resp.currency = this._getCryptoFromArray(resp.coin);
         return this.recordTransaction(resp);
       }).then(() => {
-        return this._removeDepositRef(resp.coin);
+        return this.removeDepositRef(resp.coin, false);
       }).then(() => {
         // Now that the new coins have been persisted,
         // we can end the transaction
