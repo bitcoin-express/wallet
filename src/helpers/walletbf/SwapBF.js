@@ -214,10 +214,14 @@ export default class SwapBF {
      * swap or the swap request expires.
      */
     const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+
       const args = {
         domain: this.getSettingsVariable(DEFAULT_ISSUER),
       };
-      const params = {
+      const endParams = {
         issuerRequest: {
           tid: params.issuerRequest.tid,
         },
@@ -225,11 +229,11 @@ export default class SwapBF {
 
       if (!isInSession) {
         return this.config.storage.sessionEnd()
-          .then(() => this.issuer("end", params, args))
+          .then(() => this.issuer("end", endParams, args))
           .then(() => Promise.reject(err));
       }
 
-      return this.issuer("end", params, args)
+      return this.issuer("end", endParams, args)
         .then(() => Promise.reject(err));
     };
 

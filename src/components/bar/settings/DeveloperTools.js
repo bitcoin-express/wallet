@@ -99,7 +99,7 @@ export default class DeveloperTools extends React.Component {
             onToggle={ this.setDebugMode }
           />
           <Toggle
-            label="Activate force redeem defer"
+            label="Activate force defer"
             labelPosition="right"
             defaultToggled={  wallet.config.forceDefer || false }
             onToggle={ this.setForceDefer }
