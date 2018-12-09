@@ -102,8 +102,9 @@ export default class BottomBar extends React.Component {
       totalAvailable,
     } = this.state;
 
+    console.log(total, totalAvailable);
     let totalText = "not available";
-    if (totalAvailable && total) {
+    if (totalAvailable && !isNaN(total)) {
       totalText = "≈ " + xr.getCurrencySymbol() + total.toFixed(2);
     }
 
