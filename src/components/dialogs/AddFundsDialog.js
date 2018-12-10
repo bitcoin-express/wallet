@@ -2,6 +2,13 @@ import React from 'react';
 
 import CircularProgress from 'material-ui/CircularProgress';
 
+import {
+  Table,
+  TableBody,
+  TableRow,
+  TableRowColumn,
+} from 'material-ui/Table';
+
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 import Address from '../Address';
@@ -160,6 +167,8 @@ class AddFundsDialog extends React.Component {
     const {
       isTab,
       updateTargetValue,
+      isFlipped,
+      showValuesInCurrency,
       wallet,
       xr,
     } = this.props;
@@ -201,9 +210,6 @@ class AddFundsDialog extends React.Component {
       />
     </div>;
 
-    return createAddressComponent;
-
-    /*
     let list = wallet.getDepositRefList();
     console.log(list);
 
@@ -218,25 +224,75 @@ class AddFundsDialog extends React.Component {
     };
 
     list = list.map((ref, index) => {
-      return <div key={ index } style={ rowStyle }>
-        <DateComponent
-          date={ ref.headerInfo.expiry }
-          dayLabelStyle={{
-            color: 'black',
+      let totalAmount = 0.0;
+      let totalCoins = 0;
+      if (ref.coin) {
+        totalCoins = ref.coin.length;
+        ref.coin.forEach((c) => {
+          totalAmount += parseFloat(wallet.Coin(c).v);
+        });
+      }
+
+      return <TableRow key={ index } style={ rowStyle }>
+        <TableRowColumn
+          style={{
+            padding: "0",
+            width: "60px"
           }}
-          monthLabelStyle={{
-            color: 'blue',
+        >
+          <DateComponent
+            date={ ref.headerInfo.expiry }
+            dayLabelStyle={{
+              color: 'black',
+            }}
+            monthLabelStyle={{
+              color: 'black',
+              fontWeight: 'normal',
+            }}
+            timeLabelStyle={{
+              color: 'black',
+              fontWeight: 'normal',
+            }}
+          />
+        </TableRowColumn>
+        <TableRowColumn
+          style={{
+            verticalAlign: "middle",
+            fontWeight: "bold",
+            width: "100px",
           }}
-          timeLabelStyle={{
-            color: 'black',
-            fontWeight: 'normal',
+        >
+          { ref.headerInfo.domain }
+        </TableRowColumn>
+        <TableRowColumn
+          style={{
+            verticalAlign: "middle",
+            width: "100px",
           }}
-        />
-        <div>
-        { ref.headerInfo.domain } -
-        { ref.coin ? ref.coin.length : 0  } coins collected
-        </div>
-      </div>;
+        >
+          { totalCoins } coins collected
+        </TableRowColumn>
+        <TableRowColumn
+          style={{
+            verticalAlign: "middle",
+          }}
+        >
+          <BitcoinCurrency
+            displayStorage={ false }
+            color="black"
+            removeInitialSpaces={ true }
+            buttonStyle={{
+              background: "black",
+            }}
+            isFlipped={ isFlipped }
+            showValuesInCurrency={ showValuesInCurrency }
+            tiny={ true }
+            value={ totalAmount }
+            wallet={ wallet }
+            xr={ xr }
+          />
+        </TableRowColumn>
+      </TableRow>;
     });
 
     return <div style={{ marginTop: '10px' }}>
@@ -249,11 +305,22 @@ class AddFundsDialog extends React.Component {
           { createAddressComponent }
         </TabPanel>
         <TabPanel>
-          { list }
+          <Table
+            selectable={ false }
+            style={{
+              backgroundColor: "transparent",
+              marginTop: '0',
+            }}
+          >
+            <TableBody
+              displayRowCheckbox={ false }
+            >
+            { list }
+            </TableBody>
+          </Table>
         </TabPanel>
       </Tabs>
     </div>;
-    */
   }
 
   render() {

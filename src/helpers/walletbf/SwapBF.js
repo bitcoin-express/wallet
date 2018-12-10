@@ -924,7 +924,7 @@ export default class SwapBF {
 
     const {
       sourceCurrency,
-    } = transaction.args.source
+    } = transaction.args.source;
 
     const {
       targetCurrency,

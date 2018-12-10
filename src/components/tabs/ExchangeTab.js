@@ -144,28 +144,12 @@ class ExchangeTab extends React.Component {
     this.renderButtonsSection = this.renderButtonsSection.bind(this);
     this.getListTargetCurrencies = this.getListTargetCurrencies.bind(this);
     this.swapWithOther = this.swapWithOther.bind(this);
-    this.waitSwapConfirmation = this.waitSwapConfirmation.bind(this);
     this.getDeferredTransaction = this.getDeferredTransaction.bind(this);
   }
 
   componentDidMount() {
     const tx = this.getDeferredTransaction();
     if (!tx) {
-      // TO_DO Clean COIN_SWAP
-      /*
-      const {
-        wallet,
-      } = this.props;
-
-      const {
-        COIN_SWAP,
-        storage,
-      } = wallet.config;
-
-      wallet.setPersistentVariable(COIN_SWAP, {}).then(() => {
-        return storage.flush();
-      });
-      */
       return;
     }
 
@@ -1090,8 +1074,14 @@ class ExchangeTab extends React.Component {
       const expiryTimeout = new Date(isoDate).getTime() - now;
       const timeout = Math.min(afterTimeout, expiryTimeout);
 
-      const params = [args, issuerService, isoDate, timeout, tid];
-      this.waitSwapConfirmation(...params);
+      const params = [args, issuerService, isoDate, tid];
+      setTimeout(function () {
+        const args = arguments[0];
+        const issuerService = arguments[1];
+        const isoDate = arguments[2];
+        const tid = arguments[3];
+        this.swapWithOther(args, issuerService, isoDate, tid, false);
+      }.bind(this, ...params), timeout);
     };
 
     const refreshTargetBalance = (response) => {
@@ -1206,17 +1196,6 @@ class ExchangeTab extends React.Component {
       .catch(handleError);
   }
 
-  waitSwapConfirmation() {
-    const timeout = arguments[3];
-    setTimeout(function () {
-      const args = arguments[0];
-      const issuerService = arguments[1];
-      const isoDate = arguments[2];
-      const tid = arguments[4];
-      this.swapWithOther(args, issuerService, isoDate, tid, false);
-    }.bind(this, ...arguments), timeout);
-  }
-
   handleCheckEmailRecovery(ev, emailRecovery) {
     const {
       source,
@@ -1263,12 +1242,6 @@ class ExchangeTab extends React.Component {
     });
 
     openDialog({
-      /*
-      onClickCancel: () => {
-        this.resetForm({}, true);
-        closeDialog();
-      },
-      */
       showCancelButton: false,
       cancelLabel: "Revert",
       title: "Exchange request ready",

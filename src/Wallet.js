@@ -207,7 +207,7 @@ class Wallet extends React.Component {
     this.handleClickDeposit = this.handleClickDeposit.bind(this);
 
     this.issueCollect = this.issueCollect.bind(this);
-    this._issueCollect = this._issueCollect.bind(this);
+    this.coinsInRecoveryStore = this.coinsInRecoveryStore.bind(this);
 
     this.showReceiveFundsDialog = this.showReceiveFundsDialog.bind(this);
 
@@ -763,7 +763,7 @@ class Wallet extends React.Component {
       switch (resp.headerInfo.fn) {
         case "issue":
           this.loading(true);
-          this._issueCollect(resp).then((newBalance) => {
+          this.coinsInRecoveryStore(resp).then((newBalance) => {
             this.handleNotificationUpdate("Issue collect was successful");
             this.loading(false);
             this.setState({
@@ -2038,51 +2038,56 @@ class Wallet extends React.Component {
           }
         });
       };
-      storage.gdrive.handleSignoutClick().then(switchLocalStorageAndClose)
-        .catch(switchLocalStorageAndClose);
-    } else {
-      if (!backup) {
-        const {
-          balance,
-        } = this.state;
 
-        this.clearDialog();
-        setTimeout(() => {
-          this.openDialog({
-            title: '',
-            showCancelButton: true,
-            body: <DiscardDialog
-              balance={ balance }
-              showValuesInCurrency={ this.showValuesInCurrency }
-              wallet={ this.wallet }
-              xr={ this.xr }
-            />,
-            onClickOk: () => {
-              localStorage.removeItem('loggedIn');
-              // window.$.jStorage.flush();
-              new LocalStorage().clean();
-              this.props.close(isClose);
-            },
-            onClickCancel: () => {
-              this.clearDialog();
-              this.loading(true);
-              setTimeout(() => {
-                this.loading(false);
-                this.handleClickClose(isClose);
-              }, 1000);
-            },
-            open: true,
-          });
-        }, 1000);
-      } else {
-        setTimeout( () => {
+      storage.gdrive.handleSignoutClick()
+        .then(switchLocalStorageAndClose)
+        .catch(switchLocalStorageAndClose);
+
+      return;
+    }
+
+    if (backup) {
+      setTimeout( () => {
+        localStorage.removeItem('loggedIn');
+        // window.$.jStorage.flush();
+        new LocalStorage().clean();
+        this.props.close(isClose);
+      }, 500);
+      return;
+    }
+
+    const {
+      balance,
+    } = this.state;
+
+    this.clearDialog();
+    setTimeout(() => {
+      this.openDialog({
+        title: '',
+        showCancelButton: true,
+        body: <DiscardDialog
+          balance={ balance }
+          showValuesInCurrency={ this.showValuesInCurrency }
+          wallet={ this.wallet }
+          xr={ this.xr }
+        />,
+        onClickOk: () => {
           localStorage.removeItem('loggedIn');
           // window.$.jStorage.flush();
           new LocalStorage().clean();
           this.props.close(isClose);
-        }, 500);
-      }
-    }
+        },
+        onClickCancel: () => {
+          this.clearDialog();
+          this.loading(true);
+          setTimeout(() => {
+            this.loading(false);
+            this.handleClickClose(isClose);
+          }, 1000);
+        },
+        open: true,
+      });
+    }, 1000);
   }
 
   onModifyTabIndex(index) {
@@ -2300,7 +2305,8 @@ class Wallet extends React.Component {
     });
   }
 
-  issueCollect(event, fn) {
+
+  issueCollect(event, fn=null) {
     const {
       loading,
       refreshCoinBalance,
@@ -2308,15 +2314,14 @@ class Wallet extends React.Component {
     } = this.props;
 
     const {
+      debug,
       ISSUE_POLICY,
     } = this.wallet.config;
 
     const isTab = typeof(event) == "boolean" && event;
-    this.clearDialog();
-    this.loading(true);
-    let resp;
+    let issueResponse;
 
-    return this.wallet.getDepositRef().then((depositRef) => {
+    const startIssueCollect = (depositRef) => {
       let {
         targetValue,
       } = depositRef.issueInfo;
@@ -2332,10 +2337,14 @@ class Wallet extends React.Component {
 
       this.handleNotificationUpdate("Issue collection started");
       return this.wallet.issueCollect(params);
-    }).then((response) => {
-      resp = response;
-      return this._issueCollect(response);
-    }).then((newBalance) => {
+    };
+
+    const storeCoinsInRecoveryStore = (response) => {
+      issueResponse = response;
+      return this.coinsInRecoveryStore(response);
+    }
+
+    const updateWalletStatus = (newBalance) => {
       this.handleNotificationUpdate("Issue collect was successful");
       this.loading(false);
       this.setState({
@@ -2350,21 +2359,20 @@ class Wallet extends React.Component {
       var histObj = this.wallet.getHistoryList()[0];
       this.showReceiveFundsDialog(histObj, "Receive funds complete");
       return this.refreshCoinBalance("XBT");
-    }).then((value) => {
-      return resp;
-    }).catch((err) => {
-      if (this.wallet.config.debug) {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
         console.log(err);
       }
+
       this.loading(false);
 
-      let msg = err.message || "Failed to issue new coins";
-
-      if (isTab) {
+      if (isTab && fn) {
+        // Call callback if needed
         fn();
-      } else if (msg === "Transaction unconfirmed") {
-        msg = "Transaction unconfirmed, try again later";
-      } else {
+      } else if (!isTab) {
+        // Reopen the window
         this.handleClickAddFunds();
       }
 
@@ -2375,11 +2383,26 @@ class Wallet extends React.Component {
         ]);
         return;
       }
+
+      let msg = err.message || "Failed to issue new coins";
+      if (msg === "Transaction unconfirmed") {
+        msg = "Transaction unconfirmed, try again later";
+      }
       this.handleNotificationUpdate(msg, true);
-    });
+    };
+
+    this.clearDialog();
+    this.loading(true);
+
+    return this.wallet.getDepositRef()
+      .then(startIssueCollect)
+      .then(storeCoinsInRecoveryStore)
+      .then(updateWalletStatus)
+      .then(() => issueResponse)
+      .catch(handleError);
   }
 
-  _issueCollect(response) {
+  coinsInRecoveryStore(response) {
     const {
       debug,
       storage,
@@ -2388,15 +2411,13 @@ class Wallet extends React.Component {
     } = this.wallet.config;
 
     if (debug) {
-      console.log("Wallet._issueCollect ", response.coin);
+      console.log("Wallet.coinsInRecoveryStore ", response.coin);
     }
 
     // const crypto = this.wallet.getPersistentVariable(CRYPTO, "XBT");
     const crypto = "XBT";
-
-    return storage.addAllIfAbsent(COIN_RECOVERY, response.coin, false, crypto).then(() => {
-      return this.refreshCoinBalance(crypto);
-    });
+    return storage.addAllIfAbsent(COIN_RECOVERY, response.coin, false, crypto)
+      .then(() => this.refreshCoinBalance(crypto));
   }
 
   showReceiveFundsDialog(tx, title="Bitcoin Receive transaction") {
