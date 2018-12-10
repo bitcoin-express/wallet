@@ -25,6 +25,8 @@ class DateComponent extends React.Component {
   _initializeStyles(props) {
     const {
       dayLabelStyle,
+      monthLabelStyle,
+      timeLabelStyle,
     } = props;
 
     this.styles = {
@@ -34,36 +36,36 @@ class DateComponent extends React.Component {
         textAlign: 'center',
         color: styles.colors.darkBlue,
       }, dayLabelStyle || {}),
-      month: {
+      month: Object.assign({
         fontSize: '12px',
         fontWeight: 'bold',
         width: '60px',
         textAlign: 'center',
         color: styles.colors.mainTextColor,
-      },
-      time: {
+      }, monthLabelStyle || {}),
+      time: Object.assign({
         fontSize: '11px',
         width: '60px',
         textAlign: 'center',
         color: styles.colors.secondaryTextColor,
         fontWeight: 'bold',
-      },
+      }, timeLabelStyle || {}),
       dayH: Object.assign({
         fontSize: '22px',
         marginLeft: '5px',
         color: styles.colors.darkBlue,
       }, dayLabelStyle || {}),
-      monthH: {
+      monthH: Object.assign({
         fontSize: '16px',
         fontWeight: 'bold',
         color: styles.colors.mainTextColor,
-      },
-      timeH: {
+      }, monthLabelStyle || {}),
+      timeH: Object.assign({
         fontSize: '14px',
         marginLeft: '5px',
         color: styles.colors.secondaryTextColor,
         fontWeight: 'bold',
-      },
+      }, timeLabelStyle || {}),
     };
   }
 

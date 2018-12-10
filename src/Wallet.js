@@ -2286,8 +2286,6 @@ class Wallet extends React.Component {
         fn();
         return true;
       }
-
-      this.handleClickAddFunds();
     }).catch((err) => {
       console.log(err);
       this.loading(false);

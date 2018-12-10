@@ -416,15 +416,15 @@ export default class SwapBF {
       });
     };
 
-
     const handleResponse = (response) => {
       // Must return a deferInfo
       if (debug) {
         console.log("SwapBF.atomicSwap", response);
       }
 
-      if (response.error && response.error.length > 0) {
-        return Promise.reject(Error(response.error[0].message));
+      const { error } = response;
+      if (error && error.length > 0) {
+        throw new Error(error[0].message);
       }
 
       result = response;
@@ -505,14 +505,18 @@ export default class SwapBF {
     };
 
     const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
 
       let errorList = [
         "Bad request [invalid coins]",
         "Bad request [previous response error]"
       ];
+      // "Bad request [expired]"
 
       if (tid && errorList.indexOf(err.message) > -1) {
-        // It seems the coins are invalid
+        // It seems the coins are invald or it expired
         let existingCoins;
         let totalExistingCoins = 0;
 
@@ -528,7 +532,7 @@ export default class SwapBF {
         };
 
         const addExistingCoins = (response) => {
-          if (response.deferInfo || response.status !== "ok") {
+          if (response && (response.deferInfo || response.status !== "ok")) {
             // Save coin list in recovery store just in case
             let params = [COIN_RECOVERY, toRemove, false, sourceCurrency];
             return storage.addAllIfAbsent(...params);
@@ -570,6 +574,13 @@ export default class SwapBF {
           });
         };
 
+        const handleRecoverCoinsError = (err) => {
+          if (debug) {
+            console.log(err);
+          }
+          return Promise.reject(err);
+        };
+
         const removePromises = [
           storage.removeFrom(COIN_SWAP, tid),
           storage.removeFrom(SESSION, tid),
@@ -580,7 +591,8 @@ export default class SwapBF {
           .then(addExistingCoins)
           .then(recordTransaction)
           .then(() => storage.sessionEnd())
-          .then(() => { cancelled: true });
+          .then(() => { return { cancelled: true }; })
+          .catch(handleRecoverCoinsError);
       }
 
       return storage.sessionEnd()
@@ -890,4 +902,94 @@ export default class SwapBF {
       .then(recordSwap);
 
   }
+
+  revertSwapRequest (swapTransaction, reason) {
+    const {
+      debug,
+      SESSION,
+      COIN_STORE,
+      COIN_SWAP,
+      storage,
+    } = this.config;
+
+    if (!swapTransaction) {
+      const msg = "Swap transaction is null"
+      return Promise.reject(new Error(msg));
+    }
+
+    const {
+      tid,
+      transaction,
+    } = swapTransaction;
+
+    const {
+      sourceCurrency,
+    } = transaction.args.source
+
+    const {
+      targetCurrency,
+    } = transaction.args.target;
+;
+
+    let coinSwap = storage.get(COIN_SWAP);
+    let totalExistingCoins = 0;
+
+    coinSwap = coinSwap[tid];
+    coinSwap.forEach((c) => {
+      if (typeof c == "string") {
+        c = this.Coin(c);
+      }
+      totalExistingCoins += parseFloat(c.v) || 0;
+    });
+
+    const updateWalletStorages = () => {
+      return Promise.all([
+        storage.removeFrom(SESSION, tid),
+        storage.removeFrom(COIN_SWAP, tid),
+        storage.addAllIfAbsent(COIN_STORE, coinSwap, false, sourceCurrency),
+      ]);
+    }
+
+    const recordTransaction = () => {
+      return this.recordTransaction({
+        walletInfo: {
+          faceValue: totalExistingCoins,
+          actualValue: totalExistingCoins,
+          fee: 0,
+        },
+        headerInfo:{
+          fn: "revert swap",
+          domain: "localhost",
+        },
+        other: {
+          type: "source",
+          targetCurrency,
+        },
+        coin: coinSwap,
+        currency: sourceCurrency,
+      });
+    }
+
+    const endTransaction = () => {
+      const {
+        DEFAULT_ISSUER,
+      } = this.config;
+
+      return this.issuer("end", {
+        issuerRequest: {
+          tid,
+        },
+      }, {
+        domain: this.getSettingsVariable(DEFAULT_ISSUER),
+      });
+    };
+
+    const msg = `Swap with other ${reason}`;
+    return storage.sessionStart()
+      .then(updateWalletStorages)
+      .then(recordTransaction)
+      .then(endTransaction)
+      .then(() => storage.sessionEnd());
+  }
 }
+

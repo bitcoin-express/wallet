@@ -923,7 +923,6 @@ class ExchangeTab extends React.Component {
   }
 
   swapWithOther(args, issuerService, isoDate, tid = null, file = true) {
-
     let {
       sourceCurrency,
       sourceValue,
@@ -940,6 +939,7 @@ class ExchangeTab extends React.Component {
     const {
       isFlipped,
       isFullScreen,
+      debug,
       loading,
       refreshCoinBalance,
       showValuesInCurrency,
@@ -960,108 +960,141 @@ class ExchangeTab extends React.Component {
     let swapInfo;
     args["expiryTime"] = isoDate;
 
-    let initialSourceBal, initialTargetBal, download, href; 
-    const promises = [
-      refreshCoinBalance(sourceCurrency),
-      refreshCoinBalance(targetCurrency)
-    ];
+    let initialSourceBal, initialTargetBal, download, href, swapResponse;
 
     let fee = issuerFee == 0 ? args.fee : issuerFee;
     let totalSource = parseFloat(sourceValue);
     totalSource = totalSource.toFixed(8);
     args.fee = fee; // ??
 
-    Promise.all(promises).then((response) => {
+
+    const callSwap = (response) => {
       initialSourceBal = parseFloat(response[0]);
       initialTargetBal = parseFloat(response[1]);
       return wallet.exportSwapCode(args, issuerService, tid);
-    }).then((resp) => {
+    };
 
-      if (!resp.deferInfo) {
-        return Promise.all([
-          refreshCoinBalance(sourceCurrency),
-          refreshCoinBalance(targetCurrency)
-        ]).then((response) => {
+    const handleResponse = (resp) => {
+      swapResponse = resp;
 
-          if (resp.cancelled) {
-            loading(false);
-            let msg = "Swap with other cancelled due response error";
-            this.setState({
-              file: false,
-              waitingToCollect: false,
-            });
-            snackbarUpdate(msg);
-            return;
-          }
+      if (resp.deferInfo) {
+        // Deferred response:
+        //  1. If expired, revert the Swap
+        //  2. If not expired, timeout the new Swap request. 
 
-          const finalSourceBal = parseFloat(response[0]);
-          const finalTargetBal = parseFloat(response[1]);
-          const sourceDiff = initialSourceBal - finalSourceBal;
-          const targetDiff = initialTargetBal - finalTargetBal;
+        if (file) {
+          swapInfo = resp.swapInfo;
+          const result = JSON.stringify({
+            atomicSwapRequest: {
+              swapInfo,
+            }
+          }, null, 2);
+          const urlEncoded = encodeURIComponent(result);
+          href = `data:application/json;charset=utf8,${urlEncoded}`;
+          download = `swapCode_${sourceCurrency}${totalSource}_` +
+            `${targetCurrency}${targetValue.toFixed(8)}.json`;
+        }
 
-          openDialog({
-            showCancelButton: false,
-            title: "Coins Exchanged with counterparty",
-            body: <ExchangeInfo
-              currSource={ this.currencies[sourceCurrency] }
-              currTarget={ this.currencies[targetCurrency] }
-              source={ this.fixedTo(totalSource, 8) }
-              target={ this.fixedTo(targetValue, 8) }
-              background="transparent"
+        const now = new Date().getTime();
+        let expiry = new Date(isoDate).getTime() - now;
 
-              isFlipped={ isFlipped }
-              isFullScreen={ isFullScreen }
-              showValuesInCurrency={ showValuesInCurrency }
-              wallet={ wallet }
-              xr={ xr }
-            />,
-          });
+        if (expiry < 0) {
+          return revertExpiredSwap();
+        }
 
+        scheduleSwapRequest();
+        return refreshCoinBalance(sourceCurrency);
+      }
+
+      const confirmValidSwap = (balances) => {
+        if (resp.cancelled) {
           loading(false);
+          let msg = "Swap with other cancelled due response error";
           this.setState({
             file: false,
             waitingToCollect: false,
           });
-          return true;
+          snackbarUpdate(msg);
+          return;
+        }
+
+        const finalSourceBal = parseFloat(balances[0]);
+        const finalTargetBal = parseFloat(balances[1]);
+        const sourceDiff = initialSourceBal - finalSourceBal;
+        const targetDiff = initialTargetBal - finalTargetBal;
+
+        openDialog({
+          showCancelButton: false,
+          title: "Coins Exchanged with counterparty",
+          body: <ExchangeInfo
+            currSource={ this.currencies[sourceCurrency] }
+            currTarget={ this.currencies[targetCurrency] }
+            source={ this.fixedTo(totalSource, 8) }
+            target={ this.fixedTo(targetValue, 8) }
+            background="transparent"
+
+            isFlipped={ isFlipped }
+            isFullScreen={ isFullScreen }
+            showValuesInCurrency={ showValuesInCurrency }
+            wallet={ wallet }
+            xr={ xr }
+          />,
         });
+
+        loading(false);
+        this.setState({
+          file: false,
+          waitingToCollect: false,
+        });
+        return true;
       }
 
-      if (file) {
-        swapInfo = resp.swapInfo;
-        const result = JSON.stringify({
-          atomicSwapRequest: {
-            swapInfo,
-          }
-        }, null, 2);
-        const urlEncoded = encodeURIComponent(result);
-        href = `data:application/json;charset=utf8,${urlEncoded}`;
-        download = `swapCode_${sourceCurrency}${totalSource}_` +
-          `${targetCurrency}${targetValue.toFixed(8)}.json`;
+      const refreshBalancePromises = [
+        refreshCoinBalance(sourceCurrency),
+        refreshCoinBalance(targetCurrency)
+      ];
+
+      return Promise.all(refreshBalancePromises)
+        .then(confirmValidSwap);
+    }
+
+    const revertExpiredSwap = (sourceCurrency) => { 
+      // Swap request expired - Revert the swap.
+      const handleError = (err) => {
+        if (debug) {
+          console.log(err);
+        }
+        scheduleSwapRequest();
       }
+
+      this.revertSwap()
+        .catch(handleError);
+
+      return refreshCoinBalance(sourceCurrency)
+        .then(refreshTargetBalance);
+    };
+
+    const scheduleSwapRequest = () => {
+      // Call timeout to repeat future swap request
+      if (!swapResponse || !swapResponse.deferInfo) {
+        return;
+      }
+
+      const {
+        after,
+        tid,
+      } = swapResponse.deferInfo;
 
       const now = new Date().getTime();
-      let expiry = new Date(isoDate).getTime() - now;
-      const repeatSwap = () => {
-        // Call timeout to repeat future request
-        const {
-          after,
-          tid,
-        } = resp.deferInfo;
-        let timeout = Math.max(0, new Date(after).getTime() - now);
-        const params = [args, issuerService, isoDate, Math.min(timeout, expiry), tid];
-        this.waitSwapConfirmation(...params);
-      };
+      const afterTimeout = Math.max(0, new Date(after).getTime() - now);
+      const expiryTimeout = new Date(isoDate).getTime() - now;
+      const timeout = Math.min(afterTimeout, expiryTimeout);
 
-      if (expiry < 0) {
-        // Timeout exceded, revert swap
-        this.revertSwap().catch(() => {
-          repeatSwap();
-        });
-      } else {
-        repeatSwap();
-      }
-      return refreshCoinBalance(sourceCurrency);
-    }).then((response) => {
+      const params = [args, issuerService, isoDate, timeout, tid];
+      this.waitSwapConfirmation(...params);
+    };
+
+    const refreshTargetBalance = (response) => {
       let resetObj = {};
       if (file) {
         const sourceChanged = response - initialSourceBal;
@@ -1085,22 +1118,46 @@ class ExchangeTab extends React.Component {
       loading(false);
       this.resetForm(resetObj);
       return refreshCoinBalance(targetCurrency);
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+
+      if (err.message == "Bad request [expired]") {
+        return revertExpiredSwap();
+      }
+
       loading(false);
+
       let msg = err.message || "Error on creating swap file";
       this.updateBalances();
       this.resetForm();
       snackbarUpdate(msg, true);
       this.updateBalances();
+
       return Promise.all([
         refreshCoinBalance(sourceCurrency),
         refreshCoinBalance(targetCurrency)
       ]);
-    });
-  }
+    };
+
+    const refreshAllBalancesPromises = [
+      refreshCoinBalance(sourceCurrency),
+      refreshCoinBalance(targetCurrency)
+    ];
+
+    Promise.all(refreshAllBalancesPromises)
+      .then(callSwap)
+      .then(handleResponse)
+      .then(refreshTargetBalance)
+      .catch(handleError);
+  };
 
   revertSwap(reason="timeout") {
     const {
+      debug,
       loading,
       refreshCoinBalance,
       snackbarUpdate,
@@ -1122,78 +1179,31 @@ class ExchangeTab extends React.Component {
     }
 
     const {
-      tid,
-      transaction,
-    } = tx;
-
-    const {
       sourceCurrency,
-    } = transaction.args.source
+    } = tx.transaction.args.source;
 
-    const {
-      targetCurrency,
-    } = transaction.args.target;
-;
-
-    let coinSwap = storage.get(COIN_SWAP);
-    let totalExistingCoins = 0;
-
-    coinSwap = coinSwap[tid];
-    coinSwap.forEach((c) => {
-      if (typeof c == "string") {
-        c = wallet.Coin(c);
-      }
-      totalExistingCoins += parseFloat(c.v) || 0;
-    });
-
-    loading(true);
-    // TO_DO - Move the function into WalletBF
-    return storage.sessionStart(`Swap with other ${reason}`).then(() => {
-      return Promise.all([
-        storage.removeFrom(SESSION, tid),
-        storage.removeFrom(COIN_SWAP, tid),
-        storage.addAllIfAbsent(COIN_STORE, coinSwap, false, sourceCurrency),
-      ]);
-    }).then(() => {
-      this.updateBalances();
-
-      return wallet.recordTransaction({
-        walletInfo: {
-          faceValue: totalExistingCoins,
-          actualValue: totalExistingCoins,
-          fee: 0,
-        },
-        headerInfo:{
-          fn: "revert swap",
-          domain: "localhost",
-        },
-        other: {
-          type: "source",
-          targetCurrency,
-        },
-        coin: coinSwap,
-        currency: sourceCurrency,
-      });
-    }).then(() => {
-      return refreshCoinBalance(sourceCurrency);
-    }).then(() => {
-      return wallet.issuer("end", {
-        issuerRequest: {
-          tid,
-        },
-      }, {
-        domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
-      });
-    }).then(() => {
-      return storage.sessionEnd();
-    }).then(() => {
+    const displayRevertInfo = () => {
       this.setState({
         waitingToCollect: false,
       });
       this.resetForm();
       loading(false);
       snackbarUpdate(`Swap with other cancelled due ${reason}`);
-    });
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+      return Promise.reject(err);
+    };
+
+    loading(true);
+    return wallet.revertSwapRequest(tx, reason)
+      .then(() => this.updateBalances())
+      .then(() => refreshCoinBalance(sourceCurrency))
+      .then(displayRevertInfo)
+      .catch(handleError);
   }
 
   waitSwapConfirmation() {

@@ -2,9 +2,12 @@ import React from 'react';
 
 import CircularProgress from 'material-ui/CircularProgress';
 
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+
 import Address from '../Address';
 import BitcoinCurrency from '../BitcoinCurrency';
 import CoinSelector from '../CoinSelector';
+import DateComponent from '../DateComponent';
 import InfoBox from '../InfoBox';
 
 import styles from '../../helpers/Styles';
@@ -19,9 +22,6 @@ class AddFundsDialog extends React.Component {
       depositRef: null,
       qr: false,
     };
-
-    this._updateQR = this._updateQR.bind(this);
-    this.renderCreateAddress = this.renderCreateAddress.bind(this);
 
     this.styles = {
       address: {
@@ -62,6 +62,9 @@ class AddFundsDialog extends React.Component {
       gridArea: 'qr',
       marginLeft: 'calc(50% - 50px)',
     };
+
+    this._updateQR = this._updateQR.bind(this);
+    this.renderCreateAddress = this.renderCreateAddress.bind(this);
   }
 
   componentWillMount() {
@@ -157,6 +160,7 @@ class AddFundsDialog extends React.Component {
     const {
       isTab,
       updateTargetValue,
+      wallet,
       xr,
     } = this.props;
 
@@ -164,19 +168,23 @@ class AddFundsDialog extends React.Component {
       depositRef,
     } = this.state;
 
-    const {
-      domain,
-    } = depositRef.headerInfo;
+    let domain = "";
+    if (!isDefaultIssuer) {
+      domain = depositRef.headerInfo.domain;
+    }
 
     const stTab = {
       textAlign: "center",
       fontWeight: "bold",
     };
 
-    return <div>
-      { isDefaultIssuer ? null : <p style={ this.styles.note }>
-        You have an active deposit reference from another issuer - '{ domain }'
-      </p> }
+    /*
+    { isDefaultIssuer ? null : <p style={ this.styles.note }>
+      You have an active deposit reference from another issuer - '{ domain }'
+    </p> }
+     */
+
+    const createAddressComponent = <div>
       <p style={ isTab ? stTab : {} }>
         Please indicate how much you intend to transfer to this Wallet.
         { isTab ? <br /> : null }
@@ -192,6 +200,60 @@ class AddFundsDialog extends React.Component {
         }}
       />
     </div>;
+
+    return createAddressComponent;
+
+    /*
+    let list = wallet.getDepositRefList();
+    console.log(list);
+
+    if (list.length == 0) {
+      return createAddressComponent;
+    }
+
+    const rowStyle = {
+      padding: "5px",
+      borderRadius: "6px",
+      marginBottom: "10px",
+    };
+
+    list = list.map((ref, index) => {
+      return <div key={ index } style={ rowStyle }>
+        <DateComponent
+          date={ ref.headerInfo.expiry }
+          dayLabelStyle={{
+            color: 'black',
+          }}
+          monthLabelStyle={{
+            color: 'blue',
+          }}
+          timeLabelStyle={{
+            color: 'black',
+            fontWeight: 'normal',
+          }}
+        />
+        <div>
+        { ref.headerInfo.domain } -
+        { ref.coin ? ref.coin.length : 0  } coins collected
+        </div>
+      </div>;
+    });
+
+    return <div style={{ marginTop: '10px' }}>
+      <Tabs>
+        <TabList>
+          <Tab>Create an address</Tab>
+          <Tab>Address list</Tab>
+        </TabList>
+        <TabPanel>
+          { createAddressComponent }
+        </TabPanel>
+        <TabPanel>
+          { list }
+        </TabPanel>
+      </Tabs>
+    </div>;
+    */
   }
 
   render() {

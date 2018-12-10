@@ -1416,6 +1416,7 @@ export default class WalletBF extends SwapBF {
                   fileInfo: fileList[0],
                 }, result);
               }));
+
               return;
             } catch (err) {
               console.log(err);
