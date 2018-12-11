@@ -6,6 +6,7 @@ import {
   getDepositRef,
   getDepositRefList,
   removeDepositRef,
+  removeFromDepositStore,
   setDepositRef,
 } from './walletbf/DepositReference'
 
@@ -145,6 +146,7 @@ export default class WalletBF extends SwapBF {
     this.getDepositRefList = getDepositRefList.bind(this);
     this.removeDepositRef = removeDepositRef.bind(this);
     this.setDepositRef = setDepositRef.bind(this);
+    this.removeFromDepositStore = removeFromDepositStore.bind(this);
   }
 
   isGoogleDrive() {

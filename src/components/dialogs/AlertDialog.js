@@ -27,6 +27,7 @@ class AlertDialog extends React.Component {
         backgroundImage: "url('css/img/Bitcoin-express-bg2.png')",
         backgroundRepeat: 'no-repeat',
         backgroundPositionX: '-25%',
+        backgroundAttachment: 'local',
         backgroundColor: styles.colors.mainWhite,
         // color: styles.colors.mainTextColor,
         overflowY: 'auto',

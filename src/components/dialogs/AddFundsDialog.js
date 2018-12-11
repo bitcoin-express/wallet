@@ -9,8 +9,6 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-
 import Address from '../Address';
 import BitcoinCurrency from '../BitcoinCurrency';
 import CoinSelector from '../CoinSelector';
@@ -19,6 +17,147 @@ import InfoBox from '../InfoBox';
 
 import styles from '../../helpers/Styles';
 
+class DepositReferenceRow extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    this.styles = {
+      row: {
+        padding: "5px",
+        borderRadius: "6px",
+        marginBottom: "10px",
+        color: styles.colors.darkBlue,
+      },
+      dateCol: {
+        padding: "0",
+        width: "60px"
+      },
+      domainCol: {
+        verticalAlign: "middle",
+        fontWeight: "bold",
+        width: "100px",
+        paddingRight: "0",
+      },
+      coinsCol: {
+        verticalAlign: "middle",
+        width: "100px",
+        paddingRight: "0",
+      },
+      amountCol: {
+        verticalAlign: "middle",
+        width: "200px",
+        paddingRight: "0",
+      },
+      iconsCol: {
+        verticalAlign: "middle",
+        cursor: "pointer",
+        width: "60px",
+        textAlign: "right",
+        padding: "0",
+      },
+      dateComponent: {
+        day: {
+          color: 'black',
+        },
+        month: {
+          color: 'black',
+          fontWeight: 'normal',
+        },
+        time: {
+          color: 'black',
+          fontWeight: 'normal',
+        },
+      },
+      icons: {
+        remove: {
+          marginRight: "20px",
+          fontSize: "23px",
+          color: "#f7941a",
+        },
+        resend: {
+          fontSize: "20px",
+          color: "green",
+        },
+      },
+    };
+  }
+
+  render() {
+    const {
+      reference,
+      removeFromDepositStore,
+      isFlipped,
+      showValuesInCurrency,
+      wallet,
+      xr,
+    } = this.props;
+
+    let totalAmount = 0.0;
+    let totalCoins = 0;
+    if (reference.coin) {
+      totalCoins = reference.coin.length;
+      reference.coin.forEach((c) => {
+        totalAmount += parseFloat(wallet.Coin(c).v);
+      });
+    }
+
+    return <TableRow style={ this.styles.row }>
+
+      <TableRowColumn style={ this.styles.dateCol }>
+        <DateComponent
+          date={ reference.headerInfo.expiry }
+          dayLabelStyle={ this.styles.dateComponent.day }
+          monthLabelStyle={ this.styles.dateComponent.month }
+          timeLabelStyle={ this.styles.dateComponent.time }
+        />
+      </TableRowColumn>
+
+      <TableRowColumn style={ this.styles.domainCol }>
+        { reference.headerInfo.domain }
+      </TableRowColumn>
+
+      <TableRowColumn style={ this.styles.coinsCol }>
+        { totalCoins } coins collected
+      </TableRowColumn>
+
+      <TableRowColumn style={ this.styles.amountCol }>
+        <BitcoinCurrency
+          displayStorage={ false }
+          color="black"
+          removeInitialSpaces={ true }
+          buttonStyle={{
+            background: "black",
+          }}
+          isFlipped={ isFlipped }
+          showValuesInCurrency={ showValuesInCurrency }
+          tiny={ true }
+          value={ totalAmount }
+          wallet={ wallet }
+          xr={ xr }
+        />
+      </TableRowColumn>
+
+      <TableRowColumn style={ this.styles.iconsCol }>
+        <i
+          className="fa fa-trash"
+          style={ this.styles.icons.remove }
+          onClick={() => removeFromDepositStore(reference.id)}
+        ></i>
+        <i
+          className="fa fa-get-pocket"
+          style={ this.styles.icons.resend }
+          onClick={() => {
+            snackbarUpdate("Address already used");
+          }}
+        ></i>
+      </TableRowColumn>
+
+    </TableRow>;
+  }
+
+}
+
 class AddFundsDialog extends React.Component {
 
   constructor(props) {
@@ -26,7 +165,8 @@ class AddFundsDialog extends React.Component {
 
     this.state = {
       ready: false,
-      depositRef: null,
+      depositef: null,
+      depositRefStore: props.wallet.getDepositRefList(),
       qr: false,
     };
 
@@ -72,6 +212,7 @@ class AddFundsDialog extends React.Component {
 
     this._updateQR = this._updateQR.bind(this);
     this.renderCreateAddress = this.renderCreateAddress.bind(this);
+    this.removeFromDepositStore = this.removeFromDepositStore.bind(this);
   }
 
   componentWillMount() {
@@ -163,18 +304,40 @@ class AddFundsDialog extends React.Component {
       .then(updateQR);
   }
 
+  removeFromDepositStore(transactionId) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.props;
+
+    snackbarUpdate("Can not delete yet the deposit reference");
+    /*
+    const updateWalletStatus = (depositRefStore) => {
+      this.setState({
+        depositRefStore,
+      });
+      snackbarUpdate("Deleted deposit reference.");
+    };
+
+    wallet.removeFromDepositStore(transactionId)
+      .then(updateWalletStatus);
+    */
+  }
+
   renderCreateAddress(isDefaultIssuer = true) {
     const {
       isTab,
       updateTargetValue,
       isFlipped,
       showValuesInCurrency,
+      snackbarUpdate,
       wallet,
       xr,
     } = this.props;
 
     const {
       depositRef,
+      depositRefStore,
     } = this.state;
 
     let domain = "";
@@ -210,116 +373,55 @@ class AddFundsDialog extends React.Component {
       />
     </div>;
 
-    let list = wallet.getDepositRefList();
+    let list = depositRefStore;
     console.log(list);
 
     if (list.length == 0) {
       return createAddressComponent;
     }
 
-    const rowStyle = {
-      padding: "5px",
-      borderRadius: "6px",
-      marginBottom: "10px",
-    };
-
     list = list.map((ref, index) => {
-      let totalAmount = 0.0;
-      let totalCoins = 0;
-      if (ref.coin) {
-        totalCoins = ref.coin.length;
-        ref.coin.forEach((c) => {
-          totalAmount += parseFloat(wallet.Coin(c).v);
-        });
-      }
-
-      return <TableRow key={ index } style={ rowStyle }>
-        <TableRowColumn
-          style={{
-            padding: "0",
-            width: "60px"
-          }}
-        >
-          <DateComponent
-            date={ ref.headerInfo.expiry }
-            dayLabelStyle={{
-              color: 'black',
-            }}
-            monthLabelStyle={{
-              color: 'black',
-              fontWeight: 'normal',
-            }}
-            timeLabelStyle={{
-              color: 'black',
-              fontWeight: 'normal',
-            }}
-          />
-        </TableRowColumn>
-        <TableRowColumn
-          style={{
-            verticalAlign: "middle",
-            fontWeight: "bold",
-            width: "100px",
-          }}
-        >
-          { ref.headerInfo.domain }
-        </TableRowColumn>
-        <TableRowColumn
-          style={{
-            verticalAlign: "middle",
-            width: "100px",
-          }}
-        >
-          { totalCoins } coins collected
-        </TableRowColumn>
-        <TableRowColumn
-          style={{
-            verticalAlign: "middle",
-          }}
-        >
-          <BitcoinCurrency
-            displayStorage={ false }
-            color="black"
-            removeInitialSpaces={ true }
-            buttonStyle={{
-              background: "black",
-            }}
-            isFlipped={ isFlipped }
-            showValuesInCurrency={ showValuesInCurrency }
-            tiny={ true }
-            value={ totalAmount }
-            wallet={ wallet }
-            xr={ xr }
-          />
-        </TableRowColumn>
-      </TableRow>;
+      return <DepositReferenceRow
+        key={ index }
+        reference={ ref }
+        removeFromDepositStore={ this.removeFromDepositStore }
+        isFlipped={ isFlipped }
+        showValuesInCurrency={ showValuesInCurrency }
+        wallet={ wallet }
+        xr={ xr }
+      />;
     });
 
     return <div style={{ marginTop: '10px' }}>
-      <Tabs>
-        <TabList>
-          <Tab>Create an address</Tab>
-          <Tab>Address list</Tab>
-        </TabList>
-        <TabPanel>
-          { createAddressComponent }
-        </TabPanel>
-        <TabPanel>
-          <Table
-            selectable={ false }
-            style={{
-              backgroundColor: "transparent",
-              marginTop: '0',
-            }}
+      { createAddressComponent }
+      <section style={{
+        background: "#ffffff90",
+        padding: "5px 10px",
+        borderRadius: "10px",
+        marginTop: "30px",
+      }}>
+        <h3 style={{
+          textAlign: "right",
+          fontSize: "15px",
+          color: "green",
+          fontWeight: "normal",
+        }}>
+          <i className="fa fa-history"/> Address history
+        </h3>
+        <Table
+          selectable={ false }
+          style={{
+            backgroundColor: "transparent",
+            marginTop: '0',
+          }}
+        >
+          <TableBody
+            displayRowCheckbox={ false }
           >
-            <TableBody
-              displayRowCheckbox={ false }
-            >
-            { list }
-            </TableBody>
-          </Table>
-        </TabPanel>
-      </Tabs>
+          { list }
+          </TableBody>
+        </Table>
+      </section>
     </div>;
   }
 

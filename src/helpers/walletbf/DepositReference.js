@@ -187,8 +187,36 @@ export function removeDepositRef(coin = null, inSession = true) {
   }
 
   const action = "Remove deposit reference";
-  return this.config.storage.sessionStart(action)
+  return storage.sessionStart(action)
     .then(removeReference)
     .then(() => storage.sessionEnd())
     .then(() => true);
+}
+
+export function removeFromDepositStore(transactionId) {
+  const {
+    DEPOSIT,
+    storage,
+  } =  this.config;
+
+  if (!storage) {
+    return null;
+  }
+
+  let list = this.getPersistentVariable(DEPOSIT);
+  const removeReference = () => {
+    if (Array.isArray(list) && list.length > 0) {
+      list = list.filter((deposit) => {
+        return deposit.id != transactionId;
+      });
+      return this.setPersistentVariable(DEPOSIT, list);
+    }
+    return Promise.resolve(true);
+  };
+
+  const action = "Remove deposit history reference";
+  return storage.sessionStart(action)
+    .then(removeReference)
+    .then(() => storage.sessionEnd())
+    .then(() => list);
 }
