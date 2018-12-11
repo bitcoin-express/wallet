@@ -207,7 +207,7 @@ export function removeFromDepositStore(transactionId) {
   const removeReference = () => {
     if (Array.isArray(list) && list.length > 0) {
       list = list.filter((deposit) => {
-        return deposit.id != transactionId;
+        return deposit.headerInfo.tid != transactionId;
       });
       return this.setPersistentVariable(DEPOSIT, list);
     }
@@ -218,5 +218,5 @@ export function removeFromDepositStore(transactionId) {
   return storage.sessionStart(action)
     .then(removeReference)
     .then(() => storage.sessionEnd())
-    .then(() => list);
+    .then(() => this.getDepositRefList());
 }

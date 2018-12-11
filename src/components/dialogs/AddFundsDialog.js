@@ -89,6 +89,7 @@ class DepositReferenceRow extends React.Component {
       removeFromDepositStore,
       isFlipped,
       showValuesInCurrency,
+      snackbarUpdate,
       wallet,
       xr,
     } = this.props;
@@ -142,7 +143,7 @@ class DepositReferenceRow extends React.Component {
         <i
           className="fa fa-trash"
           style={ this.styles.icons.remove }
-          onClick={() => removeFromDepositStore(reference.id)}
+          onClick={() => removeFromDepositStore(reference.headerInfo.tid)}
         ></i>
         <i
           className="fa fa-get-pocket"
@@ -310,8 +311,7 @@ class AddFundsDialog extends React.Component {
       wallet,
     } = this.props;
 
-    snackbarUpdate("Can not delete yet the deposit reference");
-    /*
+    //snackbarUpdate("Can not delete yet the deposit reference");
     const updateWalletStatus = (depositRefStore) => {
       this.setState({
         depositRefStore,
@@ -321,7 +321,6 @@ class AddFundsDialog extends React.Component {
 
     wallet.removeFromDepositStore(transactionId)
       .then(updateWalletStatus);
-    */
   }
 
   renderCreateAddress(isDefaultIssuer = true) {
@@ -387,6 +386,7 @@ class AddFundsDialog extends React.Component {
         removeFromDepositStore={ this.removeFromDepositStore }
         isFlipped={ isFlipped }
         showValuesInCurrency={ showValuesInCurrency }
+        snackbarUpdate={ snackbarUpdate }
         wallet={ wallet }
         xr={ xr }
       />;
