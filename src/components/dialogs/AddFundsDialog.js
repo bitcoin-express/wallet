@@ -81,12 +81,22 @@ class DepositReferenceRow extends React.Component {
         },
       },
     };
+
+    this.removeDeposit = this.removeDeposit.bind(this);
+  }
+
+  removeDeposit() {
+    const {
+      removeFromDepositStore,
+      reference,
+    } = this.props;
+
+    removeFromDepositStore(reference.headerInfo.tid)
   }
 
   render() {
     const {
       reference,
-      removeFromDepositStore,
       isFlipped,
       showValuesInCurrency,
       snackbarUpdate,
@@ -143,7 +153,7 @@ class DepositReferenceRow extends React.Component {
         <i
           className="fa fa-trash"
           style={ this.styles.icons.remove }
-          onClick={() => removeFromDepositStore(reference.headerInfo.tid)}
+          onClick={ this.removeDeposit }
         ></i>
         <i
           className="fa fa-get-pocket"
@@ -375,7 +385,7 @@ class AddFundsDialog extends React.Component {
     let list = depositRefStore;
     console.log(list);
 
-    if (list.length == 0) {
+    if (!list || list.length == 0) {
       return createAddressComponent;
     }
 
@@ -383,7 +393,7 @@ class AddFundsDialog extends React.Component {
       return <DepositReferenceRow
         key={ index }
         reference={ ref }
-        removeFromDepositStore={ this.removeFromDepositStore }
+        removeFromDepositStore={ this.removeFromDepositStore.bind(this) }
         isFlipped={ isFlipped }
         showValuesInCurrency={ showValuesInCurrency }
         snackbarUpdate={ snackbarUpdate }

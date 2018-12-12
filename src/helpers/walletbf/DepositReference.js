@@ -1,3 +1,5 @@
+import { DEFAULT_SETTINGS } from '../WalletBF';
+
 /**
  * Declare the user's intent to deposit a standard Bitcoin with the
  * Bitcoin-fast Issuer.
@@ -132,7 +134,7 @@ export function getDepositRef() {
     return Promise.resolve(null);
   }
 
-  const homeIssuer = this.getSettingsVariable(DEFAULT_ISSUER);
+  const homeIssuer = this.getSettingsVariable(DEFAULT_ISSUER, DEFAULT_SETTINGS.defaultIssuer);
   const list = this.getPersistentVariable(DEPOSIT);
   if (!Array.isArray(list) || list.length == 0 || list[0].complete) {
     return Promise.resolve(null);
