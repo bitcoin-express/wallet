@@ -556,9 +556,9 @@ class Wallet extends React.Component {
     let {
       settings,
     } = this.state;
+    settings[key] = value;
 
     const updateComponentState = (result) => {
-      settings[key] = value;
       this.updateSettingsState(settings);
       return settings;
     };
@@ -1382,6 +1382,7 @@ class Wallet extends React.Component {
   handleAuthorizeGDrive(login = false) {
     const {
       storage,
+      debug,
     } = this.wallet.config;
 
     if (login == true) {
@@ -1412,7 +1413,9 @@ class Wallet extends React.Component {
       }
       return this._authorizeGDrive(coinsToMove);
     }).catch((stillAuthorize) => {
-      console.log(err);
+      if (debug) {
+        console.log(stillAuthorize);
+      }
       // error, shall we still try to authorize?
       if (stillAuthorize) {
         this._authorizeGDrive(coinsToMove);
@@ -1425,6 +1428,7 @@ class Wallet extends React.Component {
     if (keys.length > 0) {
       const {
         COIN_STORE,
+        debug,
         storage,
       } = this.wallet.config;
 
@@ -1459,7 +1463,9 @@ class Wallet extends React.Component {
         });
         return true;
       }).catch((err) => {
-        console.log(err);
+        if (debug) {
+          console.log(err);
+        }
         storage.sessionEnd();
         return Promise.reject(err);
       });

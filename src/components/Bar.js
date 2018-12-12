@@ -146,6 +146,17 @@ class Bar extends React.Component {
       });
       openDialog({
         onClickOk: this.hideSettings,
+        onClickCancel: () => {
+          let {
+            backupSettings,
+          } = this.state;
+
+          const {
+            SETTINGS,
+          } = wallet.config;
+
+          return wallet.setPersistentVariable(SETTINGS, backupSettings);
+        },
         okLabel: "Confirm Changes",
         showCancelButton: true,
         showTitle: false,
