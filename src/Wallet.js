@@ -2576,6 +2576,9 @@ class Wallet extends React.Component {
           isFlipped={ isFlipped }
           snackbarUpdate={ this.handleNotificationUpdate }
           showValuesInCurrency={ this.showValuesInCurrency }
+          loading={ this.loading }
+          closeDialog={ this.clearDialog }
+          openDialog={ this.handleClickAddFunds }
           updateTargetValue={(value) => {
             this.setState({
               targetValue: value,
@@ -2797,6 +2800,7 @@ class Wallet extends React.Component {
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
             issueCollect={ this.issueCollect }
+            loading={ this.loading }
             snackbarUpdate={ this.handleNotificationUpdate }
             showValuesInCurrency={ this.showValuesInCurrency }
             updateTargetValue={(value) => {

@@ -318,17 +318,34 @@ class AddFundsDialog extends React.Component {
   removeFromDepositStore(transactionId) {
     const {
       snackbarUpdate,
+      loading,
+      isTab,
+      closeDialog,
+      openDialog,
       wallet,
     } = this.props;
 
     //snackbarUpdate("Can not delete yet the deposit reference");
     const updateWalletStatus = (depositRefStore) => {
+      if (!isTab) {
+        setTimeout(() => {
+          loading(false);
+          snackbarUpdate("Deleted deposit reference.");
+          openDialog();
+        }, 1000);
+        return;
+      }
+      loading(false);
+      snackbarUpdate("Deleted deposit reference.");
       this.setState({
         depositRefStore,
       });
-      snackbarUpdate("Deleted deposit reference.");
     };
 
+    if (!isTab) {
+      closeDialog();
+    }
+    loading(true);
     wallet.removeFromDepositStore(transactionId)
       .then(updateWalletStatus);
   }
