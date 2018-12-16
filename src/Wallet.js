@@ -1041,13 +1041,12 @@ class Wallet extends React.Component {
     }
 
     let balances, responses; 
-
-    return this.refreshSettings().then(() => {
-      return this.getCurrencyBalances();
-    }).then((response) => {
+    const readFile = (response) => {
       balances = response;
       return this.wallet.importFile(file, args);
-    }).then((response) => {
+    }
+
+    const handleResponse = (response) => {
       if (typeof response == 'object' && response.swapCode) {
         return response;
       }
@@ -1108,15 +1107,22 @@ class Wallet extends React.Component {
         });
         return true;
       });
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
       if (this.wallet.config.debug) {
         console.log(err);
       }
       const msg = err.message || "Invalid file or password";
       this.handleNotificationUpdate(msg, true);
       return Promise.reject(Error(msg));
-    });
+    };
 
+    return this.refreshSettings()
+      .then(() => this.getCurrencyBalances())
+      .then(readFile)
+      .then(handleResponse)
+      .catch(handleError);
   }
 
   getImportComponent(importResponse) {

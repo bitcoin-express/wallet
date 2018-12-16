@@ -131,100 +131,110 @@ class ImportFile extends React.Component {
         export: forceExportVerify,
         coin: forceExportVerify,
       },
+      notify: true, // show dialog window
       verifyAlienCoins: false,
     };
 
-    loading(true);
-    importFile(accepted, args).then((result) => {
-      if (typeof result == 'object' && result.swapCode) {
-        // TO_DO, we need to display confirmation window
-        const {
-          isFlipped,
-          isFullScreen,
-          snackbarUpdate,
-          showValuesInCurrency,
-          xr,
-          wallet,
-        } = this.props;
 
-        const {
-          debug,
-          COIN_RECOVERY,
-          COIN_STORE,
-          ISSUE_POLICY,
-          SETTINGS,
-          storage,
-          VERIFY_EXPIRE,
-        } = wallet.config;
-
-        const {
-          expiry,
-          issuerService,
-        } = result;
-
-        let now = new Date().getTime();
-        if (now > new Date(expiry).getTime()) {
-          loading(false);
-          snackbarUpdate("Atomic swap file already expired");
-          return;
-        }
-
-        const expiryPeriod_ms = wallet.getExpiryPeriod(VERIFY_EXPIRE);
-        const issuePolicy = wallet.getSettingsVariable(ISSUE_POLICY);
-        const coinList = wallet.getStoredCoins(false, result.source.c);
-
-        const sourceValue = parseFloat(result.source.v);
-        let fee = wallet.getVerificationFee(sourceValue, issuerService, true);
-        const totalSource = parseFloat((sourceValue + fee).toFixed(8));
-
-        const coinSelection = wallet._coinSelection(totalSource, coinList, {
-          singleCoin: true,
-          issuerService,
-          outCoinCount: wallet.getOutCoinCount(),
-          expiryPeriod_ms,
-        });
-
-        let toRemove = coinSelection.toVerify;
-        if (toRemove == null || toRemove.length == 0) {
-          toRemove = coinSelection.selection;
-        }
-
-        if (toRemove == null || toRemove.length == 0) {
-          loading(false);
-          snackbarUpdate("Not enough funds for this swap request");
-          return;
-        }
-        toRemove = toRemove.map(c => c.base64 || c);
-
-        openDialog({
-          showCancelButton: true,
-          onClickOk: () => {
-            this._agreeExchangeRequest(result, toRemove, fee);
-          },
-          okLabel: "Agree",
-          title: "Exchange request",
-          body: <SwapDialog
-            sourceCurrency={ result.source.c }
-            targetCurrency={ result.target.c }
-            source={ parseFloat(result.source.v) }
-            issuerService={ result.issuerService }
-            expiry={ expiry }
-            target={ parseFloat(result.target.v) }
-            isFlipped={ isFlipped }
-            isFullScreen={ isFullScreen }
-            recalculateFee={(emailVf) => {
-              fee = wallet.getVerificationFee(sourceValue, issuerService, emailVf);
-            }}
-            showValuesInCurrency={ showValuesInCurrency }
-            xr={ xr }
-            wallet={ wallet }
-          />,
-        });
+    const handleResponse = (result) => {
+      loading(false);
+      if (typeof result != 'object' || !result.swapCode) {
+        return;
       }
+
+      const {
+        isFlipped,
+        isFullScreen,
+        snackbarUpdate,
+        showValuesInCurrency,
+        xr,
+        wallet,
+      } = this.props;
+
+      const {
+        debug,
+        COIN_RECOVERY,
+        COIN_STORE,
+        ISSUE_POLICY,
+        SETTINGS,
+        storage,
+        VERIFY_EXPIRE,
+      } = wallet.config;
+
+      const {
+        expiry,
+        issuerService,
+      } = result;
+
+      let now = new Date().getTime();
+      if (now > new Date(expiry).getTime()) {
+        loading(false);
+        snackbarUpdate("Atomic swap file already expired");
+        return;
+      }
+
+      const expiryPeriod_ms = wallet.getExpiryPeriod(VERIFY_EXPIRE);
+      const issuePolicy = wallet.getSettingsVariable(ISSUE_POLICY);
+      const coinList = wallet.getStoredCoins(false, result.source.c);
+
+      const sourceValue = parseFloat(result.source.v);
+      let fee = wallet.getVerificationFee(sourceValue, issuerService, true);
+      const totalSource = parseFloat((sourceValue + fee).toFixed(8));
+
+      const coinSelection = wallet._coinSelection(totalSource, coinList, {
+        singleCoin: true,
+        issuerService,
+        outCoinCount: wallet.getOutCoinCount(),
+        expiryPeriod_ms,
+      });
+
+      let toRemove = coinSelection.toVerify;
+      if (toRemove == null || toRemove.length == 0) {
+        toRemove = coinSelection.selection;
+      }
+
+      if (toRemove == null || toRemove.length == 0) {
+        loading(false);
+        snackbarUpdate("Not enough funds for this swap request");
+        return;
+      }
+      toRemove = toRemove.map(c => c.base64 || c);
+
+      openDialog({
+        showCancelButton: true,
+        onClickOk: () => {
+          this._agreeExchangeRequest(result, toRemove, fee);
+        },
+        okLabel: "Agree",
+        title: "Exchange request",
+        body: <SwapDialog
+          sourceCurrency={ result.source.c }
+          targetCurrency={ result.target.c }
+          source={ parseFloat(result.source.v) }
+          issuerService={ result.issuerService }
+          expiry={ expiry }
+          target={ parseFloat(result.target.v) }
+          isFlipped={ isFlipped }
+          isFullScreen={ isFullScreen }
+          recalculateFee={(emailVf) => {
+            fee = wallet.getVerificationFee(sourceValue, issuerService, emailVf);
+          }}
+          showValuesInCurrency={ showValuesInCurrency }
+          xr={ xr }
+          wallet={ wallet }
+        />,
+      });
+    };
+
+    const handleError = (err) => {
       loading(false);
-    }).catch((err) => {
-      loading(false);
-    });
+      return Promise.reject(err);
+    };
+
+    loading(true);
+    importFile(accepted, args)
+      .then(handleResponse)
+      .catch(handleError);
   }
 
   _agreeExchangeRequest(result, toRemove, fee) {

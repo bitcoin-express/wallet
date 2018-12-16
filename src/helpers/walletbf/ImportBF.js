@@ -310,8 +310,7 @@ export function verifyCoins(coins, args, inSession=true, repository=null) {
   };
 
   const handleError = (err) => {
-    return storage.sessionEnd()
-      .then(() => Promise.reject(err));
+    return storage.sessionEnd().then(() => Promise.reject(err));
   };
 
   return storage.sessionStart(args.action)
