@@ -10,6 +10,12 @@ import {
   setDepositRef,
 } from './walletbf/DepositReference'
 
+import {
+  importVerifiedCoin,
+  verifyCoins,
+  verifyCoinsRecovery,
+} from './walletbf/ImportBF'
+
 import FSM from './FSM';
 
  // "be.ap.rmp.net";
@@ -147,6 +153,11 @@ export default class WalletBF extends SwapBF {
     this.removeDepositRef = removeDepositRef.bind(this);
     this.setDepositRef = setDepositRef.bind(this);
     this.removeFromDepositStore = removeFromDepositStore.bind(this);
+
+    // Import functions
+    this.importVerifiedCoin = importVerifiedCoin.bind(this);
+    this.verifyCoins = verifyCoins.bind(this);
+    this.verifyCoinsRecovery = verifyCoinsRecovery.bind(this);
   }
 
   isGoogleDrive() {
@@ -193,7 +204,21 @@ export default class WalletBF extends SwapBF {
    * Set the key settings with the desired value 
    */
   setSettings(value) {
-    return this.config.storage.setToPromise(this.config.PERSISTENT, this.config.SETTINGS, value);
+    const {
+      debug,
+      SETTINGS,
+      storage,
+      PERSISTENT,
+    } = this.config;
+
+    if (!storage) {
+      if (debug) {
+        console.log("WalletBF - setSettings: storage is null");
+      }
+      throw new Error("storage not defined");
+    }
+
+    return storage.setToPromise(PERSISTENT, SETTINGS, value);
   }
 
   /**
@@ -2101,86 +2126,6 @@ export default class WalletBF extends SwapBF {
     });
   }
 
-  importVerifiedCoin(coin) {
-    const {
-      debug,
-      ISSUE_POLICY,
-      VERIFY_EXPIRE,
-    } = this.config;
-
-    if (debug) {
-      console.log("WalletBF.importVerifiedCoin", coin);
-    }
-
-    let params = {
-      issuerRequest: {
-        fn: "verify"
-      }
-    };
-    return this.issuer("begin", params, {}).then((beginResponse) => {
-      let args = {
-        expiryPeriod_ms: this.getSettingsVariable(VERIFY_EXPIRE) * (1000 * 60 * 60) || 1000 * 60 * 59,
-        policy: this.getSettingsVariable(ISSUE_POLICY) || "single",
-        inCoinCount: 1, //we have a single coin in
-        outCoinCount: 1, //and a single coin out policy
-        domain: coin.d,
-        action: "import coin",
-        external: true,
-        other: {
-          fromString: true,
-          verified: true,
-        },
-      };
-
-      // The actual fee is heavily dependent on the args that verify
-      // is called with so first get args ready
-      let issuer = beginResponse.issuer.find((elt) => {
-        return elt.domain == coin.d;
-      });
-
-      let currency = coin.c || "XBT";
-      let currencyInfo = issuer.currencyInfo.find((elt) => {
-        return elt.currencyCode == currency;
-      });
-
-      let feeExpiryEmail = 0;
-      if (currencyInfo) {
-        args.issuerService = issuer;
-        args.currencyInfo = currencyInfo;
-        feeExpiryEmail = parseFloat(currencyInfo.feeExpiryEmail || "0");
-      }
-
-      // Coin object will include the fee according to args
-      coin = this.Coin(typeof coin == "string" ? coin : coin.base64, true, args);
-      if (debug) {
-        console.log(`Coin value after verify is ${coin.verifiedValue}`);
-      }
-
-      if (coin.verifiedValue < currencyInfo.coinMinValue) {
-        // If the value after verification is smaller than the smallest allowable coin
-        // then there is no point to verify the coin on it's own
-        return Promise.reject(RangeError("The value of this coin is too small to verify"));
-      }
-
-      // If expiryEmail is defined and the fee is less than the
-      // value of coins, add it to the args
-      let expiryEmail = this._fillEmailArray(0, true, currency);
-      if (Array.isArray(expiryEmail) && expiryEmail.length > 0) {
-        if (coin.verifiedValue > feeExpiryEmail) {
-          args.expiryEmail = expiryEmail;
-        }
-      }
-
-      return this.verifyCoins([coin], args, true, currency);
-    }).then((issuerResponse) => {
-      if (issuerResponse.coin && issuerResponse.coin.length == 0) {
-        // Something went wrong
-        return Promise.reject(EvalError(issuerResponse.error[0].message));
-      }
-      return issuerResponse;
-    });
-  }
-
   /**
    * Extract the specified coins from the coinStore.
    * All extracted coins are archived in the Coin recovery list with a 'reference' as a fail-safe against coin loss.
@@ -3206,433 +3151,6 @@ export default class WalletBF extends SwapBF {
     return redeem();
   }
 
-  /**
-   * Takes an array of 'coins' (either base64 encoded or Coin objects), a callback 'success' function
-   * and an arguments object containing optional parameters.
-   * The coin(s) will be splits/joins such that at least one new coin will have the exact target value
-   * (assuming a target was set and that value is achievable).
-   * The coin(s) that are sent for verification are expected be in the coin store at the time of calling
-   * (unless the optional 'external' parameter is true), and they will be extracted from the store and persisted along with other request information. 
-   * Once complete, the 'success' callback function will be called with an issuerResponse parameter to indicate the progress of the verification.
-   * 
-   * @param coins [array (string | Coin)]: An array of Coins or base64 encoded coin strings
-   * @param args [map]: A Map containing zero or more optional arguments.
-   * 
-   * OPTIONAL ARGS
-   *
-   * target [string]: The target value when a specific coin value is required.
-   *
-   * action [string]: A short label for the action being taken. This will be
-   *     reflected in the history. Defaults to "verify".
-   *
-   * comment [string]: A short comment to be reflected in the history. Defaults to undefined.
-   *
-   * policy [string]: I hint to the Issuer as to the desired coin issuing policy
-   *     to be followed. Defaults to the wallet's default issuePolicy.
-   *
-   * domain [string]: The domain of the Issuer where the coins will be verified.
-   *
-   * external [boolean]: If true indicates that coins are NOT presently in the coin
-   *     store. Defaults to false.
-   *
-   * expiryPeriod_ms [integer]: The number of milliseconds before the transaction should
-   *     expire. Defaults to the wallet's 'config.verifyExpire'.
-   *
-   * beginResponse [object]: A Issuer's issuerResponse object as returned by /begin.
-   *     Defaults to undefined.
-   *
-   * expiryEmail [array string]: The email address, passphrase and reference to be used
-   *     for expired transaction recovery
-   *
-   * newCoinList [array decimal strings]: A list of desired coin values to be issued by the
-   *     server. NOTE if this list is defined the 'policy' will be set to "user".
-   * 
-   * NOTE: If args.domain is not specified and all the coins are from the same Issuer,
-   *     the Coin's own Issuer will be used, otherwise the wallet's default Issuer will be used.
-   */
-  verifyCoins(coins, args, inSession=true, crypto=null) {
-    const {
-      CRYPTO,
-      debug,
-      ISSUE_POLICY,
-      SESSION,
-      storage,
-      VERIFY_EXPIRE,
-    } = this.config;
-
-    if (debug) {
-      console.log("WalletBF.verifyCoins", coins, args);
-    }
-
-    crypto = crypto || this.getPersistentVariable(CRYPTO, "XBT");
-
-    if (!Array.isArray(coins) || coins.length === 0) {
-      return Promise.reject(Error("No Coins provided"));
-    }
-
-    if (!storage) {
-      return Promise.reject(Error("Persistent storage has not been set."));
-    }
-
-    let defaults = {
-      target: "0",
-      action: "verify",
-      external: false,
-      newCoinList: [],
-      expiryPeriod_ms: this.getExpiryPeriod(VERIFY_EXPIRE),
-      policy: this.getSettingsVariable(ISSUE_POLICY),
-    };
-    args = $.extend({}, defaults, args);
-
-    let wrongType = false;
-    let base64Coins = new Array();
-    let sumCoins = 0.0;
-    let domainCoin;
-    coins.forEach((elt) => {
-      if (typeof elt === "string") {
-        let c = this.Coin(elt);
-        domainCoin = c.d;
-        sumCoins += parseFloat(c.value);
-        base64Coins.push(elt);
-      } else {
-        sumCoins += elt.value;
-        domainCoin = elt.d;
-        if (elt.base64) {
-          base64Coins.push(elt.base64);
-        } else {
-          wrongType = true;
-        }
-      }
-    });
-
-    if (!args.domain) {
-      args.domain = domainCoin;
-    }
-
-    if (wrongType) {
-      return Promise.reject(Error("Verify requires Coin or base64 string"));
-    }
-
-    let expiryEmail = this._fillEmailArray(sumCoins, true, crypto);
-    if (expiryEmail != null) {
-      args.expiryEmail = expiryEmail;
-    }
-
-    let promise;
-    if (args.beginResponse) {
-      promise = Promise.resolve(args.beginResponse);
-    } else {
-      const params = { issuerRequest: { fn: "verify" } };
-      promise = this.issuer("begin", params, {});
-    }
-
-    return promise.then((beginResponse) => {
-
-      if (!args.beginResponse) {
-        args.beginResponse = beginResponse;
-      }
-
-      if (!beginResponse.headerInfo || !beginResponse.headerInfo.tid) {
-        return Promise.reject(Error("No transaction id available"));
-      }
-
-      let tid = beginResponse.headerInfo.tid;
-
-      //Issuer typically allocates very short transaction expiry periods which need
-      //to be extended according to the needs of the client (i.e. mobile device vs. desktop). 
-      let newExpiryStr = (new Date((new Date()).getTime() + (typeof(args.expiryPeriod_ms) == "undefined" ? parseFloat(this.getSettingsVariable(VERIFY_EXPIRE)) * (1000 * 60 * 60) : args.expiryPeriod_ms))).toISOString();
-
-      //NOTE: "control" will NOT be passed to /verify. It is used to pass data
-      //to '_verifyCoins_inner_' and will be removed before the request is sent to the Issuer
-      let verifyRequest = {
-        issuerRequest: {
-          tid: tid,
-          expiry: newExpiryStr,
-          coin: base64Coins
-        },
-        recovery: {}
-      };
-
-      // Get the minimum coin denomination or use a reasonable estimate
-      // TO DO: What about coins with multiple domains?
-      let currencyInfo = beginResponse.issuer.find((elt) => {
-        return elt.domain == args.domain;
-      }).currencyInfo.find((elt) => {
-        return elt.currencyCode == crypto;
-      });
-
-      let minCoinDenomination = this._round(parseFloat(currencyInfo.coinMinValue), 8);
-      minCoinDenomination = isNaN(minCoinDenomination) ? 0.000001 : minCoinDenomination;
-      
-      let targetVal = Number.parseFloat(args.target);
-      if (isNaN(targetVal)) {
-        return Promise.reject(Error("Amount is not a number '"+args.target+"'"));
-      }
-      if (targetVal > 0 && targetVal < minCoinDenomination) {
-        return Promise.reject(Error("Amount is too small '"+args.target+"'"));
-      }
-      
-      verifyRequest.issuerRequest.targetValue = args.target;
-      verifyRequest.issuerRequest.issuePolicy = args.policy || DEFAULT_SETTINGS.issuePolicy;
-      
-      if ($.isArray(args.newCoinList) && args.newCoinList.length > 0) {
-        verifyRequest.issuerRequest.denominations = args.newCoinList;
-        //over-ride the issue policy to use the supplied denomination list
-        verifyRequest.issuerRequest.issuePolicy = "user";
-      }
-
-      //these will allow recovery to know what to recover
-      //Args are not persisted only the verifyRequest so the domain and function type
-      //are stored with the request so that they can also be recovered.
-      verifyRequest.recovery.fn = "verify";
-      verifyRequest.recovery.domain  = args.domain;
-      if (typeof(args.action)  === "string") {
-        verifyRequest.recovery.action  = args.action;
-      }
-      if (typeof(args.comment) === "string") {
-        verifyRequest.recovery.comment = args.comment;
-      }
-
-      // If expiryEmail is defined and the fee is less than the sum of coins,
-      // add it to the request 
-      if (Array.isArray(args.expiryEmail) && args.expiryEmail.length > 0) {
-        let issuer = beginResponse.issuer.find((elt) => {
-          return elt.relationship == "home";
-        });
-        issuer = issuer || {};
-        let feeExpiryEmail = parseFloat(issuer.feeExpiryEmail || "0");
-        if (sumCoins > feeExpiryEmail) {
-          verifyRequest.issuerRequest.expiryEmail = args.expiryEmail;
-          verifyRequest.recovery.expiryEmail = args.expiryEmail;
-        }
-      }
-
-      const persistVerify = () => {
-        return storage.setToPromise(SESSION, tid, verifyRequest).then(() => {
-          return storage.flush();
-        }).then(() => {
-          // returns the verifyResponse
-          return this._verifyCoins_inner_(verifyRequest, args);
-        });
-      };
-
-      // @return the list of coins extracted
-      const extractFromStore = () => {
-        if (!args.external) {
-          return this.extractCoins(coins, tid, "wallet", crypto);
-        }
-        return Promise.resolve([]);
-      };
-
-      // now that the coins are persisted we can extract them from the store
-      if (inSession) {
-        let verifyResponse;
-        return storage.sessionStart(args.action).then(() => {
-          return extractFromStore();
-        }).then(() => {
-          return persistVerify();
-        }).then((response) => {
-          verifyResponse = response;
-          return storage.sessionEnd();
-        }).then(() => {
-          return verifyResponse;
-        }).catch((err) => {
-          return storage.sessionEnd().then(() => {
-            return Promise.reject(err);
-          });
-        });
-      } else {
-        return extractFromStore().then(persistVerify);
-      }
-    });
-  }
-
-  /**
-   * Takes an array of 'coins' (either base64 encoded or Coin objects) and an
-   * arguments object containing optional parameters.
-   * The coin(s) will be splits/joins such that at least one new coin will have
-   * the exact target value (assuming a target was set and that value is achievable).
-   * The coin(s) that are sent for verification are expected be in the coin store
-   * at the time of calling (unless the optional 'external' parameter is true), and
-   * they will be extracted from the store and persisted along with other request
-   * information. 
-   * Once complete, resolve will be called with an issuerResponse parameter to indicate
-   * the progress of the verification.
-   * 
-   * @param request  [object] An issuerRequest object to be passed to the Issuer.
-   * @param args     [map]    A Map containing zero or more optional arguments.
-   * 
-   * OPTIONAL ARGS
-   * action          [string] A short label for the action being taken.
-   *                          This will be reflected in the history. Defaults to "verify".
-   * comment         [string] A short comment to be reflected in the history.
-   *                          Defaults to undefined.
-   * domain          [string] The domain of the Issuer where the coins will be verified.
-   */
-
-  _verifyCoins_inner_(request, args) {
-
-    if (this.config.debug) {
-      console.log("WalletBF._verifyCoins_inner_");
-    }
-    delete request.recovery;
-
-    const verify = () => {
-      const {
-        debug,
-        powerLoss,
-        SESSION,
-        storage,
-      } = this.config;
-
-      let verifyResponse = null;
-      const params = {
-        domain: args.domain,
-      };
-
-      return this.issuer("verify", request, params).then((resp) => {
-
-        if (resp.deferInfo) {
-          const req  = JSON.parse(JSON.stringify(request));
-          return this._restartDeferral(verify, resp, req, 10000).then(() => {
-            return Promise.reject(resp);
-          });
-        }
-
-        // This is just for testing. It will simulate loss of network or power
-        if (powerLoss) {
-          alert("BANG!! Simulated power loss. Restart browser to recover.");
-          return Promise.reject(false);
-        }
-
-        if (!resp.verifyInfo) {
-          return Promise.reject(resp);
-        }
-
-        // Add a comment to the history
-        if (typeof(args.comment) === "string") {
-          let err = "";
-          if (resp.error && resp.error.length > 0) {
-            err = resp.error[0].message;
-          }
-          resp.verifyInfo.comment = `${args.comment} ${err}`;
-        }
-
-        verifyResponse = resp;
-        if (resp.coin && resp.coin.length > 0) {
-          return this.includeCoinsInStore(resp.coin);
-        }
-        return 0;
-      }).then((numCoins) => {
-        if (debug && numCoins == 0) {
-          console.log("Redeem zero coins");
-          return Promise.resolve(true);
-        }
-
-        let {
-          actualValue,
-          lostValue,
-          totalFee,
-          verifiedValue,
-        } = verifyResponse.verifyInfo;
-
-        actualValue = parseFloat(actualValue || "0");
-        lostValue = parseFloat(lostValue || "0");
-        totalFee = parseFloat(totalFee || "0");
-
-        //over-write the event label in the history 
-        if (verifyResponse.headerInfo && typeof(args.action) === "string") {
-          verifyResponse.headerInfo.fn = args.action;
-        }
-
-        if (typeof(args.comment) === "string") {
-          verifyResponse.verifyInfo.comment = args.comment;
-        }
-
-        //add the original face value to the history (most likely from a file)
-        let faceValue = verifyResponse.verifyInfo.faceValue;
-        if (typeof(args.originalFaceValue) !== "undefined") {
-          faceValue = args.originalFaceValue;
-        }
-        verifyResponse.verifyInfo.faceValue = parseFloat(faceValue || "").toFixed(8);
-
-        // determine the new value
-        let deductions = parseFloat(totalFee + lostValue);
-
-        // if the coins were external their value must be added to the balance
-        // if the coins were internal then we must account for the deductions
-        const newValue = args.external ? actualValue - deductions : -deductions;
-        verifyResponse.verifyInfo.newValue = newValue.toFixed(8);
-
-        verifyResponse.other = args.other || {};
-        if (verifiedValue && parseFloat(verifiedValue) == 0) {
-          verifyResponse.other.verifyFailed = true;
-        }
-        verifyResponse.currency = this._getCryptoFromArray(verifyResponse.coin);
-        return this.recordTransaction(verifyResponse);
-      }).then(() => {
-        return this._cleanTransaction(verifyResponse, args);
-      }).catch((err) => {
-        // VERIFY FAILED
-        // So now we know that verify has failed, we need to recover as best we can          
-        // This could be any kind of failure so it's good practice to check and
-        // recover the original coins that were sent.
-        if (debug) {
-          console.log("WalletBF._verifyCoins_inner_.failure");
-        }
-
-        if (err == false) {
-          // This is a simulation of power loss
-          // Not Possible to connect to session
-          return Promise.reject(Error("Power loss failure"));
-        }
-
-        if (args.external && verifyResponse) {
-          return this._cleanTransaction(verifyResponse, args);
-        }
-
-        let existResponse = null;
-        const existParams = {
-          issuerRequest: {
-            fn: "exist",
-            coin: request.issuerRequest.coin
-          }
-        };
-
-        return this.issuer("exist", existParams, params).then((response) => {
-          existResponse = response;
-          if (existResponse.coin && existResponse.coin.length > 0) {
-            return this.includeCoinsInStore(existResponse.coin);
-          }
-          return 0;
-        }).then((numCoins) => {
-          if (debug && numCoins == 0) {
-            console.log("_verifyCoins_inner_. Coins does not exist");
-          }
-
-          let promise = Promise.resolve(true);
-          if (numCoins > 0) {
-            if (typeof(args.originalFaceValue) !== "undefined") {
-              existResponse.verifyInfo.faceValue = args.originalFaceValue;
-            }
-            existResponse.other = args.other || {};
-            existResponse.currency = this._getCryptoFromArray(existResponse.coin);
-            promise = this.recordTransaction(existResponse);
-          }
-
-          return promise.then(() => numCoins);
-        }).then((numCoins) => {
-          if (numCoins == 0) {
-            return Promise.reject(new Error("Coin has no value"));
-          }
-          return numCoins;
-        });
-      });
-    };
-
-    return verify();
-  }
-
   // Remove transaction from the server and call 'end' to the issuer
   _cleanTransaction(response, args) {
     const {
@@ -4166,30 +3684,39 @@ export default class WalletBF extends SwapBF {
           switch(fn) {
             case "issue":
             case "receive funds":
-              promises.push(this._issueCollect_inner_(request, args).then((resp) => {
+              const handleResponse = (resp) => {
                 result = resp;
                 return storage.removeFrom(SESSION, tid);
-              }).then(() => {
-                return success(result);
-              }).catch(failure));
+              };
+
+              const issuePromise = this._issueCollect_inner_(request, args)
+                .then(handleResponse)
+                .then(() => success(result))
+                .catch(failure);
+
+              promises.push(issuePromise);
               break;
             
             case "verify":
-              promises.push(this._verifyCoins_inner_(request, args).then((resp) => {
-                result = resp;
-                return storage.removeFrom(SESSION, tid);
-              }).then(() => {
-                return success(result);
-              }).catch(failure));
+              const verifyPromise = this.verifyCoinsRecovery(request, args)
+                .then((resp) => success(resp))
+                .catch(failure);
+
+              promises.push(verifyPromise);
               break;
             
             case "redeem":
-              promises.push(this._redeemCoins_inner_(request, args).then((resp) => {
+              const handleRedeemResponse = (resp) => {
                 result = resp;
                 return storage.removeFrom(SESSION, tid);
-              }).then(() => {
-                return success(result);
-              }).catch(failure));
+              };
+
+              const redeemPromise = this._redeemCoins_inner_(request, args)
+                .then(handleRedeemResponse)
+                .then(() => success(result))
+                .catch(failure);
+
+              promises.push(redeemPromise);
               break;
           }
         } else {

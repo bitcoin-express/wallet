@@ -39,7 +39,7 @@ class ImportCoin extends React.Component {
     this.handleClickButton = this.handleClickButton.bind(this);
     this.showResults = this.showResults.bind(this);
     this.cleanDialog = this.cleanDialog.bind(this);
-    this._addInCoinStore = this._addInCoinStore.bind(this);
+    this.addInCoinStore = this.addInCoinStore.bind(this);
   }
 
   showResults(verify) {
@@ -91,6 +91,7 @@ class ImportCoin extends React.Component {
     } = this.props;
 
     const {
+      debug,
       ISSUE_POLICY,
       VERIFY_EXPIRE,
     } = wallet.config;
@@ -101,9 +102,9 @@ class ImportCoin extends React.Component {
     }
 
     const newCoin = wallet.Coin(coin);
-    const exists = wallet.getStoredCoins(false, newCoin.c).some((storedCoin) => {
-      return storedCoin == coin;
-    });
+    const exists = wallet.getStoredCoins(false, newCoin.c)
+      .some((storedCoin) => storedCoin == coin);
+
     if (exists) {
       snackbarUpdate("This coin is already in the store");
       return;
@@ -115,13 +116,11 @@ class ImportCoin extends React.Component {
     }
 
     if (!verified) {
-      this._addInCoinStore(newCoin.d, newCoin.c);
+      this.addInCoinStore(newCoin.d, newCoin.c);
       return;
     }
 
-    // Import with verification == fee
-    loading(true);
-    wallet.importVerifiedCoin(newCoin).then((issuerResponse) => {
+    const showInfoAndRefreshBalance = (issuerResponse) => {
       const {
         verifyInfo,
       } = issuerResponse;
@@ -135,8 +134,15 @@ class ImportCoin extends React.Component {
         });
       }
       return refreshCoinBalance();
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+
       loading(false);
+
       let messages = [err.message || "Invalid coin"];
       if (err.name === "RangeError") {
         messages.push("Uncheck verify and try again");
@@ -144,11 +150,18 @@ class ImportCoin extends React.Component {
         messages.push("Try importing the coin without verification.");
       }
       snackbarUpdate(messages);
+
       return err;
-    });
+    };
+
+
+    loading(true);
+    wallet.importVerifiedCoin(newCoin)
+      .then(showInfoAndRefreshBalance)
+      .catch(handleError);
   }
 
-  _addInCoinStore(domain, crypto) {
+  addInCoinStore(domain, crypto) {
     // Import without verification == no fee
     const {
       coin,
@@ -163,8 +176,7 @@ class ImportCoin extends React.Component {
       wallet,
     } = this.props;
 
-    loading(true);
-    wallet.importCoin(coin, comment, domain, crypto).then((response) => {
+    const handleResponse = (response) => {
       loading(false);
       handleShowCoin(wallet.Coin(response.coin[0]))({
         verified: 0,
@@ -173,10 +185,17 @@ class ImportCoin extends React.Component {
         crypto,
       });
       return refreshCoinBalance();
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
       loading(false);
       snackbarUpdate(err.message || "Unable to import the coin");
-    });
+    };
+
+    loading(true);
+    wallet.importCoin(coin, comment, domain, crypto)
+      .then(handleResponse)
+      .catch(handleError);
   }
 
   render() {

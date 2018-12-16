@@ -87,23 +87,26 @@ export default class ExchangeRate {
   }
 
   getExchangeRate(ico="BTC", refresh=false) {
-    if (ico == "XBT") {
-      ico="BTC";
-    }
+    ico = (ico == "XBT") ? "BTC" : ico;
 
     let info = this.rates[ico][this.currency];
+
+    if (info.rate) {
+      return `${info.symbol}${parseFloat(info.rate).toFixed(2)}`;
+    }
+
     if (!info.rate && !refresh) {
       return "not available";
     }
-    if (!info.rate && refresh) {
-      return this.refreshExchangeRates().then(() => {
-        info = this.rates[ico][this.currency];
-        return `${info.symbol}${parseFloat(info.rate).toFixed(2)}`;
-      }).catch(() => {
-        return "not available";
-      });
-    }
-    return `${info.symbol}${parseFloat(info.rate).toFixed(2)}`;
+
+    const buildReturnString = () => {
+      info = this.rates[ico][this.currency];
+      return `${info.symbol}${parseFloat(info.rate).toFixed(2)}`;
+    };
+
+    return this.refreshExchangeRates()
+      .then(buildReturnString)
+      .catch(() => "not available");
   }
 
   refreshExchangeRates() {
