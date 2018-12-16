@@ -197,6 +197,10 @@ export function verifyCoins(coins, args, inSession=true, repository=null) {
 
   repository = repository || this.getPersistentVariable(CRYPTO, crypto);
 
+  if (parseFloat(args.target) == 0) {
+    delete args.target;
+  }
+
   args = Object.assign({
     action: "verify",
     external: false,
