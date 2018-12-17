@@ -15,6 +15,7 @@ import Address from '../Address';
 import BitcoinCurrency from '../BitcoinCurrency';
 import CoinSelector from '../CoinSelector';
 import DateComponent from '../DateComponent';
+import CurrencyRadioGroup from '../CurrencyRadioGroup';
 import InfoBox from '../InfoBox';
 
 import styles from '../../helpers/Styles';
@@ -225,6 +226,14 @@ class AddFundsDialog extends React.Component {
         gridArea: 'info',
         margin: '20px 0 20px 0',
       },
+      amountArea: {
+        padding: '20px',
+        backgroundColor: '#ffffff99',
+        marginTop: '20px',
+        borderRadius: '20px',
+        justifyContent: 'center',
+        boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
+      },
       blockchain: {
         textDecoration: 'inherit',
         color: '#966600',
@@ -277,6 +286,11 @@ class AddFundsDialog extends React.Component {
           width: "60px",
           padding: "0",
         },
+      },
+      text: {
+        textAlign: 'center',
+        fontSize: '16px',
+        color: 'rgba(0, 0, 0, 0.6)',
       },
       wallet: {
         textDecoration: 'inherit',
@@ -447,10 +461,13 @@ class AddFundsDialog extends React.Component {
       domain = depositRef.headerInfo.domain;
     }
 
-    const stTab = {
-      textAlign: "center",
-      fontWeight: "bold",
-    };
+    let styleArea = this.styles.amountArea;
+    if (isTab) {
+      styleArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
+      styleArea["backgroundRepeat"] = 'no-repeat';
+      styleArea["backgroundPositionX"] = '-15%';
+      styleArea["backgroundAttachment"] = 'local';
+    }
 
     /*
     { isDefaultIssuer ? null : <p style={ this.styles.note }>
@@ -458,12 +475,20 @@ class AddFundsDialog extends React.Component {
     </p> }
      */
 
-    const createAddressComponent = <div>
-      <p style={ isTab ? stTab : {} }>
+    const createAddressComponent = <div style={ this.styles.amountArea }>
+      <div style={ this.styles.text }>
         Please indicate how much you intend to transfer to this Wallet.
-        { isTab ? <br /> : null }
-        Or just get an address and decide later.
-      </p>
+        { isTab ? <br /> : <span /> } Or just get an address and decide later.
+        <div style={{ padding: "10px 80px" }}>
+          <CurrencyRadioGroup
+            active={ ["XBT"] }
+            currency="XBT"
+            onChange={(ev, crypto) => {
+              return;
+            }}
+          />
+        </div>
+      </div>
       <CoinSelector
         centered={ true }
         fullSize={ false }
@@ -505,6 +530,7 @@ class AddFundsDialog extends React.Component {
         padding: "5px 10px",
         borderRadius: "10px",
         marginTop: "30px",
+        boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
       }}>
         <Table
           selectable={ false }
@@ -558,6 +584,7 @@ class AddFundsDialog extends React.Component {
     const {
       isTab,
       qrLabel,
+      buttons,
       wallet,
       xr,
     } = this.props;
@@ -606,16 +633,17 @@ class AddFundsDialog extends React.Component {
     const expiry = headerInfo.expiry;
     const confirmations = issueInfo.confirmations;
 
-    let infoBoxProps = {};
+    let styleArea = {};
     if (isTab) {
-      infoBoxProps = {
-        backgroundColor: styles.colors.secondaryBlue,
-        border: false,
-        iconColor: styles.colors.mainTextColor,
-      };
+      styleArea = this.styles.amountArea;
+      styleArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
+      styleArea["backgroundRepeat"] = 'no-repeat';
+      styleArea["backgroundPositionX"] = '-15%';
+      styleArea["backgroundAttachment"] = 'local';
+      styleArea["color"] = 'rgba(0, 0, 0, 0.6)';
     }
 
-    return <div>
+    return <div style={ styleArea }>
       <div className="addFundsGrid">
         <div style={ this.styles.address }>
           <Address
@@ -644,7 +672,7 @@ class AddFundsDialog extends React.Component {
         </div>
       </div>
 
-      <InfoBox { ...infoBoxProps }>
+      <InfoBox>
         <div>
           Send only bitcoin (BTC) to <i>{ blockchainAddress }</i><br/>
           Sending bitcoin cash (BCH) to this address will result in
@@ -668,6 +696,8 @@ class AddFundsDialog extends React.Component {
           Start Bitcoin wallet
         </a>
       </p>
+
+      { buttons }
     </div>;
   }
 }
@@ -676,6 +706,7 @@ AddFundsDialog.defaultProps = {
   isTab: false,
   qrLabel: "QR",
   centered: false,
+  buttons: null,
 };
 
 export default AddFundsDialog;

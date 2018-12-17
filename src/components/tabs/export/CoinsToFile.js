@@ -1,97 +1,18 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
 import TextField from 'material-ui/TextField';
 
-import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
-
+import Button from '../../Button';
 import CoinSelector from '../../CoinSelector';
+import CurrencyRadioGroup from '../../CurrencyRadioGroup';
 import EncryptSelector from '../../EncryptSelector';
 import FormArea from '../../FormArea';
-import Button from '../../Button';
 import Title from '../../Title';
 
 import styles from '../../../helpers/Styles';
 import Tools from '../../../helpers/Tools';
-
-class CurrencyRadioGroup extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.tools = new Tools();
-
-    this.styles = {
-      iconStyle: {
-        fill: styles.colors.mainTextColor,
-      },
-      labelRadio: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        color: styles.colors.mainTextColor,
-        fontSize: '16px',
-        width: 'inherit',
-        zIndex: '3',
-      },
-      radioButton: {
-        width: 'auto',
-        margin: '10px 0',
-      },
-      radioGroup: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-      },
-      radioLabel: {
-        display: 'flex',
-        flexWrap: 'nowrap',
-        marginRight: '10px',
-      },
-    };
-  }
-
-  render() {
-    let {
-      currency,
-      onChange,
-    } = this.props;
-
-    if (currency == 'BTC') {
-      currency = "XBT";
-    }
-
-    return <RadioButtonGroup
-      name="currency-type"
-      defaultSelected={ currency }
-      onChange={ onChange }
-      style={ this.styles.radioGroup }
-    >
-      <RadioButton
-        value="XBT"
-        label={ this.tools.getImageComponent("btce.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
-      <RadioButton
-        value="BCH"
-        label={ this.tools.getImageComponent("bche.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
-      <RadioButton
-        value="ETH"
-        label={ this.tools.getImageComponent("ethe.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
-    </RadioButtonGroup>;
-  }
-}
 
 class CoinsToFile extends React.Component {
 

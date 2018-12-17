@@ -101,10 +101,10 @@ export default class AddFundsTab extends React.Component {
         depositRef={ depositRef }
         isTab={ true }
         qrLabel="QR2"
+        buttons={ <div style={ this.styles.buttons }>
+          { this.renderButtons() }
+        </div> }
       />
-      <div style={ this.styles.buttons }>
-        { this.renderButtons() }
-      </div>
     </div>;
   }
 }
