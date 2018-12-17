@@ -1052,61 +1052,66 @@ class Wallet extends React.Component {
       }
 
       responses = response;
-      return this.getCurrencyBalances().then((newBalances) => {
-        let listComponents = [];
-        let currencies = [];
+      return this.getCurrencyBalances();
+    };
+    
+    const updateWalletStatus = (newBalances) => {
+      let listComponents = [];
+      let currencies = [];
 
-        responses.forEach((response) => {
-          let {
-            coin,
-            crypto,
-          } = response;
+      responses.forEach((response) => {
+        let {
+          coin,
+          crypto,
+        } = response;
 
-          if (!crypto) {
-            crypto = response.currency || "XBT";
-          }
-
-          if (coin.length == 0) {
-            return;
-          }
-
-          let component = this.getImportComponent(response);
-          if (component != null) {
-            listComponents.push(component);
-            currencies.push(crypto);
-            this.showImportFileNotifications(response,
-              newBalances[crypto], balances[crypto]);
-          }
-        });
-
-        let msg = "All coins already included in the wallet";
-        if (responses.length == 0) {
-          msg = "No valid coins included in the file";
+        if (!crypto) {
+          crypto = response.currency || "XBT";
         }
 
-        if (listComponents.length == 0 || !args.notify) {
-          this.handleNotificationUpdate(msg);
-          return true;
-        } else if (listComponents.length == 1) {
-          this.openDialog({
-            showCancelButton: false,
-            onClickOk: this.clearDialog,
-            showTitle: false,
-            body: listComponents[0],
-          });
-          return true;
+        if (coin.length == 0) {
+          return;
         }
+
+        let component = this.getImportComponent(response);
+        if (component != null) {
+          listComponents.push(component);
+          currencies.push(crypto);
+          this.showImportFileNotifications(response,
+            newBalances[crypto], balances[crypto]);
+        }
+      });
+
+      let msg = "All coins already included in the wallet";
+      if (responses.length == 0) {
+        msg = "No valid coins included in the file";
+      }
+
+      if (listComponents.length == 0 || !args.notify) {
+        this.handleNotificationUpdate(msg);
+        return true;
+      }
+
+      if (listComponents.length == 1) {
         this.openDialog({
           showCancelButton: false,
           onClickOk: this.clearDialog,
           showTitle: false,
-          body: <ImportFileDialog
-            currencies={ currencies }
-            listComponents={ listComponents }
-          />,
+          body: listComponents[0],
         });
         return true;
+      }
+
+      this.openDialog({
+        showCancelButton: false,
+        onClickOk: this.clearDialog,
+        showTitle: false,
+        body: <ImportFileDialog
+          currencies={ currencies }
+          listComponents={ listComponents }
+        />,
       });
+      return true;
     };
 
     const handleError = (err) => {
@@ -1122,6 +1127,7 @@ class Wallet extends React.Component {
       .then(() => this.getCurrencyBalances())
       .then(readFile)
       .then(handleResponse)
+      .then(updateWalletStatus)
       .catch(handleError);
   }
 
@@ -2318,7 +2324,7 @@ class Wallet extends React.Component {
   }
 
 
-  issueCollect(event, fn=null) {
+  issueCollect(event, fn=null, reference=null) {
     const {
       loading,
       refreshCoinBalance,
@@ -2406,7 +2412,12 @@ class Wallet extends React.Component {
     this.clearDialog();
     this.loading(true);
 
-    return this.wallet.getDepositRef()
+    let promise = Promise.resolve(reference);
+    if (!reference) {
+      promise = this.wallet.getDepositRef()
+    }
+
+    return promise
       .then(startIssueCollect)
       .then(storeCoinsInRecoveryStore)
       .then(updateWalletStatus)
@@ -2585,11 +2596,12 @@ class Wallet extends React.Component {
         showCancelButton: true,
         cancelLabel: "OK",
         body: <AddFundsDialog
+          closeDialog={ this.clearDialog }
           isFlipped={ isFlipped }
+          issueCollect={ this.issueCollect }
+          loading={ this.loading }
           snackbarUpdate={ this.handleNotificationUpdate }
           showValuesInCurrency={ this.showValuesInCurrency }
-          loading={ this.loading }
-          closeDialog={ this.clearDialog }
           openDialog={ this.handleClickAddFunds }
           updateTargetValue={(value) => {
             this.setState({

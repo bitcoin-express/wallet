@@ -5,6 +5,8 @@ import CircularProgress from 'material-ui/CircularProgress';
 import {
   Table,
   TableBody,
+  TableHeader,
+  TableHeaderColumn,
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
@@ -31,29 +33,35 @@ class DepositReferenceRow extends React.Component {
       },
       dateCol: {
         padding: "0",
-        width: "60px"
+        width: "60px",
+        textAlign: 'center',
       },
       domainCol: {
         verticalAlign: "middle",
         fontWeight: "bold",
-        width: "100px",
-        paddingRight: "0",
+        width: "140px",
+        color: "green",
+        textAlign: 'center',
+        padding: "0",
       },
       coinsCol: {
         verticalAlign: "middle",
-        width: "100px",
-        paddingRight: "0",
+        width: "140px",
+        padding: "0",
+        fontSize: '24px',
+        textAlign: 'center',
+        color: "black",
       },
       amountCol: {
         verticalAlign: "middle",
-        width: "200px",
-        paddingRight: "0",
+        width: "230px",
+        padding: "0",
       },
       iconsCol: {
         verticalAlign: "middle",
         cursor: "pointer",
         width: "60px",
-        textAlign: "right",
+        textAlign: "left",
         padding: "0",
       },
       dateComponent: {
@@ -79,10 +87,30 @@ class DepositReferenceRow extends React.Component {
           fontSize: "20px",
           color: "green",
         },
+        locked: {
+          fontSize: "20px",
+          color: "grey",
+          cursor: "pointer",
+        },
       },
     };
 
+    let totalAmount = 0.0;
+    let totalCoins = 0;
+    if (props.reference.coin) {
+      totalCoins = props.reference.coin.length;
+      props.reference.coin.forEach((c) => {
+        totalAmount += parseFloat(props.wallet.Coin(c).v);
+      });
+    }
+
+    this.state = {
+      totalAmount,
+      totalCoins,
+    };
+
     this.removeDeposit = this.removeDeposit.bind(this);
+    this.retrieveAddress = this.retrieveAddress.bind(this);
   }
 
   removeDeposit() {
@@ -92,6 +120,19 @@ class DepositReferenceRow extends React.Component {
     } = this.props;
 
     removeFromDepositStore(reference.headerInfo.tid)
+  }
+
+  retrieveAddress() {
+    const {
+      closeDialog,
+      issueCollect,
+      openDialog,
+      reference,
+    } = this.props;
+
+    closeDialog();
+    issueCollect(null, null, reference)
+      .then(() => openDialog());
   }
 
   render() {
@@ -104,14 +145,10 @@ class DepositReferenceRow extends React.Component {
       xr,
     } = this.props;
 
-    let totalAmount = 0.0;
-    let totalCoins = 0;
-    if (reference.coin) {
-      totalCoins = reference.coin.length;
-      reference.coin.forEach((c) => {
-        totalAmount += parseFloat(wallet.Coin(c).v);
-      });
-    }
+    const {
+      totalAmount,
+      totalCoins,
+    } = this.state;
 
     return <TableRow style={ this.styles.row }>
 
@@ -129,12 +166,13 @@ class DepositReferenceRow extends React.Component {
       </TableRowColumn>
 
       <TableRowColumn style={ this.styles.coinsCol }>
-        { totalCoins } coins collected
+        { totalCoins }
       </TableRowColumn>
 
       <TableRowColumn style={ this.styles.amountCol }>
         <BitcoinCurrency
           displayStorage={ false }
+          centered={ true }
           color="black"
           removeInitialSpaces={ true }
           buttonStyle={{
@@ -155,13 +193,14 @@ class DepositReferenceRow extends React.Component {
           style={ this.styles.icons.remove }
           onClick={ this.removeDeposit }
         ></i>
-        <i
-          className="fa fa-get-pocket"
-          style={ this.styles.icons.resend }
-          onClick={() => {
-            snackbarUpdate("Address already used");
-          }}
-        ></i>
+        { totalCoins == 0 ? <i
+            className="fa fa-get-pocket"
+            style={ this.styles.icons.resend }
+            onClick={ this.retrieveAddress }
+          ></i>: <i
+            className="fa fa-lock"
+            style={ this.styles.icons.locked }
+          ></i> }
       </TableRowColumn>
 
     </TableRow>;
@@ -205,6 +244,40 @@ class AddFundsDialog extends React.Component {
         margin: '20px 0 20px 0',
       },
       qr: {},
+      tableHeaderCol: {
+        date: {
+          width: "60px",
+          fontSize: '10px',
+          textAlign: 'center',
+          color: styles.colors.darkBlue,
+          padding: "0",
+        },
+        domain: {
+          width: "140px",
+          fontSize: '10px',
+          textAlign: 'center',
+          color: styles.colors.darkBlue,
+          padding: "0",
+        },
+        coins: {
+          width: "140px",
+          fontSize: '10px',
+          textAlign: 'center',
+          color: styles.colors.darkBlue,
+          padding: "0",
+        },
+        amount: {
+          width: "230px",
+          fontSize: '10px',
+          textAlign: 'center',
+          color: styles.colors.darkBlue,
+          padding: "0",
+        },
+        icons: {
+          width: "60px",
+          padding: "0",
+        },
+      },
       wallet: {
         textDecoration: 'inherit',
         color: '#966600',
@@ -317,11 +390,11 @@ class AddFundsDialog extends React.Component {
 
   removeFromDepositStore(transactionId) {
     const {
-      snackbarUpdate,
-      loading,
-      isTab,
       closeDialog,
+      isTab,
+      loading,
       openDialog,
+      snackbarUpdate,
       wallet,
     } = this.props;
 
@@ -352,11 +425,14 @@ class AddFundsDialog extends React.Component {
 
   renderCreateAddress(isDefaultIssuer = true) {
     const {
-      isTab,
-      updateTargetValue,
+      closeDialog,
       isFlipped,
+      issueCollect,
+      isTab,
+      openDialog,
       showValuesInCurrency,
       snackbarUpdate,
+      updateTargetValue,
       wallet,
       xr,
     } = this.props;
@@ -408,10 +484,13 @@ class AddFundsDialog extends React.Component {
 
     list = list.map((ref, index) => {
       return <DepositReferenceRow
+        closeDialog={ closeDialog }
         key={ index }
         reference={ ref }
         removeFromDepositStore={ this.removeFromDepositStore.bind(this) }
         isFlipped={ isFlipped }
+        issueCollect={ issueCollect }
+        openDialog={ openDialog }
         showValuesInCurrency={ showValuesInCurrency }
         snackbarUpdate={ snackbarUpdate }
         wallet={ wallet }
@@ -427,14 +506,6 @@ class AddFundsDialog extends React.Component {
         borderRadius: "10px",
         marginTop: "30px",
       }}>
-        <h3 style={{
-          textAlign: "right",
-          fontSize: "15px",
-          color: "green",
-          fontWeight: "normal",
-        }}>
-          <i className="fa fa-history"/> Address history
-        </h3>
         <Table
           selectable={ false }
           style={{
@@ -442,6 +513,37 @@ class AddFundsDialog extends React.Component {
             marginTop: '0',
           }}
         >
+          <TableHeader
+            className="hide-device"
+            displaySelectAll={ false }
+            adjustForCheckbox={ false }
+          >
+            <TableRow>
+              <TableHeaderColumn
+                style={ this.styles.tableHeaderCol.date }
+              >
+                EXPIRY
+              </TableHeaderColumn>
+              <TableHeaderColumn
+                style={ this.styles.tableHeaderCol.domain }
+              >
+                ISSUER
+              </TableHeaderColumn>
+              <TableHeaderColumn
+                style={ this.styles.tableHeaderCol.coins }
+              >
+                COINS COLLECTED
+              </TableHeaderColumn>
+              <TableHeaderColumn
+                style={ this.styles.tableHeaderCol.amount }
+              >
+                AMOUNT
+              </TableHeaderColumn>
+              <TableHeaderColumn
+                style={ this.styles.tableHeaderCol.icons }
+              />
+            </TableRow>
+          </TableHeader>
           <TableBody
             displayRowCheckbox={ false }
           >
