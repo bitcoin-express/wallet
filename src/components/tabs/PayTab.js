@@ -222,17 +222,17 @@ class PayTab extends React.Component {
       },
     }, paymentDetails));
 
-    machine.run().then(() => {
-      return refreshCoinBalance();
-    }).then(() => {
-      console.log("PaymentRequest has run to completion");
-      return storage.sessionEnd();
-    }).catch((err) => {
+    const handleError = (err) => {
       console.log(err);
       if (this.state.paymentSessionStarted) {
         return storage.sessionEnd();
       }
-    });
+    };
+
+    machine.run()
+      .then(() => refreshCoinBalance())
+      .then(() => storage.sessionEnd())
+      .catch(handleError);
 
     /*
     storage.sessionStart("Payment").then(() => {

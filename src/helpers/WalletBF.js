@@ -3399,41 +3399,82 @@ export default class WalletBF extends SwapBF {
   }
 
   getIssuerExchangeRates() {
-    return this.issuer("exchange", {}, null, "GET").then((response) => {
+
+    const handleResponse = (response) => {
       if (response.status != "ok") {
-        return Promise.reject(Error("Error on calling exchange"));
+        throw new Error("Error on calling exchange");
       }
 
-      let currencies = [];
-      let sourceCurrencies = [];
-      const {
-        expiry,
-        rates,
-      } = response.exchangeInfo;
+      if (!response.exchangeRates) {
+        // TO_DO @deprecated: in the future just remove this if-clause
+        let currencies = [];
+        let sourceCurrencies = [];
+
+        const {
+          expiry,
+          rates,
+        } = response.exchangeInfo;
+
+        let result = {
+          exchangeRates: {},
+          expiry,
+        };
+        const now = new Date();
+
+        rates.forEach((exchange) => {
+          sourceCurrencies.push(exchange[0]);
+          currencies.push(exchange[0]);
+          currencies.push(exchange[1]);
+          let key = `${exchange[0].toUpperCase()}_${exchange[1].toUpperCase()}`;
+          if (new Date(expiry) > now) {
+            result.exchangeRates[key] = parseFloat(exchange[2]);
+          }
+        });
+        result['currencies'] = Array.from(new Set(currencies));
+        result['sourceCurrencies'] = Array.from(new Set(sourceCurrencies));
+
+        if (this.config.debug) {
+          console.log("WalletBF.getIssuerExchangeFees", result);
+        }
+
+        return result;
+      }
 
       let result = {
         exchangeRates: {},
-        expiry,
+        expiry: {},
       };
+
+      const { rateInfo } = response.exchangeRates;
       const now = new Date();
 
-      rates.forEach((exchange) => {
-        sourceCurrencies.push(exchange[0]);
-        currencies.push(exchange[0]);
-        currencies.push(exchange[1]);
-        let key = `${exchange[0].toUpperCase()}_${exchange[1].toUpperCase()}`;
-        if (new Date(expiry) > now) {
-          result.exchangeRates[key] = parseFloat(exchange[2]);
+      let currencies = [];
+      let sourceCurrencies = [];
+
+      rateInfo.forEach((exchange) => {
+        sourceCurrencies.push(exchange["base"]);
+        currencies.push(exchange["base"]);
+        currencies.push(exchange["target"]);
+
+        const key = `${exchange["base"].toUpperCase()}_${exchange["target"].toUpperCase()}`;
+        if (new Date(exchange["expiry"]) > now) {
+          result.exchangeRates[key] = parseFloat(exchange["rate"]);
+          result.expiry[key] = exchange["expiry"];
         }
       });
+
       result['currencies'] = Array.from(new Set(currencies));
       result['sourceCurrencies'] = Array.from(new Set(sourceCurrencies));
 
       if (this.config.debug) {
         console.log("WalletBF.getIssuerExchangeFees", result);
       }
+
       return result;
-    });
+    };
+
+    return this.issuer("exchange", {}, null, "GET")
+      .then(handleResponse);
   }
 
   /**
@@ -3466,56 +3507,47 @@ export default class WalletBF extends SwapBF {
    * newCoinList    [array decimal strings] The list of desired coin values to be issued by the server. NOTE if this list is defined the iPolicy will be set to "user".
    */
   splitCoins(targetValue, coins, args, inSession=true, crypto=null) {
-    return new Promise((resolve, reject) => {
-      if (this.config.debug) {
-        console.log("WalletBF.splitCoins", targetValue, coins, args);
+
+    if (this.config.debug) {
+      console.log("WalletBF.splitCoins", targetValue, coins, args);
+    }
+
+    if (coins === null || coins.length === 0) {
+      return Promise.reject(Error("Found no coins to split"));
+    }
+
+    if (typeof(targetValue) !== "number" || targetValue <= 0) {
+      return Promise.resolve(null);
+    }
+
+    args = Object.assign({
+      action: "split coin",
+      policy: this.getSettingsVariable(this.config.ISSUE_POLICY),
+      domain: this.getSettingsVariable(this.config.DEFAULT_ISSUER),
+      external: false,
+      newCoinList: [],
+    }, args);
+
+    args.target = targetValue;
+
+    const verifiedValue = this._arrayTotalValue(coins, args);
+    if (verifiedValue < targetValue) {
+      return Promise.reject(Error("Coin value too small once verified"));
+    }
+
+    const handleResponse = (verifyResponse) => {
+      const newCoins = Object.keys(verifyResponse.coin).map((key) => {
+        return this.Coin(verifyResponse.coin[key]);
+      });
+      const splitTarget = newCoins.find((elt) => args.target === elt.value);
+      if (typeof splitTarget === "undefined") {
+        throw new Error("Verify did not split the coin as expected");
       }
+      return splitTarget;
+    };
 
-      let defaults = {
-        action: "split coin",
-        policy: this.getSettingsVariable(this.config.ISSUE_POLICY),
-        domain: this.getSettingsVariable(this.config.DEFAULT_ISSUER),
-        external: false,
-        newCoinList: [],
-      };
-      args = $.extend({}, defaults, args);
-
-      if (coins === null || coins.length === 0) {
-        reject(Error("Found no coins to split"));
-      }
-
-      if (typeof(targetValue) !== "number" || targetValue <= 0) {
-        resolve(null);
-      }
-
-      //determine if coins have sufficient value to satisfy the targetValue once verified
-      let verifiedValue = this._arrayTotalValue(coins, args);
-      if (verifiedValue < targetValue) {
-        // There is no point in verifying
-        reject(Error("Coin value too small once verified"));
-      }
-
-      args.target = targetValue;
-      this.verifyCoins(coins, args, inSession, crypto).then((verifyResponse) => {
-        //verify success
-        let newCoins = new Array();
-        Object.keys(verifyResponse.coin).forEach((key) => {
-          // Convert the base64 version into a more useful Coin object
-          newCoins.push(this.Coin(verifyResponse.coin[key]));
-        });
-
-        let splitTarget = newCoins.find((elt) => {
-          // Find the target coin
-          return (args.target === elt.value);
-        });
-
-        if (typeof splitTarget === "undefined") {
-          reject(Error("Verify did not split the coin as expected"));
-        } else {
-          resolve(splitTarget);
-        }
-      }).catch(reject);
-    });
+    return this.verifyCoins(coins, args, inSession, crypto)
+      .then(handleResponse);
   }
 
 
@@ -3539,26 +3571,29 @@ export default class WalletBF extends SwapBF {
       return Promise.resolve(true);
     };
 
-    return this.getIssuerExchangeRates().then((response) => {
-      const {
-        exchangeRates,
-      } = response;
+
+    const startSession = (response) => {
+      const { exchangeRates } = response;
+
       paymentFSM.other = {
         other: {
           exchangeRates,
         },
       };
       return storage.sessionStart("Payment recovery")
-    }).then(() => {
+    };
+
+
+    const startFSM = () => {
       let machine = new FSM("paymentRequest", paymentFSM);
       return machine.run();
-    }).then(function() {
-      console.log("PaymentRequest has run to completion");
-      return storage.sessionEnd();
-    }).catch(function(err){
-      console.log(err);
-      return storage.sessionEnd();
-    });
+    }
+
+    return this.getIssuerExchangeRates()
+      .then(startSession)
+      .then(startFSM)
+      .then(() => storage.sessionEnd())
+      .catch(() => storage.sessionEnd());
   }
 
 

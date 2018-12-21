@@ -369,7 +369,28 @@ var doPrepareCurrency = function(fsm) {
         expiryExchangeRates,
       } = fsm.args.other;
 
-      const expiryRates = new Date(expiryExchangeRates).getTime() / 1000;
+      let expiry = expiryExchangeRates;
+      if (typeof expiry != "string") {
+
+        // Get the earliest expiry time
+        let key = "";
+        Object.keys(swapList).forEach((k) => {
+          const actualKey = `${k.toUpperCase()}_${currency.toUpperCase()}`;
+          const actualExp = new Date(expiryExchangeRates[actualExp]).getTime();
+          if (key == "") {
+            key = actualKey;
+            expiry = expiryExchangeRates[key];
+            return;
+          }
+          if (actualExp < new Date(expiryExchangeRates[expiry]).getTime()) {
+            key = actualKey;
+            expiry = expiryExchangeRates[key];
+            return;
+          }
+        });
+      }
+
+      const expiryRates = new Date(expiry).getTime() / 1000;
       const secsToExpireRates = Math.ceil(expiryRates - now());
       const secsToExpire = parseInt(expires - now());
 
