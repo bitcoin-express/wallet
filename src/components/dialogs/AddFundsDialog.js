@@ -300,6 +300,11 @@ class AddFundsDialog extends React.Component {
 
     if (props.isTab) {
       this.styles.gridQR.textAlign = 'center';
+      this.styles.amountArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
+      this.styles.amountArea["backgroundRepeat"] = 'no-repeat';
+      this.styles.amountArea["backgroundPositionX"] = '-15%';
+      this.styles.amountArea["backgroundAttachment"] = 'local';
+      this.styles.amountArea["color"] = 'rgba(0, 0, 0, 0.6)';
       return;
     }
 
@@ -439,6 +444,7 @@ class AddFundsDialog extends React.Component {
 
   renderCreateAddress(isDefaultIssuer = true) {
     const {
+      buttons,
       closeDialog,
       isFlipped,
       issueCollect,
@@ -459,14 +465,6 @@ class AddFundsDialog extends React.Component {
     let domain = "";
     if (!isDefaultIssuer) {
       domain = depositRef.headerInfo.domain;
-    }
-
-    let styleArea = this.styles.amountArea;
-    if (isTab) {
-      styleArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
-      styleArea["backgroundRepeat"] = 'no-repeat';
-      styleArea["backgroundPositionX"] = '-15%';
-      styleArea["backgroundAttachment"] = 'local';
     }
 
     /*
@@ -498,6 +496,7 @@ class AddFundsDialog extends React.Component {
           updateTargetValue(targetValue);
         }}
       />
+      { buttons }
     </div>;
 
     let list = depositRefStore;
@@ -633,17 +632,8 @@ class AddFundsDialog extends React.Component {
     const expiry = headerInfo.expiry;
     const confirmations = issueInfo.confirmations;
 
-    let styleArea = {};
-    if (isTab) {
-      styleArea = this.styles.amountArea;
-      styleArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
-      styleArea["backgroundRepeat"] = 'no-repeat';
-      styleArea["backgroundPositionX"] = '-15%';
-      styleArea["backgroundAttachment"] = 'local';
-      styleArea["color"] = 'rgba(0, 0, 0, 0.6)';
-    }
 
-    return <div style={ styleArea }>
+    return <div style={ this.styles.amountArea }>
       <div className="addFundsGrid">
         <div style={ this.styles.address }>
           <Address
