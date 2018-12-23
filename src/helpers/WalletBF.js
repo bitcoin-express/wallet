@@ -2562,7 +2562,7 @@ export default class WalletBF extends SwapBF {
 
     const handleError = (err) => {
       if (debug) {
-        print(err);
+        console.log(err);
       }
       return storage.sessionEnd()
         .then(() => Promise.reject(err));
