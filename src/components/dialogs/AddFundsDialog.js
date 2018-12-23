@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Checkbox from 'material-ui/Checkbox';
 import CircularProgress from 'material-ui/CircularProgress';
 
 import {
@@ -209,50 +210,23 @@ class DepositReferenceRow extends React.Component {
 
 }
 
-class AddFundsDialog extends React.Component {
+class DepositReferenceTable extends React.Component {
 
   constructor(props) {
     super(props);
 
-    this.state = {
-      ready: false,
-      depositef: null,
-      depositRefStore: props.wallet.getDepositRefList(),
-      qr: false,
-    };
-
     this.styles = {
-      address: {
-        gridArea: 'info',
-        margin: '20px 0 20px 0',
-      },
-      amountArea: {
-        padding: '20px',
-        backgroundColor: '#ffffff99',
-        marginTop: '20px',
-        borderRadius: '20px',
-        justifyContent: 'center',
+      section: {
+        background: "#ffffff90",
+        padding: "5px 10px",
+        borderRadius: "10px",
+        marginTop: "30px",
         boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
       },
-      blockchain: {
-        textDecoration: 'inherit',
-        color: '#966600',
-        fontWeight: 'bold',
+      table: {
+        backgroundColor: "transparent",
+        marginTop: '0',
       },
-      circularProgress: {
-        textAlign: 'center',
-        margin: '10px',
-      },
-      note: {
-        color: '#b96f13',
-        textAlign: 'center',
-        fontWeight: 'bold',
-      },
-      gridQR: {
-        gridArea: 'qr',
-        margin: '20px 0 20px 0',
-      },
-      qr: {},
       tableHeaderCol: {
         date: {
           width: "60px",
@@ -287,6 +261,126 @@ class AddFundsDialog extends React.Component {
           padding: "0",
         },
       },
+    };
+  }
+
+  render() {
+    let {
+      list,
+    } = this.props;
+
+    list = list.map((ref, index) => {
+      return <DepositReferenceRow
+        key={ index }
+        reference={ ref }
+        { ...this.props }
+      />;
+    });
+
+    return <section style={ this.styles.section }>
+      <Table
+        selectable={ false }
+        style={ this.styles.table }
+      >
+        <TableHeader
+          className="hide-device"
+          displaySelectAll={ false }
+          adjustForCheckbox={ false }
+        >
+          <TableRow>
+            <TableHeaderColumn
+              style={ this.styles.tableHeaderCol.date }
+            >
+              EXPIRY
+            </TableHeaderColumn>
+            <TableHeaderColumn
+              style={ this.styles.tableHeaderCol.domain }
+            >
+              ISSUER
+            </TableHeaderColumn>
+            <TableHeaderColumn
+              style={ this.styles.tableHeaderCol.coins }
+            >
+              COINS COLLECTED
+            </TableHeaderColumn>
+            <TableHeaderColumn
+              style={ this.styles.tableHeaderCol.amount }
+            >
+              AMOUNT
+            </TableHeaderColumn>
+            <TableHeaderColumn
+              style={ this.styles.tableHeaderCol.icons }
+            />
+          </TableRow>
+        </TableHeader>
+        <TableBody
+          displayRowCheckbox={ false }
+        >
+        { list }
+        </TableBody>
+      </Table>
+    </section>;
+  }
+}
+
+
+class AddFundsDialog extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      ready: false,
+      depositef: null,
+      depositRefStore: props.wallet.getDepositRefList(),
+      qr: false,
+      showHistory: false,
+    };
+
+    this.styles = {
+      address: {
+        gridArea: 'info',
+        margin: '20px 0 20px 0',
+      },
+      amountArea: {
+        padding: '20px',
+        backgroundColor: '#ffffff99',
+        marginTop: '20px',
+        borderRadius: '20px',
+        justifyContent: 'center',
+        boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
+      },
+      blockchain: {
+        textDecoration: 'inherit',
+        color: '#966600',
+        fontWeight: 'bold',
+      },
+      checkbox: {
+        width: 'initial',
+        margin: '20px auto auto auto',
+        textAlign: 'center',
+      },
+      checkboxIcon: {
+        fill: "rgba(0, 0, 0, 0.6)",
+      },
+      checkboxLabel: {
+        width: 'initial',
+        color: "rgba(0, 0, 0, 0.6)",
+      },
+      circularProgress: {
+        textAlign: 'center',
+        margin: '10px',
+      },
+      note: {
+        color: '#b96f13',
+        textAlign: 'center',
+        fontWeight: 'bold',
+      },
+      gridQR: {
+        gridArea: 'qr',
+        margin: '20px 0 20px 0',
+      },
+      qr: {},
       text: {
         textAlign: 'center',
         fontSize: '16px',
@@ -499,83 +593,40 @@ class AddFundsDialog extends React.Component {
       { buttons }
     </div>;
 
-    let list = depositRefStore;
-    console.log(list);
-
-    if (!list || list.length == 0) {
+    if (!depositRefStore || depositRefStore.length == 0) {
       return createAddressComponent;
     }
 
-    list = list.map((ref, index) => {
-      return <DepositReferenceRow
+    const {
+      showHistory,
+    } = this.state;
+
+    return <div style={{ marginTop: '10px' }}>
+      { createAddressComponent }
+      <Checkbox
+        checked={ showHistory }
+        iconStyle={ this.styles.checkboxIcon }
+        label="Show address history"
+        labelStyle={ this.styles.checkboxLabel }
+        onCheck={() => {
+          this.setState({
+            showHistory: !showHistory,
+          });
+        }}
+        style={ this.styles.checkbox }
+      />
+      { showHistory ? <DepositReferenceTable
         closeDialog={ closeDialog }
-        key={ index }
-        reference={ ref }
         removeFromDepositStore={ this.removeFromDepositStore.bind(this) }
         isFlipped={ isFlipped }
         issueCollect={ issueCollect }
+        list={ depositRefStore }
         openDialog={ openDialog }
         showValuesInCurrency={ showValuesInCurrency }
         snackbarUpdate={ snackbarUpdate }
         wallet={ wallet }
         xr={ xr }
-      />;
-    });
-
-    return <div style={{ marginTop: '10px' }}>
-      { createAddressComponent }
-      <section style={{
-        background: "#ffffff90",
-        padding: "5px 10px",
-        borderRadius: "10px",
-        marginTop: "30px",
-        boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
-      }}>
-        <Table
-          selectable={ false }
-          style={{
-            backgroundColor: "transparent",
-            marginTop: '0',
-          }}
-        >
-          <TableHeader
-            className="hide-device"
-            displaySelectAll={ false }
-            adjustForCheckbox={ false }
-          >
-            <TableRow>
-              <TableHeaderColumn
-                style={ this.styles.tableHeaderCol.date }
-              >
-                EXPIRY
-              </TableHeaderColumn>
-              <TableHeaderColumn
-                style={ this.styles.tableHeaderCol.domain }
-              >
-                ISSUER
-              </TableHeaderColumn>
-              <TableHeaderColumn
-                style={ this.styles.tableHeaderCol.coins }
-              >
-                COINS COLLECTED
-              </TableHeaderColumn>
-              <TableHeaderColumn
-                style={ this.styles.tableHeaderCol.amount }
-              >
-                AMOUNT
-              </TableHeaderColumn>
-              <TableHeaderColumn
-                style={ this.styles.tableHeaderCol.icons }
-              />
-            </TableRow>
-          </TableHeader>
-          <TableBody
-            displayRowCheckbox={ false }
-          >
-          { list }
-          </TableBody>
-        </Table>
-      </section>
+      /> : null }
     </div>;
   }
 
@@ -686,7 +737,6 @@ class AddFundsDialog extends React.Component {
           Start Bitcoin wallet
         </a>
       </p>
-
       { buttons }
     </div>;
   }
