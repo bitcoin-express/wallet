@@ -172,10 +172,13 @@ class ExchangeTab extends React.Component {
   componentWillReceiveProps(nextProps) {
     const {
       active,
-      debug,
       snackbarUpdate,
       wallet,
     } = nextProps;
+
+    const {
+      debug,
+    } = wallet.config;
 
     this._initializeStyles(nextProps);
 
@@ -186,27 +189,39 @@ class ExchangeTab extends React.Component {
         return;
       }
 
-      this.refreshRates(false).then(() => {
-        return this.updateBalances();
-      }).then((resp) => {
-        return wallet.issuer("info", {}, null, "GET");
-      }).then((resp) => {
+      const handleInfoResponse = (resp) => {
+        if (debug) {
+          console.log("ExchangeTab. Issuer rates ok.");
+          console.log(resp.issuer[0]);
+        }
+
         this.setState({
           issuerService: resp.issuer[0],
           ready: true,
           errorRate: false,
         });
-        if (debug) {
-          console.log("ExchangeTab. Issuer rates ok.")
-        }
+
         return true;
-      }).catch((err) => {
+      };
+
+      const handleError = (err) => {
+        if (debug) {
+          console.log(err);
+        }
+
         let msg = err.message || "Issuer problem, no response on getting rates";
         this.setState({
           errorRate: true,
         });
         snackbarUpdate(msg, true);
-      });
+      };
+
+      this.refreshRates(false)
+        .then(() => this.updateBalances())
+        .then(() => wallet.issuer("info", {}, null, "GET"))
+        .then(handleInfoResponse)
+        .catch(handleError);
+
       return;
     }
   }
@@ -437,11 +452,15 @@ class ExchangeTab extends React.Component {
   refreshRates(notify=true) {
     const {
       refreshIssuerRates,
+      wallet,
     } = this.props;
 
-    return refreshIssuerRates(notify).then((response) => {
+    const {
+      debug,
+    } = wallet.config;
+
+    const handleRateResponse = (response) => {
       const {
-        expiry,
         currencies,
         sourceCurrencies,
       } = response;
@@ -454,16 +473,35 @@ class ExchangeTab extends React.Component {
           return Object.keys(this.currencies).indexOf(curr) != -1;
         }),
       };
+
+      let {
+        expiry,
+      } = response;
+
+      if (typeof expiry == "object") {
+        expiry = Object.values(expiry).map((d) => new Date(d).getTime());
+        expiry = new Date(Math.min.apply(null, expiry)).toISOString();
+      }
       state['initialCounter'] = expiry;
 
       this.setState(state);
       return expiry;
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+
       this.setState({
         disabled: true,
         error: true,
       });
-    });
+    };
+
+    return refreshIssuerRates(notify)
+      .then(handleRateResponse)
+      .catch(handleError);
   }
 
   resetForm(obj = {}, recover=false) {
@@ -563,9 +601,14 @@ class ExchangeTab extends React.Component {
   handleTimerClick() {
     const {
       snackbarUpdate,
+      wallet,
     } = this.props;
 
-    return this.refreshRates().then((expiry) => {
+    const {
+      debug,
+    } = wallet.config;
+
+    const handleRateResponse = (expiry) => {
       const {
         lastModified,
         source,
@@ -597,11 +640,25 @@ class ExchangeTab extends React.Component {
         expired: false,
       });
 
+      if (typeof expiry == "object") {
+        expiry = Object.values(expiry).map((d) => new Date(d).getTime());
+        return new Date(Math.min.apply(null, expiry)).toISOString();
+      }
       return expiry;
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(debug);
+      }
+
       const msg = "Can't refresh issuer rates";
       snackbarUpdate(err.message || msg, true);
-    });
+    };
+
+    return this.refreshRates()
+      .then(handleRateResponse)
+      .catch(handleError);
   }
 
   handleSourceCurrencyChange(event, key, payload) {
@@ -831,6 +888,10 @@ class ExchangeTab extends React.Component {
       xr,
     } = this.props;
 
+    const {
+      debug,
+    } = wallet.config;
+
     source = parseFloat(source);
     target = parseFloat(target);
     issuerFee = parseFloat(issuerFee);
@@ -858,21 +919,22 @@ class ExchangeTab extends React.Component {
       case "issuer":
 
         let initialSourceBal; 
-        refreshCoinBalance(sourceCurrency).then((response) => {
+        const handleBalanceResponse = (response) => {
           initialSourceBal = response;
           return wallet.atomicSwap(args, issuerService);
-        }).then(({ swapInfo, coin }) => {
-          return refreshCoinBalance(sourceCurrency);
-        }).then((response) => {
-          // TO_DO Display dialog instead notifications
+        };
+
+        const displayConfirmDialog = (response) => {
           const sourceChanged = this.fixedTo(response - initialSourceBal, 8);
           snackbarUpdate([
             `Change in balance ${sourceCurrency} ${sourceChanged}`,
             `New balance ${sourceCurrency}${response.toFixed(8)}`,
           ]);
+
           this.updateBalances();
           this.resetForm();
           loading(false);
+
           openDialog({
             showCancelButton: false,
             title: "Exchange Confirmed",
@@ -890,14 +952,28 @@ class ExchangeTab extends React.Component {
               xr={ xr }
             />,
           });
+
           return refreshCoinBalance(targetCurrency);
-        }).catch((err) => {
+        };
+
+        const handleError = (err) => {
+          if (debug) {
+            console.log(err);
+          }
+
           let msg = err.message || "Error on trying to swap with issuer";
           snackbarUpdate(msg, true);
           this.updateBalances();
           this.resetForm();
           loading(false);
-        });
+        };
+
+        refreshCoinBalance(sourceCurrency)
+          .then(handleBalanceResponse)
+          .then(({ swapInfo, coin }) => refreshCoinBalance(sourceCurrency))
+          .then(displayConfirmDialog)
+          .catch(handleError);
+
         break;
 
       case "person":
@@ -923,7 +999,6 @@ class ExchangeTab extends React.Component {
     const {
       isFlipped,
       isFullScreen,
-      debug,
       loading,
       refreshCoinBalance,
       showValuesInCurrency,
@@ -932,6 +1007,10 @@ class ExchangeTab extends React.Component {
       wallet,
       xr,
     } = this.props;
+
+    const {
+      debug,
+    } = wallet.config;
 
     const {
       issuerFee,
@@ -1147,12 +1226,15 @@ class ExchangeTab extends React.Component {
 
   revertSwap(reason="timeout") {
     const {
-      debug,
       loading,
       refreshCoinBalance,
       snackbarUpdate,
       wallet,
     } = this.props;
+
+    const {
+      debug,
+    } = wallet.config;
 
     const {
       COIN_SWAP,

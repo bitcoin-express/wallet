@@ -1045,15 +1045,6 @@ class Wallet extends React.Component {
       balances = response;
       return this.wallet.importFile(file, args);
     }
-
-    const handleResponse = (response) => {
-      if (typeof response == 'object' && response.swapCode) {
-        return response;
-      }
-
-      responses = response;
-      return this.getCurrencyBalances();
-    };
     
     const updateWalletStatus = (newBalances) => {
       let listComponents = [];
@@ -1114,6 +1105,16 @@ class Wallet extends React.Component {
       return true;
     };
 
+    const handleResponse = (response) => {
+      if (typeof response == 'object' && response.swapCode) {
+        return response;
+      }
+      responses = response;
+
+      return this.getCurrencyBalances()
+        .then(updateWalletStatus);
+    };
+
     const handleError = (err) => {
       if (this.wallet.config.debug) {
         console.log(err);
@@ -1127,7 +1128,6 @@ class Wallet extends React.Component {
       .then(() => this.getCurrencyBalances())
       .then(readFile)
       .then(handleResponse)
-      .then(updateWalletStatus)
       .catch(handleError);
   }
 
@@ -2413,7 +2413,7 @@ class Wallet extends React.Component {
     this.loading(true);
 
     let promise = Promise.resolve(reference);
-    if (!reference) {
+    if (!reference || !reference.issueInfo) {
       promise = this.wallet.getDepositRef()
     }
 
