@@ -171,122 +171,127 @@ class CoinsToFile extends React.Component {
     const disabled = exported || this.state.amount.length == 0 ||
       parseFloat(this.state.amount) <= 0 || (encrypted && !password);
 
-    return (
-      <FormArea
-        isFullScreen={ isFullScreen }
-        type={ this.props.type }
-      >
-        <div style={{ padding: '10px 20px' }}>
-          <Title
-            isFullScreen={ isFullScreen }
-            label={ crypto + " to file" }
-            labelRightWidth={ 100 }
-            labelRight={ <div
-              style={{
-                display: 'flex',
-                width: '100px',
-                marginTop: '-10px',
-                justifyContent: 'space-between'
-              }}
-            >
-              <img
-                src={ `css/img/currencies/${cvalue}e.png` }
-                width={ 35 }
-                height={ 35 }
-              />
-              { this.tools.getImageComponent('arrowRight.svg', 30, 30) }
-              { this.tools.getImageComponent('export.svg', 30, 30) }
-            </div> }
-          />
+    const activeCurrencies = ["XBT", "ETH", "BCH"].filter((elt) => {
+      return wallet.getBalance(elt) > 0;
+    });
 
-          <CurrencyRadioGroup
-            currency={ crypto }
-            onChange={(ev, crypto) => {
-              this.setState({
-                crypto,
-              });
+    return <FormArea
+      isFullScreen={ isFullScreen }
+      type={ this.props.type }
+    >
+      <div style={{ padding: '10px 20px' }}>
+        <Title
+          isFullScreen={ isFullScreen }
+          label={ crypto + " to file" }
+          labelRightWidth={ 100 }
+          labelRight={ <div
+            style={{
+              display: 'flex',
+              width: '100px',
+              marginTop: '-10px',
+              justifyContent: 'space-between'
             }}
-          />
-
-          <CoinSelector
-            currency={ cvalue }
-            floatingLabelFocusStyle={{
-              color: styles.colors.secondaryTextColor,
-            }}
-            floatingLabelStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
-            inputStyle={{
-              color: styles.colors.mainTextColor,
-            }}
-            label="Value"
-            onAmountChange={ this.handleAmountChange }
-            value={ amountInText }
-            xr={ this.props.xr }
-          />
-
-          <EncryptSelector
-            onPasswordChange={ this.handlePasswordChange }
-            encrypted={ encrypted }
-            password={ password }
-          />
-
-          <TextField
-            value={ comment }
-            onChange={ (ev, comment) => this.setState({ comment }) }
-            floatingLabelText="Comment"
-            style={ this.styles.textfield }
-            inputStyle={{
-              color: styles.colors.mainTextColor,
-            }}
-            floatingLabelFocusStyle={{
-              color: styles.colors.secondaryTextColor,
-            }}
-            floatingLabelStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
-          />
-
-          <div style={{ marginTop: '20px' }}>
-            <Button
-              label="Reset"
-              style={ this.styles.button2 }
-              icon={ <i
-                className="fa fa-undo"
-                style={{
-                  color: styles.colors.mainTextColor,
-                }}
-              /> }
-              onClick={ this.clearForm }
+          >
+            <img
+              src={ `css/img/currencies/${cvalue}e.png` }
+              width={ 35 }
+              height={ 35 }
             />
-            { ready ? <Button
-              download={ this.state.download }
-              href={ this.state.href }
-              icon={ <i
-                className="fa fa-arrow-circle-down"
-                style={{
-                  color: styles.colors.mainTextColor,
-                }}
-              /> }
-              label="Download File"
-              style={ Object.assign({}, this.styles.button3, {margin: 'none'}) }
-            /> : <Button
-              disabled={ disabled }
-              icon={ <i
-                className="fa fa-file-code-o"
-                style={{
-                  color: styles.colors.mainTextColor,
-                }}
-              /> }
-              label="Export"
-              onClick={ this.handleTouchTap }
-              primary={ true }
-              style={ this.styles.button3 }
+            { this.tools.getImageComponent('arrowRight.svg', 30, 30) }
+            { this.tools.getImageComponent('export.svg', 30, 30) }
+          </div> }
+        />
+
+        <CurrencyRadioGroup
+          active={ activeCurrencies }
+          currency={ crypto }
+          onChange={(ev, crypto) => {
+            this.setState({
+              crypto,
+            });
+          }}
+        />
+
+        <CoinSelector
+          currency={ cvalue }
+          floatingLabelFocusStyle={{
+            color: styles.colors.secondaryTextColor,
+          }}
+          floatingLabelStyle={{
+            color: styles.colors.secondaryBlue,
+          }}
+          inputStyle={{
+            color: styles.colors.mainTextColor,
+          }}
+          fullSize={ isFullScreen }
+          label="Value"
+          max={ wallet.getBalance(crypto) }
+          onAmountChange={ this.handleAmountChange }
+          value={ amountInText }
+          xr={ this.props.xr }
+        />
+
+        <EncryptSelector
+          onPasswordChange={ this.handlePasswordChange }
+          encrypted={ encrypted }
+          password={ password }
+        />
+
+        <TextField
+          value={ comment }
+          onChange={ (ev, comment) => this.setState({ comment }) }
+          floatingLabelText="Comment"
+          style={ this.styles.textfield }
+          inputStyle={{
+            color: styles.colors.mainTextColor,
+          }}
+          floatingLabelFocusStyle={{
+            color: styles.colors.secondaryTextColor,
+          }}
+          floatingLabelStyle={{
+            color: styles.colors.secondaryBlue,
+          }}
+        />
+
+        <div style={{ marginTop: '20px' }}>
+          <Button
+            label="Reset"
+            style={ this.styles.button2 }
+            icon={ <i
+              className="fa fa-undo"
+              style={{
+                color: styles.colors.mainTextColor,
+              }}
             /> }
-          </div>
+            onClick={ this.clearForm }
+          />
+          { ready ? <Button
+            download={ this.state.download }
+            href={ this.state.href }
+            icon={ <i
+              className="fa fa-arrow-circle-down"
+              style={{
+                color: styles.colors.mainTextColor,
+              }}
+            /> }
+            label="Download File"
+            style={ Object.assign({}, this.styles.button3, {margin: 'none'}) }
+          /> : <Button
+            disabled={ disabled }
+            icon={ <i
+              className="fa fa-file-code-o"
+              style={{
+                color: styles.colors.mainTextColor,
+              }}
+            /> }
+            label="Export"
+            onClick={ this.handleTouchTap }
+            primary={ true }
+            style={ this.styles.button3 }
+          /> }
         </div>
-      </FormArea>
-    );
+      </div>
+    </FormArea>;
   }
 }
 
