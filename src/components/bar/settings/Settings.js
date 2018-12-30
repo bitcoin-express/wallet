@@ -2,11 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Paper from 'material-ui/Paper';
+import Paper from '@material-ui/core/Paper';
 import {
   BottomNavigation,
   BottomNavigationItem
-} from 'material-ui/BottomNavigation';
+} from '@material-ui/core/BottomNavigation';
 
 import SettingsMain from './SettingsMain';
 import SettingsDisplay from './SettingsDisplay';

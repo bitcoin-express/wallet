@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FlatButton from 'material-ui/FlatButton';
-import CircularProgress from 'material-ui/CircularProgress';
+//import Button from '@material-ui/core/Button';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
 import Button from '../../Button';
@@ -187,7 +187,7 @@ class SendConfirmDialog extends React.Component {
             textAlign: 'center',
           }}
         >
-          <FlatButton
+          <ButtonComponent
             label="Continue"
             disabled={ encrypt && !password }
             labelStyle={ this.styles.labelStyle }
@@ -213,7 +213,7 @@ class SendConfirmDialog extends React.Component {
             margin: '20px 0 0 0',
           }}
         >
-          <FlatButton
+          <ButtonComponent
             id="download-coin-file"
             label="Download coin file"
             labelStyle={ this.styles.labelStyle }
@@ -240,7 +240,7 @@ class SendConfirmDialog extends React.Component {
             textAlign: 'center',
             margin: '10px 0 20px 0',
           }}>
-            <FlatButton
+            <ButtonComponent
               id="download-coin-file"
               label="Create coin file"
               labelStyle={ this.styles.labelStyle }
@@ -369,7 +369,7 @@ class SendConfirmDialog extends React.Component {
         textAlign: 'center',
         marginTop: '20px',
       }}>
-        <Button
+        <ButtonComponent
           label="Send Bitcoin"
           style={{
             maxWidth: '250px',

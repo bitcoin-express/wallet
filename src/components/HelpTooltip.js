@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Popover from 'material-ui/Popover';
+import Popover from '@material-ui/core/Popover';
 
 class HelpTooltip extends React.Component {
   constructor (props) {

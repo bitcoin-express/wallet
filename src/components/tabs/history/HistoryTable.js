@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableHeaderColumn,
   TableRow,
-} from 'material-ui/Table';
+} from '@material-ui/core/Table';
 
 import styles from '../../../helpers/Styles';
 

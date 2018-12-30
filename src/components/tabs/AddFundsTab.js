@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 
 import AddFundsDialog from '../dialogs/AddFundsDialog';
 
@@ -64,25 +64,28 @@ export default class AddFundsTab extends React.Component {
 
     if (this.state.depositRef) {
       return [
-        <RaisedButton
+        <Button
           label="FORGET ADDRESS"
           key="forget-address"
           onClick={ handleRemoveDepositRef.bind(this, true, this.updateDepositRef) }
           style={{ margin: '0 0 10px 15px' }}
+          variant="contained"
         />,
-        <RaisedButton
+        <Button
           label="COLLECT COINS"
           key="collect-coins"
           onClick={ issueCollect.bind(this, true, this.updateDepositRef) }
           style={{ marginLeft: '15px' }}
+          variant="contained"
         />
       ];
     }
 
-    return <RaisedButton
+    return <Button
       label="GET ADDRESS"
       key="get-address"
       onClick={ handleClickDeposit.bind(this, true, this.updateDepositRef) }
+      variant="contained"
     />;
   }
 

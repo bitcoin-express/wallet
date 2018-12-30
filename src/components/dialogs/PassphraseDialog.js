@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Dialog from 'material-ui/Dialog';
-import FlatButton from 'material-ui/FlatButton';
-import TextField from 'material-ui/TextField';
+import Dialog from '@material-ui/core/Dialog';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
 
 class PassphraseDialog extends React.Component {
   constructor(props) {
@@ -27,13 +27,13 @@ class PassphraseDialog extends React.Component {
     const { passphrase } = this.state
 
     const actions = [
-      <FlatButton
+      <Button
         id="passphrase-cancel"
         label="Cancel"
         primary={ true }
         onTouchTap={ handleClose }
       />,
-      <FlatButton
+      <Button
         id="passphrase-ok"
         label="OK"
         disabled={ passphrase == null }

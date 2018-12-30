@@ -1,11 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Checkbox from 'material-ui/Checkbox';
-import FlatButton from 'material-ui/FlatButton';
-import RaisedButton from 'material-ui/RaisedButton';
-import FontIcon from 'material-ui/FontIcon';
-import TextField from 'material-ui/TextField';
+import Checkbox from '@material-ui/core/Checkbox';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
 
 import styles from '../helpers/Styles';
 
@@ -102,7 +100,7 @@ class EncryptSelector extends React.Component {
               color: styles.colors.mainTextColor,
             }, style) }
           />
-          <FlatButton
+          <Button
             label="Generate"
             secondary={ true }
             disabled={ !encrypted }

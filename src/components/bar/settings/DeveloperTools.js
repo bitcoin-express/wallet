@@ -2,12 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Toggle from 'material-ui/Toggle';
-import FlatButton from 'material-ui/FlatButton';
-import Divider from 'material-ui/Divider';
-import Checkbox from 'material-ui/Checkbox';
-import MenuItem from 'material-ui/MenuItem';
-import SelectField from 'material-ui/SelectField';
+import Switch from '@material-ui/core/Switch';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Button from '@material-ui/core/Button';
+import Divider from '@material-ui/core/Divider';
+import Checkbox from '@material-ui/core/Checkbox';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
 
 import LocalStorage from '../../../helpers/persistence/LocalStorage';
 
@@ -86,28 +87,34 @@ export default class DeveloperTools extends React.Component {
     return (
       <section>
         <div style={{ padding: '20px 20px 20px 20px' }}>
-          <Toggle
+          <FormControlLabel
+            control={ <Switch
+              checked={ wallet.config.powerloss || false }
+              onChange={ this.setPowerLoss }
+            /> }
             label="Simulate Power loss"
-            labelPosition="right"
-            defaultToggled={ wallet.config.powerloss || false }
-            onToggle={ this.setPowerLoss }
+            labelPlacement="end"
           />
-          <Toggle
+          <FormControlLabel
+            control={ <Switch
+              checked={ wallet.config.debug || false }
+              onChange={ this.setDebugMode }
+            /> }
             label="Activate debug mode"
-            labelPosition="right"
-            defaultToggled={ wallet.config.debug || false }
-            onToggle={ this.setDebugMode }
+            labelPlacement="end"
           />
-          <Toggle
+          <FormControlLabel
+            control={ <Switch
+              checked={  wallet.config.forceDefer || false }
+              onChange={ this.setForceDefer }
+            /> }
             label="Activate force defer"
-            labelPosition="right"
-            defaultToggled={  wallet.config.forceDefer || false }
-            onToggle={ this.setForceDefer }
+            labelPlacement="end"
           />
         </div>
         <Divider />
         <div style={{ padding: '20px 20px 20px 20px' }}>
-          <SelectField
+          <Select
             floatingLabelText="Issuer protocol"
             value={ settings[wallet.config.ISSUER_PROTOCOL] }
             style={{
@@ -135,16 +142,16 @@ export default class DeveloperTools extends React.Component {
               value={p}
               primaryText={p}
             />) }
-          </SelectField> 
+          </Select> 
         </div>
         <Divider />
         <div style={{ padding: '20px 20px 20px 20px' }}>
-          <FlatButton
+          <Button
             label="Check Recovery Coins"
             icon={ <i className="fa fa-search"/> }
             onTouchTap={ this.checkRecoveryCoins }
           />
-          <FlatButton
+          <Button
             label="Recovery Coins"
             icon={ <i className="fa fa-recycle"/> }
             onTouchTap={ this.recoverRecoveryCoins }
@@ -161,7 +168,7 @@ export default class DeveloperTools extends React.Component {
             after cleaning the storage you will loose all your coins.
             we strongly recommend <b>first to backup your wallet</b>.
           </p>
-          <FlatButton
+          <Button
             label="proceed and clear storage"
             icon={ <i className="fa fa-trash"/> }
             disabled={ this.state.disabled }

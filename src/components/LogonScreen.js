@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 
 import { CSSTransitionGroup } from 'react-transition-group';
 
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import Dropzone from 'react-dropzone';
 
 import StorageIcon from './StorageIcon';
@@ -124,7 +124,7 @@ class LogonScreen extends React.Component {
             Please select one of the following options:
           </div>
           <div style={ this.styles.divider }>
-            <RaisedButton
+            <Button
               backgroundColor={ this.styles.backgroundColor }
               icon={ <div style={ this.styles.welcomeButton } >
                 <StorageIcon
@@ -139,10 +139,11 @@ class LogonScreen extends React.Component {
               onClick={ onAuthGDrive }
               style={ this.styles.welcomeButton }
               title="Please allow pop-ups for bitcoin-e.org"
+              variant="contained"
             />
           </div>
           <div style={ this.styles.divider }>
-            <RaisedButton
+            <Button
               label="Start Local Wallet"
               labelStyle={ this.styles.welcomeLabelButton }
               icon={ <div style={ this.styles.welcomeButton } >
@@ -156,6 +157,7 @@ class LogonScreen extends React.Component {
               style={ this.styles.welcomeButton }
               onClick={ () => onAuthLocalStorage(true) }
               backgroundColor={ this.styles.backgroundColor }
+              variant="contained"
             />
           </div>
           <div>
@@ -168,12 +170,13 @@ class LogonScreen extends React.Component {
                 }).then(onFinishLoadingFile);
               }}
             >
-              <RaisedButton
+              <Button
                 label="Import coins from file"
                 labelStyle={ this.styles.welcomeLabelButton }
                 icon={ importIcon }
                 style={ this.styles.welcomeButton }
                 backgroundColor={ this.styles.backgroundColor }
+                variant="contained"
               />
             </Dropzone>
           </div>

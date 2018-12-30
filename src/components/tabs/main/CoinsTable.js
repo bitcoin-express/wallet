@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableBody,
   TableRow,
-} from 'material-ui/Table';
+} from '@material-ui/core/Table';
 
 import CoinsTableHeader from './CoinsTableHeader';
 import CoinRow from './CoinRow';

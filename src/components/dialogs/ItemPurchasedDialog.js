@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
-import Avatar from 'material-ui/Avatar';
+import Avatar from '@material-ui/core/Avatar';
 import isURL from 'validator/lib/isURL';
 
 import BitcoinCurrency from '../BitcoinCurrency';

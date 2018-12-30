@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import TextField from 'material-ui/TextField';
-import Checkbox from 'material-ui/Checkbox';
+import TextField from '@material-ui/core/TextField';
+import Checkbox from '@material-ui/core/Checkbox';
 
 import EncryptSelector from '../../EncryptSelector';
 import Button from '../../Button';

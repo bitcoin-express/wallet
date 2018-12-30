@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Paper from 'material-ui/Paper';
-import { BottomNavigation, BottomNavigationItem } from 'material-ui/BottomNavigation';
+import Paper from '@material-ui/core/Paper';
+import { BottomNavigation, BottomNavigationItem } from '@material-ui/core/BottomNavigation';
 
 import styles from '../helpers/Styles';
 

@@ -7,19 +7,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import getMuiTheme from 'material-ui/styles/getMuiTheme';
+import {
+  MuiThemeProvider,
+  createMuiTheme
+} from '@material-ui/core/styles';
 
 import Wallet from './src/Wallet';
 import styles from './src/helpers/Styles';
 
-import injectTapEventPlugin from 'react-tap-event-plugin';
-injectTapEventPlugin();
-
-// possible background color: rgba(168, 186, 248, 0.46)
-const muiTheme = getMuiTheme({
+const theme = createMuiTheme({
   palette: {
-    primary1Color: styles.colors.mainColor,
+    primaryColor: styles.colors.mainColor,
+    secondaryColor: styles.colors.mainColor,
   },
 });
 
@@ -27,6 +26,7 @@ const states = {
   REVEAL_APP: 0,
   PROCESS_PAYMENT: 1,
 };
+
 
 class App extends React.Component {
 
@@ -208,7 +208,7 @@ class App extends React.Component {
     } = this.state;
 
     return (
-      <MuiThemeProvider muiTheme={ muiTheme }>
+      <MuiThemeProvider theme={ theme }>
         <div
           id="container"
           className={ isFullScreen ? "desktop" : "wallet" }

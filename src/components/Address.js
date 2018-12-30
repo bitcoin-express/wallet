@@ -1,9 +1,9 @@
 import React from 'react';
 
-import TextField from 'material-ui/TextField';
-import FlatButton from 'material-ui/FlatButton';
-import Avatar from 'material-ui/Avatar';
-import Chip from 'material-ui/Chip';
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
+import Avatar from '@material-ui/core/Avatar';
+import Chip from '@material-ui/core/Chip';
 
 import Time from '../helpers/Time';
 
@@ -172,20 +172,20 @@ class Address extends React.Component {
           margin: '5px 0 15px 0',
         }}
       >
-        <FlatButton
+        <Button
           label="Copy URI"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleCopyURI }
         />
-        <FlatButton
+        <Button
           label="Copy address"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleCopyAddress }
         />
         { idQR ? [
-          <FlatButton
+          <Button
             key="button"
             label="Save Image..."
             labelStyle={ this.styles.labelStyle }

@@ -23,17 +23,18 @@
     "font-awesome": "^4.7.0",
     "html-webpack-plugin": "^2.28.0",
     "jquery": "^3.2.1",
-    "material-ui": "^0.19.0",
     "prop-types": "^15.5.8",
-    "react": "^15.6.1",
-    "react-dom": "^15.6.1",
     "react-dropzone": "^3.13.1",
     "react-paginate": "^4.4.4",
     "react-tabs": "^2.1.0",
-    "react-tap-event-plugin": "^2.0.0",
     "react-transition-group": "^1.2.0",
     "uglifyjs-webpack-plugin": "^0.4.3",
-    "webpack": "^2.6.1",
-    "validator": "^10.8.0"
+    "validator": "^10.8.0",
+    "webpack": "^2.6.1"
+  },
+  "dependencies": {
+    "@material-ui/core": "^3.7.1",
+    "react": "^16.7.0",
+    "react-dom": "^16.7.0"
   }
 }

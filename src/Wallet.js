@@ -1,12 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Tabs, Tab } from 'material-ui/Tabs';
-import Drawer from 'material-ui/Drawer';
-import RaisedButton from 'material-ui/RaisedButton';
+import { Tabs, Tab } from '@material-ui/core/Tabs';
+import Drawer from '@material-ui/core/Drawer';
+import Button from '@material-ui/core/Button';
 
-import TextField from 'material-ui/TextField';
-import ActionHome from 'material-ui/svg-icons/action/home';
+import TextField from '@material-ui/core/TextField';
 
 import WalletBF, { DEFAULT_SETTINGS } from './helpers/WalletBF';
 import Persistence from './helpers/Persistence';
@@ -218,7 +217,7 @@ class Wallet extends React.Component {
     this.interceptError = this.interceptError.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
 
     const login = () => {
       if (localStorage.getItem('loggedIn') == 'true') {
@@ -714,6 +713,7 @@ class Wallet extends React.Component {
 
   _initializeWallet(updateState = true) {
     const {
+      debug,
       SESSION,
       storage,
     } = this.wallet.config;
@@ -721,30 +721,41 @@ class Wallet extends React.Component {
     // Place where stored the current transaction with the issuer.
     // Dictionary which ids are transactions ids
     let session = storage.get(SESSION);
-    if (session != null) {
+    if (session != null && debug) {
       console.log("SESSION", session);
-    } else {
+    } else if (debug) {
       console.log("No transactions to recover from session");
     }
 
-    return this._recoverTransactionsInProgress().then(() => {
-      return this.refreshCoinBalance();
-    }).then((balance) => {
-      console.log(`Total balance: ${balance}`);
+    const refreshSettings = (balance) => {
+      if (debug) {
+        console.log(`Total balance: ${balance}`);
+      }
       return this.refreshSettings();
-    }).then((settings) => {
+    };
+
+    const updateWalletState = (settings) => {
       if (updateState) {
         this.setState({
           status: states.APP,
         });
       }
       return true;
-    }).catch((err) => {
-      console.log(err);
-      return this.refreshSettings();
-    }).then((balance) => {
-      return this.refreshCoinBalance();
-    });
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
+      return this.refreshSettings()
+        .then(() => this.refreshCoinBalance());
+    };
+
+    return this._recoverTransactionsInProgress()
+      .then(() => this.refreshCoinBalance())
+      .then(refreshSettings)
+      .then(updateWalletState)
+      .catch(handleError);
   }
 
   _successRecoveryTx(resp) {
@@ -2543,8 +2554,9 @@ class Wallet extends React.Component {
     } = this.state;
 
     let actions = [
-      <RaisedButton
+      <Button
         label="Close"
+        variant="contained"
         primary={ true }
         onClick={ this.clearDialog }
       />
@@ -2553,18 +2565,21 @@ class Wallet extends React.Component {
 
     this.wallet.getDepositRef().then((depositRef) => {
       if (depositRef) {
-        actions.push(<RaisedButton
+        actions.push(<Button
+          variant="contained"
           style={{ marginLeft: '5px' }}
           label="FORGET ADDRESS"
           onClick={ this.handleRemoveDepositRef }
         />);
-        actions.push(<RaisedButton
+        actions.push(<Button
+          variant="contained"
           style={{ marginLeft: '5px' }}
           label="COLLECT COINS"
           onClick={ this.issueCollect }
         />);
       } else {
-        actions.push(<RaisedButton
+        actions.push(<Button
+          variant="contained"
           style={{ marginLeft: '5px' }}
           label="GET ADDRESS"
           onClick={ this.handleClickDeposit }
@@ -2780,6 +2795,8 @@ class Wallet extends React.Component {
     const {
       total,
     } = this.wallet.getAllStoredCoins();
+
+    return null;
 
     let notWaitingForSwap = true;
     if (this.wallet.config.storage) {

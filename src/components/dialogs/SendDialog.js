@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
-import CircularProgress from 'material-ui/CircularProgress';
-import MenuItem from 'material-ui/MenuItem';
-import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
-import SelectField from 'material-ui/SelectField';
-import TextField from 'material-ui/TextField';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import MenuItem from '@material-ui/core/MenuItem';
+import { Radio, RadioGroup } from '@material-ui/core/Radio';
+import Select from '@material-ui/core/Select';
+import TextField from '@material-ui/core/TextField';
 
 import Button from '../Button';
 import FormArea from '../FormArea';
@@ -527,7 +527,7 @@ class SendDialog extends React.Component {
             </div>
           </div></span>
 
-          <RadioButtonGroup
+          <RadioGroup
             valueSelected={ speed }	
             name="shipSpeed"
             style={{
@@ -543,7 +543,7 @@ class SendDialog extends React.Component {
                   fee,
                 } = item;
 
-                return <RadioButton
+                return <Radio
                   key={ index }
                   value={ value }
                   iconStyle={{
@@ -581,10 +581,10 @@ class SendDialog extends React.Component {
                   }}
                 />;
               }) }
-          </RadioButtonGroup>
+          </RadioGroup>
 
           <span className="show-device">
-            <SelectField
+            <Select
               floatingLabelText="Urgency"
               floatingLabelStyle={{
                 color: styles.colors.secondaryBlue,
@@ -618,7 +618,7 @@ class SendDialog extends React.Component {
                     }}
                   />;
               }) }
-            </SelectField>
+            </Select>
           </span>
 
           <TextField

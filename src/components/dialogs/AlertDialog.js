@@ -1,11 +1,47 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Dialog from 'material-ui/Dialog';
+import { withStyles } from '@material-ui/core/styles';
+
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 import DialogButton from './DialogButton';
 
 import styles from '../../helpers/Styles';
+
+
+const componentStyles = (theme) => {
+  const {
+    colors,
+  } = styles;
+
+  return {
+    paper: {
+      backgroundImage: "url('css/img/Bitcoin-express-bg2.png')",
+      backgroundRepeat: 'no-repeat',
+      backgroundPositionX: '-25%',
+      backgroundAttachment: 'local',
+      backgroundColor: colors.mainWhite,
+      overflowY: 'auto',
+    },
+    rootActions: {
+      //background: colors.mainColor,
+      overflowX: 'auto',
+      whiteSpace: 'nowrap',
+    },
+    rootTitle: {
+      background: "#a8baf8b0",
+      color: colors.mainTextColor,
+      textAlign: 'center',
+      whiteSpace: 'nowrap',
+      textOverflow: 'ellipsis',
+      overflow: 'hidden',
+    },
+  };
+};
 
 class AlertDialog extends React.Component {
   constructor(props) {
@@ -23,20 +59,6 @@ class AlertDialog extends React.Component {
 
   initializeStyles() {
     this.styles = {
-      bodyStyle: {
-        backgroundImage: "url('css/img/Bitcoin-express-bg2.png')",
-        backgroundRepeat: 'no-repeat',
-        backgroundPositionX: '-25%',
-        backgroundAttachment: 'local',
-        backgroundColor: styles.colors.mainWhite,
-        // color: styles.colors.mainTextColor,
-        overflowY: 'auto',
-      },
-      bottomStyle: {
-        background: styles.colors.mainColor,
-        overflowX: 'auto',
-        whiteSpace: 'nowrap',
-      },
       buttonStyle: {
         color: styles.colors.mainTextColor,
       },
@@ -61,14 +83,6 @@ class AlertDialog extends React.Component {
         height: '100%',
         maxHeight: 'none',
         backgroundColor: 'white',
-      },
-      titleStyle: {
-        background: styles.colors.mainColor,
-        color: styles.colors.mainTextColor,
-        textAlign: 'center',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        overflow: 'hidden',
       },
     };
   }
@@ -98,8 +112,9 @@ class AlertDialog extends React.Component {
         <DialogButton
           { ...props }
           id="alert-ok"
+          key="alert-ok"
           label={ okLabel || "OK" }
-          onTouchTap={ onClickOk || onCloseClick }
+          onClick={ onClickOk || onCloseClick }
         />
       ];
 
@@ -107,8 +122,9 @@ class AlertDialog extends React.Component {
         actions.push(<DialogButton
           { ...props }
           id="alert-cancel"
+          key="alert-cancel"
           label={ cancelLabel || "Cancel" }
-          onTouchTap={ onCloseClick }
+          onClick={ onCloseClick }
         />);
         actions = actions.reverse();
       }
@@ -120,6 +136,7 @@ class AlertDialog extends React.Component {
     const {
       actionsContainerStyle,
       body,
+      classes,
       open,
       onCloseClick,
       showTitle,
@@ -128,31 +145,38 @@ class AlertDialog extends React.Component {
       titleStyle,
     } = this.props;
 
-    let contentStyle = { };
-    let bodyStyle = Object.assign({}, this.styles.bodyStyle, style);
-    let bottomStyle = Object.assign({}, this.styles.bottomStyle, actionsContainerStyle);
-    let headerStyle = Object.assign({}, this.styles.titleStyle, titleStyle);
     let containerStyle = {};
-
-    if (!showTitle) {
-      headerStyle.padding = "0";
-    }
 
     return (
       <Dialog
-        title={ showTitle ? title : "" }
-        actions={ this._getActionButtons() }
-        actionsContainerStyle={ bottomStyle }
-        className="dialog"
-        modal={ false }
+        classes={{
+          paper: classes.paper,
+        }}
+        onBackdropClick={ () => {} }
+        onClose={ onCloseClick }
         open={ open }
-        onRequestClose={ onCloseClick }
-        bodyStyle={ bodyStyle }
-        contentStyle={ contentStyle } 
-        style={ containerStyle }
-        titleStyle={ headerStyle }
+        style={ style }
       >
-        { body }
+        { showTitle ? <DialogTitle
+          id="dialog-title"
+          classes={{
+            root: classes.rootTitle,
+          }}
+          style={ titleStyle }
+        >
+          { title }
+        </DialogTitle> : null }
+        <DialogContent>
+          { body }
+        </DialogContent>
+        <DialogActions
+          classes={{
+            root: classes.rootActions,
+          }}
+          style={ actionsContainerStyle }
+        >
+          { this._getActionButtons() }
+        </DialogActions>
       </Dialog>
     );
   }
@@ -178,4 +202,4 @@ AlertDialog.defaultProps = {
   style: {},
 };
 
-export default AlertDialog;
+export default withStyles(componentStyles, { withTheme: true })(AlertDialog);

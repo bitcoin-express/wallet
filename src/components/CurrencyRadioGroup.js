@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
+import { Radio, RadioGroup } from '@material-ui/core/Radio';
 
 import styles from '../helpers/Styles';
 import Tools from '../helpers/Tools';
@@ -54,13 +54,13 @@ export class CurrencyRadioGroup extends React.Component {
       currency = "XBT";
     }
 
-    return <RadioButtonGroup
+    return <RadioGroup
       name="currency-type"
       defaultSelected={ currency }
       onChange={ onChange }
       style={ this.styles.radioGroup }
     >
-      <RadioButton
+      <Radio
         value="XBT"
         disabled={ active.indexOf("XBT") == -1 }
         label={ this.tools.getImageComponent("btce.png", 25, 25, "currencies/") }
@@ -68,7 +68,7 @@ export class CurrencyRadioGroup extends React.Component {
         iconStyle={ this.styles.iconStyle }
         style={ this.styles.radioButton }
       />
-      <RadioButton
+      <Radio
         disabled={ active.indexOf("BCH") == -1 }
         value="BCH"
         label={ this.tools.getImageComponent("bche.png", 25, 25, "currencies/") }
@@ -76,7 +76,7 @@ export class CurrencyRadioGroup extends React.Component {
         iconStyle={ this.styles.iconStyle }
         style={ this.styles.radioButton }
       />
-      <RadioButton
+      <Radio
         value="ETH"
         disabled={ active.indexOf("ETH") == -1 }
         label={ this.tools.getImageComponent("ethe.png", 25, 25, "currencies/") }
@@ -84,7 +84,7 @@ export class CurrencyRadioGroup extends React.Component {
         iconStyle={ this.styles.iconStyle }
         style={ this.styles.radioButton }
       />
-    </RadioButtonGroup>;
+    </RadioGroup>;
   }
 }
 

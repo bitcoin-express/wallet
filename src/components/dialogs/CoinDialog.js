@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
-import CircularProgress from 'material-ui/CircularProgress';
-import FlatButton from 'material-ui/FlatButton';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Button from '@material-ui/core/Button';
 
 import BitcoinCurrency from '../BitcoinCurrency';
 import EncryptSelector from '../EncryptSelector';
@@ -346,7 +346,7 @@ class CoinDialog extends Component {
             margin: '20px 0 0 0',
           }}
         >
-          <FlatButton
+          <Button
             id="download-coin-file"
             label="Download coin file"
             labelStyle={ this.styles.labelStyle }
@@ -384,7 +384,7 @@ class CoinDialog extends Component {
             textAlign: 'center',
           }}
         >
-          <FlatButton
+          <Button
             label="Continue"
             disabled={ encrypt && !password }
             labelStyle={ this.styles.labelStyle }
@@ -468,19 +468,19 @@ class CoinDialog extends Component {
           margin: '40px 0 0 0',
         }}
       >
-        <FlatButton
+        <Button
           label="Extract coin to file"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleDownloadFile }
         />
-        <FlatButton
+        <Button
           label="Extract coin to clipboard"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleCopyString }
         />
-        <FlatButton
+        <Button
           label="Check if coin exist"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }

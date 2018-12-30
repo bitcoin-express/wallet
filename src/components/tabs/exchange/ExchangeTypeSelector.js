@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
+import { Radio, RadioGroup } from '@material-ui/core/Radio';
 
 import HelpTooltip from '../../HelpTooltip';
 import styles from '../../../helpers/Styles';
@@ -107,27 +107,27 @@ export default class ExchangeTypeSelector extends React.Component {
     </div>;
 
     return <div style={ this.styles.section }>
-      <RadioButtonGroup
+      <RadioGroup
         name="exchange-type"
         defaultSelected={ type }
         onChange={ onChangeType }
         style={ this.styles.radioGroup }
       >
-        <RadioButton
+        <Radio
           value="issuer"
           label={ issuerRadioLabel }
           labelStyle={ this.styles.labelRadio }
           iconStyle={ this.styles.iconStyle }
           style={ this.styles.radioButton }
         />
-        <RadioButton
+        <Radio
           value="person"
           label={ personRadioLabel }
           labelStyle={ this.styles.labelRadio }
           iconStyle={ this.styles.iconStyle }
           style={ this.styles.radioButton }
         />
-      </RadioButtonGroup>
+      </RadioGroup>
     </div>;
   }
 }

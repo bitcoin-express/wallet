@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Dialog from 'material-ui/Dialog';
-import FlatButton from 'material-ui/FlatButton';
-import TextField from 'material-ui/TextField';
+import Dialog from '@material-ui/core/Dialog';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
 
 class AddCoinsIfAbsentDialog extends React.Component {
   constructor(props) {
@@ -19,13 +19,13 @@ class AddCoinsIfAbsentDialog extends React.Component {
     } = this.props;
 
     const actions = [
-      <FlatButton
+      <Button
         id="alert-confirm"
         label="Add Coins"
         primary={ true }
         onTouchTap={ onConfirmClick }
       />,
-      <FlatButton
+      <Button
         id="alert-cancel"
         label="Do not add Coins"
         secondary={ true }

@@ -2,11 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Checkbox from 'material-ui/Checkbox';
-import FlatButton from 'material-ui/FlatButton';
-import TextField from 'material-ui/TextField';
-import SelectField from 'material-ui/SelectField';
-import MenuItem from 'material-ui/MenuItem';
+import Checkbox from '@material-ui/core/Checkbox';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
 import CoinSelector from '../../CoinSelector';
@@ -800,7 +800,7 @@ export default class SettingsEmail extends React.Component {
           }}>
             Min. transaction amount
           </div>
-          <SelectField
+          <Select
             disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
             value={ settings[wallet.config.MIN_TRANSACTION] || 0 }
             onChange={ this.handleSetMinTransaction }
@@ -823,7 +823,7 @@ export default class SettingsEmail extends React.Component {
               value={ 1 }
               primaryText="Auto"
             />
-          </SelectField>
+          </Select>
         </div>
 
         { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
@@ -897,7 +897,7 @@ export default class SettingsEmail extends React.Component {
           }}>
             Password
           </div>
-          <SelectField
+          <Select
             value={ settings[wallet.config.ENCRYPT_TYPE] || 0 }
             onChange={ this.handleSetEncryptType }
             style={{
@@ -920,7 +920,7 @@ export default class SettingsEmail extends React.Component {
               value={ 1 }
               primaryText="Manual"
             />
-          </SelectField>
+          </Select>
         </div>
         { showPwdField ? <TextField
           id="pwd"
@@ -992,7 +992,7 @@ export default class SettingsEmail extends React.Component {
         </div>
 
         <h3>Transaction expiry period</h3>
-        <SelectField
+        <Select
           value={ settings[wallet.config.TRANSACTION_EXPIRE_VALUE] || 0 }
           onChange={ this.handleChangeTransactionExpire }
           style={{
@@ -1008,7 +1008,7 @@ export default class SettingsEmail extends React.Component {
             value={ 1 }
             primaryText="Manual"
           />
-        </SelectField>
+        </Select>
         { settings[wallet.config.TRANSACTION_EXPIRE_VALUE] == 1 ? <div
           style={{
             marginLeft: isFullScreen ? '40px' : '0',

@@ -2,10 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import TextField from 'material-ui/TextField';
-import SelectField from 'material-ui/SelectField';
-import MenuItem from 'material-ui/MenuItem';
-import FlatButton from 'material-ui/FlatButton';
+import TextField from '@material-ui/core/TextField';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import Button from '@material-ui/core/Button';
 
 import styles from '../helpers/Styles';
 
@@ -345,7 +345,7 @@ class CoinSelector extends React.Component {
     }
 
     return <div style={ this.styles.container }>
-      <SelectField
+      <Select
         disabled={ disabled || showAsCurrency }
         floatingLabelText={ labelCurrency || "Show as" }
         floatingLabelStyle={ floatingLabelStyle }
@@ -369,7 +369,7 @@ class CoinSelector extends React.Component {
           value={3}
           primaryText={ `μ${this.btcDisplay}` }
         />
-      </SelectField>
+      </Select>
       <div style={ amountStyle }>
         { showAsCurrency ? <TextField
           { ...props }
@@ -411,7 +411,7 @@ class CoinSelector extends React.Component {
         <div
           style={ this.styles.buttonLink }
         >
-          <FlatButton
+          <Button
             style={{ minWidth: '20px', height: '20px' }}
             disabled={ showAsCurrency }
             onClick={ this.handleButtonClick }
@@ -419,7 +419,7 @@ class CoinSelector extends React.Component {
             <div style={ this.styles.buttonText }>
               { symbol }
             </div>
-          </FlatButton>
+          </Button>
         </div>
       </div>
     </div>;

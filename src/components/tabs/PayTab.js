@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import RaisedButton from 'material-ui/RaisedButton';
-import Checkbox from 'material-ui/Checkbox';
-import Avatar from 'material-ui/Avatar';
+import Button from '@material-ui/core/Button';
+import Checkbox from '@material-ui/core/Checkbox';
+import Avatar from '@material-ui/core/Avatar';
 
 import isURL from 'validator/lib/isURL';
 
@@ -430,7 +430,7 @@ class PayTab extends React.Component {
 
           <div style={ this.styles.buttonSection }>
             <div style={ this.styles.button }>
-              <RaisedButton
+              <Button
                 disabled={ disabled }
                 label={ "Confirm swap" }
                 labelStyle={{
@@ -444,6 +444,7 @@ class PayTab extends React.Component {
                 }}
                 primary={ true }
                 onClick={ this.handleOnClick }
+                variant="contained"
               />
             </div>
           </div>
@@ -464,7 +465,7 @@ class PayTab extends React.Component {
           <br />
 
           <div style={ this.styles.button }>
-            <RaisedButton
+            <Button
               disabled={ disabled }
               label="Recover payment coin and exit"
               labelStyle={{
@@ -478,6 +479,7 @@ class PayTab extends React.Component {
               }}
               primary={ true }
               onClick={ () => this.handleOnClick(true) }
+              variant="contained"
             />
           </div>
 
@@ -511,7 +513,7 @@ class PayTab extends React.Component {
           <br />
 
           <div style={ this.styles.button }>
-            <RaisedButton
+            <Button
               disabled={ disabled }
               label="Retry payment now"
               labelStyle={{
@@ -525,6 +527,7 @@ class PayTab extends React.Component {
               }}
               primary={ true }
               onClick={ () => this.handleOnClick(false) }
+              variant="contained"
             />
           </div>
 
@@ -561,7 +564,7 @@ class PayTab extends React.Component {
 
           <div style={ this.styles.buttonSection }>
             <div style={ this.styles.button }>
-              <RaisedButton
+              <Button
                 disabled={ disabled }
                 label="Confirm payment"
                 labelStyle={{
@@ -582,6 +585,7 @@ class PayTab extends React.Component {
                     return this.handleOnClick();
                   });
                 }}
+                variant="contained"
               />
             </div>
 

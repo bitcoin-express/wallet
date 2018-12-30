@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Checkbox from 'material-ui/Checkbox';
+import Checkbox from '@material-ui/core/Checkbox';
 
 import Dropzone from 'react-dropzone';
-import FileFileUpload from 'material-ui/svg-icons/file/file-upload';
 
 import Title from '../../Title';
 import PassphraseDialog from '../../dialogs/PassphraseDialog';

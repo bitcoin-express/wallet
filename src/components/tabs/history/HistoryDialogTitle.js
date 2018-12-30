@@ -1,9 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FloatingActionButton from 'material-ui/FloatingActionButton';
-import ActionLightbulbOutlineIcon from 'material-ui/svg-icons/action/lightbulb-outline';
-
 import StorageIcon from '../../StorageIcon';
 
 import Time from '../../../helpers/Time';

@@ -1,7 +1,7 @@
 import React from 'react';
 
-import Checkbox from 'material-ui/Checkbox';
-import CircularProgress from 'material-ui/CircularProgress';
+import Checkbox from '@material-ui/core/Checkbox';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import {
   Table,
@@ -10,7 +10,7 @@ import {
   TableHeaderColumn,
   TableRow,
   TableRowColumn,
-} from 'material-ui/Table';
+} from '@material-ui/core/Table';
 
 import Address from '../Address';
 import BitcoinCurrency from '../BitcoinCurrency';

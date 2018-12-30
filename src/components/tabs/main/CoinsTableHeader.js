@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {
   TableHeaderColumn,
   TableRow,
-} from 'material-ui/Table';
+} from '@material-ui/core/Table';
 
 import Exchange from '../../Exchange';
 

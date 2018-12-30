@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import CoinSelector from '../../CoinSelector';
 import EncryptSelector from '../../EncryptSelector';
 import FormArea from '../../FormArea';
@@ -63,11 +63,12 @@ class ExportCoin extends React.Component {
           <EncryptSelector
             onPasswordChange={ this.handlePasswordChange }
           />
-          <RaisedButton
+          <Button
             label="Export Coin"
             disabled={ true }
             primary={ true }
             style={ this.styles.button }
+            variant="contained"
           />
         </span>
       </FormArea>

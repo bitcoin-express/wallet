@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import MenuItem from 'material-ui/MenuItem';
-import SelectField from 'material-ui/SelectField';
-import TextField from 'material-ui/TextField';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import TextField from '@material-ui/core/TextField';
 
 export default class SettingsMain extends React.Component {
 
@@ -212,7 +212,7 @@ export default class SettingsMain extends React.Component {
         </div>
 
         <div>
-          <SelectField
+          <Select
             floatingLabelText="Issue Policy"
             value={ settings[wallet.config.ISSUE_POLICY] }
             style={{
@@ -241,7 +241,7 @@ export default class SettingsMain extends React.Component {
               value={p}
               primaryText={p}
             />) }
-          </SelectField> 
+          </Select> 
           <i
             className="fa fa-question-circle"
             onClick={ this.handleShowInfo() }

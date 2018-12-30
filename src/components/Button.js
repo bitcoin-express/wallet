@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FlatButton from 'material-ui/FlatButton';
+import { Button as ButtonComponent } from '@material-ui/core/Button';
 
 import styles from '../helpers/Styles';
 
@@ -52,7 +52,7 @@ class Button extends React.Component {
       props.onClick = onClick;
     }
 
-    return <FlatButton
+    return <ButtonComponent
       { ...props }
       label={ label }
       primary={ true }

@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import MenuItem from 'material-ui/MenuItem';
-import SelectField from 'material-ui/SelectField';
-import TextField from 'material-ui/TextField';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import TextField from '@material-ui/core/TextField';
 
 export default class SettingsDisplay extends React.Component {
 
@@ -156,15 +156,15 @@ export default class SettingsDisplay extends React.Component {
           style={{ width: '100%' }}
           onChange={ this.handleChangeLocalName }
         />  }
-        <SelectField
+        <Select
           floatingLabelText="Currency"
           value={ settings[wallet.config.CURRENCY] }
           style={{ width: '100%' }}
           onChange={ this.handleCurrencyChange }
         >
           { currencies }
-        </SelectField>
-        <SelectField
+        </Select>
+        <Select
           floatingLabelText="Bitcoin Display Type"
           value={ settings[wallet.config.BTC_DISPLAY] }
           style={{ width: '100%' }}
@@ -206,8 +206,8 @@ export default class SettingsDisplay extends React.Component {
             value={ "&mu;&#x243;" }
             primaryText="μɃ"
           />
-        </SelectField>
-        <SelectField
+        </Select>
+        <Select
           floatingLabelText="Decimal separator"
           value={ settings[wallet.config.SEPARATOR] }
           style={{ width: '100%' }}
@@ -221,7 +221,7 @@ export default class SettingsDisplay extends React.Component {
             value=","
             primaryText=", comma"
           />
-        </SelectField>
+        </Select>
       </section>
     );
   }

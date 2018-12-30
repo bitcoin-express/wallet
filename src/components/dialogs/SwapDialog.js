@@ -6,7 +6,7 @@ import ExchangeInfo from '../tabs/exchange/ExchangeInfo';
 import BitcoinCurrency from '../BitcoinCurrency';
 import CoinSelector from '../CoinSelector';
 
-import Checkbox from 'material-ui/Checkbox';
+import Checkbox from '@material-ui/core/Checkbox';
 
 import styles from '../../helpers/Styles';
 

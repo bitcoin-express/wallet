@@ -3,7 +3,7 @@ import React from 'react';
 import {
   Toolbar,
   ToolbarGroup,
-} from 'material-ui/Toolbar';
+} from '@material-ui/core/Toolbar';
 
 import BitcoinCurrency from './BitcoinCurrency'
 
@@ -106,6 +106,7 @@ export default class BottomBar extends React.Component {
     if (totalAvailable && !isNaN(total)) {
       totalText = "≈ " + xr.getCurrencySymbol() + total.toFixed(2);
     }
+    return null;
 
     return (
       <div style={ isFullScreen ? {} : this.styles.bottombar }>

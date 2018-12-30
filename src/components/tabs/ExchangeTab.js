@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Checkbox from 'material-ui/Checkbox';
-import MenuItem from 'material-ui/MenuItem';
-import SelectField from 'material-ui/SelectField';
-import LinearProgress from 'material-ui/LinearProgress';
+import Checkbox from '@material-ui/core/Checkbox';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 import BitcoinCurrency from '../BitcoinCurrency';
 import Button from '../Button';
@@ -1615,7 +1615,7 @@ class ExchangeTab extends React.Component {
         <div style={ this.styles.rate }>
           Expiry:
         </div>
-        <SelectField
+        <Select
           value={ expiryTime }
           onChange={ (ev, k, expiryTime) => this.setState({ expiryTime }) }
           style={{
@@ -1641,7 +1641,7 @@ class ExchangeTab extends React.Component {
             primaryText="1 hour"
             value={ 60 * 60000 }
           />
-        </SelectField>
+        </Select>
       </div>;
     }
 
@@ -1668,7 +1668,7 @@ class ExchangeTab extends React.Component {
               </div> }
             /> 
           </div>
-          <SelectField
+          <Select
             style={ this.styles.selectField }
             value={ sourceCurrency }
             hintStyle={{
@@ -1677,7 +1677,7 @@ class ExchangeTab extends React.Component {
             onChange={ this.handleSourceCurrencyChange }
           >
             { sourceList }
-          </SelectField>
+          </Select>
 
           <CoinSelector
             currency={ this.currencies[sourceCurrency].code }
@@ -1753,7 +1753,7 @@ class ExchangeTab extends React.Component {
           <div style={ this.styles.label }>
             Target
           </div>
-          <SelectField
+          <Select
             style={ this.styles.selectField }
             value={ targetCurrency }
             hintStyle={{
@@ -1762,7 +1762,7 @@ class ExchangeTab extends React.Component {
             onChange={ this.handleTargetCurrencyChange }
           >
             { recieveList }
-          </SelectField>
+          </Select>
 
           { exchangeRateError ? null : <CoinSelector
             id="target"

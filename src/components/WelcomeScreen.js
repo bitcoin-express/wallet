@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import LinearProgress from 'material-ui/LinearProgress';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 import Logo from './Logo';
 import LogoText from './LogoText';
@@ -52,9 +52,9 @@ class WelcomeScreen extends React.Component {
         </div>
         <div>
           <LinearProgress
-            mode="indeterminate"
+            color="primary"
             style={ this.styles.linearProgress }
-            color="#8081ff"
+            variant="indeterminate"
           />
         </div>
       </div>

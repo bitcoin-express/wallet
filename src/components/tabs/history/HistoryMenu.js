@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FloatingActionButton from 'material-ui/FloatingActionButton';
-import ActionLightbulbOutlineIcon from 'material-ui/svg-icons/action/lightbulb-outline';
+import Fab from '@material-ui/core/Fab';
 
 class HistoryMenu extends React.Component {
   constructor(props) {
@@ -62,7 +61,7 @@ class HistoryMenu extends React.Component {
         style={ this.styles.input }
         onChange={ onChangeInputText }
       />
-      <FloatingActionButton
+      <Fab
         mini={ true }
         secondary={ true }
         title="Search"
@@ -74,15 +73,15 @@ class HistoryMenu extends React.Component {
         }}
       >
         <i className="fa fa-search" />
-      </FloatingActionButton>
-      <FloatingActionButton
+      </Fab>
+      <Fab
         mini={ true }
         title={ selected ? "Click a row to activate" : "Show row info" }
         disabled={ selected }
         onClick={ onClickShowTransaction }
       >
-        <ActionLightbulbOutlineIcon />
-      </FloatingActionButton>
+        <i className="fa fa-lightbulb-o" />
+      </Fab>
     </div>;
   }
 }

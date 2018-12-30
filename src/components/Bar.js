@@ -1,16 +1,81 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import AppBar from 'material-ui/AppBar';
-import IconButton from 'material-ui/IconButton';
+import classNames from 'classnames';
+import { withStyles } from '@material-ui/core/styles';
 
-import AppNavDrawer from './bar/AppNavDrawer';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import IconButton from '@material-ui/core/IconButton';
+
+import NavigationDrawer from './bar/NavigationDrawer';
 import AppSecNavDrawer from './bar/AppSecNavDrawer';
 import LogoText from './LogoText';
 import Settings from './bar/settings/Settings';
 import SignInOut from './SignInOut';
 
 import styles from '../helpers/Styles';
+
+
+const componentStyles = (theme) => {
+  const {
+    appbarHeight,
+    colors,
+  } = styles;
+
+  // 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+  const root = {
+    background: colors.mainColor,
+    borderRadius: 'inherit',
+    fontFamily: "'Anton', impact",
+    fontWeight: 100,
+    height: `${appbarHeight}px`,
+    zIndex: '1',
+    [theme.breakpoints.down('xs')]: {
+      padding: '0 24px 0 24px',
+    },
+    [theme.breakpoints.up('xs')]: {
+      padding: '0 24px',
+    },
+    [theme.breakpoints.up('md')]: {
+      padding: '0 calc(5vw + 24px)',
+    },
+    [theme.breakpoints.up('lg')]: {
+      padding: '0 calc(15vw + 24px)',
+    },
+    [theme.breakpoints.up('xl')]: {
+      padding: '0 calc(20vw + 24px)',
+    },
+  };
+
+  return {
+    icon: {
+      margin: '6px 0px 0px -16px',
+      cursor: 'pointer',
+      WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
+      textDecoration: 'none',
+      outline: 'none',
+      fontSize: '0px',
+      fontWeight: 'inherit',
+      position: 'relative',
+      zIndex: '1',
+    },
+    iconSignInOut: {
+      position: 'absolute',
+      right: `${appbarHeight}px`,
+    },
+    root,
+    rootMin: Object.assign({}, root, {
+      borderRadius: '50px 20px 0 0',
+    }),
+    title: {
+      height: 'inital',
+      lineHeight: '10px',
+      marginLeft: '-15px',
+    },
+  };
+};
 
 
 class Bar extends React.Component {
@@ -26,108 +91,58 @@ class Bar extends React.Component {
       backupSettings: null,
     };
 
-    this.initializeStyles = this.initializeStyles.bind(this);
-    this.initializeStyles(props);
-
     this.showSettings = this.showSettings.bind(this);
     this.hideSettings = this.hideSettings.bind(this);
     this.handleCloseSettings = this.handleCloseSettings.bind(this);
     this.renderBurger = this.renderBurger.bind(this);
     this.showSecondaryNavDrawer = this.showSecondaryNavDrawer.bind(this);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.initializeStyles(nextProps);
+    this.getMenuItems = this.getMenuItems.bind(this);
   }
 
   componentDidMount() {
     this.props.initializeDraggableArea(this.DRAGGABLE_AREA);
   }
 
-  initializeStyles(props) {
-    this.styles = {
-      appbar: {
-        height: `${styles.appbarHeight}px`,
-        fontFamily: "'Anton', impact",
-        fontStyle: 'italic',
-        fontWeight: 100,
-        borderRadius: props.isFullScreen ? 'inherit' : '50px 20px 0 0',
-      },
-      icon: {
-        margin: '6px 0px 0px -16px',
-        cursor: 'pointer',
-        WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
-        textDecoration: 'none',
-        outline: 'none',
-        fontSize: '0px',
-        fontWeight: 'inherit',
-        position: 'relative',
-        zIndex: '1',
-      },
-      iconRight: {
-        marginRight: '0',
-        marginTop: '0',
-        marginLeft: `-${styles.appbarHeight}px`,
-        width: '30px',
-      },
-      title: {
-        lineHeight: `${styles.appbarHeight}px`,
-        height: 'inital',
-        marginTop: '6px',
-        textAlign: 'left',
-      },
-      burger: {
-        margin: "-3px 0 0 -15px",
-        width: '60px',
-        height: `${styles.appbarHeight}px`,
-        padding: '0', 
-      },
-    };
-  }
-
   renderBurger() {
-    return (
-      <IconButton style={ this.styles.burger }>
-        <svg
-          strokeWidth="0.501"
-          strokeLinejoin="bevel"
-          fillRule="evenodd"
-          width="66px"
-          height="34px"
-          viewBox="0 0 22 22"
-        >
-          <g
-            id="Document"
-            fill="none"
-            stroke={ styles.colors.mainTextColor }
-            transform="scale(0.15 -0.15)"
-          >
-            <g id="Spread" transform="translate(0 -192)">
-              <g id="Layer 1">
-                <g
-                  id="Group"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  strokeWidth="12.382"
-                  strokeMiterlimit="79.8403193612775"
-                >
-                  <path d="M 9.94,85.94 L 157.128,85.94" fill="none"/>
-                  <path d="M 27.17,110.206 L 163.386,110.206" fill="none"/>
-                  <path d="M 47.723,134.483 L 170.758,134.483" fill="none"/>
-                  <path d="M 75.666,158.746 L 176.314,158.746" fill="none"/>
-                  <path d="M 112.169,182.665 L 185.015,182.665" fill="none"/>
-                </g>
-              </g>
+    return <svg
+      strokeWidth="0.501"
+      strokeLinejoin="bevel"
+      fillRule="evenodd"
+      width="66px"
+      height="34px"
+      viewBox="0 0 22 22"
+    >
+      <g
+        id="Document"
+        fill="none"
+        stroke={ styles.colors.mainTextColor }
+        transform="scale(0.15 -0.15)"
+      >
+        <g id="Spread" transform="translate(0 -192)">
+          <g id="Layer 1">
+            <g
+              id="Group"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              strokeWidth="12.382"
+              strokeMiterlimit="79.8403193612775"
+            >
+              <path d="M 9.94,85.94 L 157.128,85.94" fill="none"/>
+              <path d="M 27.17,110.206 L 163.386,110.206" fill="none"/>
+              <path d="M 47.723,134.483 L 170.758,134.483" fill="none"/>
+              <path d="M 75.666,158.746 L 176.314,158.746" fill="none"/>
+              <path d="M 112.169,182.665 L 185.015,182.665" fill="none"/>
             </g>
           </g>
-        </svg>
-      </IconButton>
-    );
+        </g>
+      </g>
+    </svg>;
   }
 
   showSettings () {
     const {
       loading,
+      debug,
       handleMenuIconClick,
       openDialog,
       refreshSettings,
@@ -135,12 +150,9 @@ class Bar extends React.Component {
       wallet,
     } = this.props;
 
-    loading(true);
-    wallet.config.storage.readWallet().then(() => {
-      return refreshSettings();
-    }).then((settings) => {
+    const displaySettingsDialog = (settings) => {
       loading(false);
-      handleMenuIconClick(null, false); //navDrawerOpen: false
+      handleMenuIconClick(null, false);
       this.setState({
         backupSettings: Object.assign({}, {}, settings),
       });
@@ -169,9 +181,20 @@ class Bar extends React.Component {
           { ...this.props }
         />,
       });
-    }).catch(() => {
+    };
+
+    const handleError = (err) => {
+      if (debug) {
+        console.log(err);
+      }
       snackbarUpdate("Problem on opening settings", true);
-    });
+    };
+
+    loading(true);
+    wallet.config.storage.readWallet()
+      .then(() => refreshSettings())
+      .then(displaySettingsDialog)
+      .catch(handleError);
   }
 
   hideSettings() {
@@ -298,23 +321,17 @@ class Bar extends React.Component {
     });
   }
 
-  render() {
+  getMenuItems() {
     const {
       empty,
       handleAuthorizeGDrive,
       handleClickAbout,
       handleClickAddFunds,
-      handleClickClose,
       handleClickSend,
-      handleClickSignout,
-      handleMenuIconClick,
       handleResizeClick,
       handleSignoutGDrive,
-      isFullScreen,
       opened,
       loading,
-      setSettingsKey,
-      settings,
       wallet,
     } = this.props;
 
@@ -323,33 +340,13 @@ class Bar extends React.Component {
       type,
     } = this.state;
 
-    const itemStyle = {
-      color: styles.colors.mainTextColor,
-      fontFamily: styles.fontFamily,
-      textAlign: 'left',
-    };
-    const itemGDStyle = {
-      color: styles.colors.darkBlue,
-      fontFamily: styles.fontFamily,
-      // fontSize: isFullScreen ? 'inherit' : '13.5px',
-      // letterSpacing: '-0.8px',
-      textAlign: 'left',
-    };
-    const iconStyle = {
-      fontSize: '1.5em',
-      color: styles.colors.mainTextColor,
-    };
-
-    const isGDrive = wallet.isGoogleDrive();
-
-    const items = [{
+    let items = [{
       text: "Settings",
       fn: this.showSettings,
       key: "settings",
-      style: itemStyle,
+      isGDrive: false,
       icon: <i
         className="fa fa-cog"
-        style={ iconStyle }
       />,
       divider: false,
     }];
@@ -359,10 +356,9 @@ class Bar extends React.Component {
         text: "Add Funds",
         fn: handleClickAddFunds,
         key: "add-funds",
-        style: itemStyle,
+        isGDrive: false,
         icon: <i
           className="fa fa-plus-circle"
-          style={ iconStyle }
         />,
         divider: false,
       });
@@ -371,20 +367,20 @@ class Bar extends React.Component {
         text: "Send funds",
         fn: handleClickSend,
         key: "send",
-        style: itemStyle,
+        isGDrive: false,
         icon: <i
           className="fa fa-paper-plane"
-          style={ iconStyle }
         />,
-        divider: false,
+        divider: true,
       });
     }
 
+    const isGDrive = wallet.isGoogleDrive();
     items.push({
       text: isGDrive ? "Disconnect from Google Drive" : "Connect to Google Drive",
       fn: isGDrive ? handleSignoutGDrive : handleAuthorizeGDrive,
       key: "drive",
-      style: isGDrive ? itemGDStyle : itemStyle,
+      isGDrive: isGDrive,
       icon: <img
         src="css/img/storage/google.png"
         style={{
@@ -399,10 +395,9 @@ class Bar extends React.Component {
       text: "Developer Tools",
       fn: this.showSecondaryNavDrawer(1),
       key: "developer",
-      style: itemStyle,
+      isGDrive: false,
       icon: <i
         className="fa fa-cogs"
-        style={ iconStyle }
       />,
     });
 
@@ -410,50 +405,111 @@ class Bar extends React.Component {
       text: "About",
       fn: handleClickAbout,
       key: "about",
-      style: itemStyle,
+      isGDrive: false,
       icon: <i
         className="fa fa-info-circle"
-        style={ iconStyle }
       />,
       divider: true,
     });
 
-    return (
-      <div>
-        <AppNavDrawer
-          { ...this.props }
-          items={ items }
-          open={ opened }
-          onOverlayClick={ handleMenuIconClick }
-        />
-        <AppSecNavDrawer
-          { ...this.props }
-          open={ open }
-          type={ type }
-          onClickClose={ this.handleCloseSettings }
-        />
-        <AppBar
-          title={ <LogoText
+    return items;
+  }
+
+  render() {
+    const {
+      empty,
+      classes,
+      handleClickClose,
+      handleClickSignout,
+      handleMenuIconClick,
+      isFullScreen,
+      opened,
+      loading,
+      wallet,
+    } = this.props;
+
+    const {
+      open,
+      type,
+    } = this.state;
+
+    let properties = Object.assign({}, this.props);
+    delete properties.classes;
+
+    let renderComponent = [];
+    
+    renderComponent.push(<NavigationDrawer
+      { ...properties }
+      items={ this.getMenuItems() }
+      key="navigation-drawer"
+      open={ opened }
+      onOverlayClick={ handleMenuIconClick }
+    />);
+
+    renderComponent.push(<AppBar
+      id="app-bar"
+      key="app-bar"
+      classes={{
+        root: isFullScreen ? classes.root : classes.rootMin,
+      }}
+    >
+      <Toolbar style={{ minHeight: '40px' }}>
+        <IconButton
+          aria-label="Open drawer"
+          color="inherit"
+          onClick={ handleMenuIconClick }
+          classes={{
+            root: classes.icon,
+          }}
+        >
+          { this.renderBurger() }
+        </IconButton>
+        <div
+          className={classNames(classes.title)}
+          id={ this.DRAGGABLE_AREA }
+        >
+          <LogoText
             isFullScreen={ isFullScreen }
-            id="logo-title"
-          /> }
-          id="app-bar"
-          className="appbar top"
-          style={ this.styles.appbar }
-          titleStyle={ this.styles.title }
-          iconStyleLeft={ this.styles.icon }
-          iconStyleRight={ this.styles.iconRight }
-          iconElementLeft={ this.renderBurger() }
-          onLeftIconButtonTouchTap={ handleMenuIconClick }
-          iconElementRight={ <SignInOut
+          />
+        </div>
+        <div className={classNames(classes.iconSignInOut)}>
+          <SignInOut
             onCloseTouchTap={ handleClickClose }
             onSignOutTouchTap={ handleClickSignout }
-          /> }
-        />
-      </div>
-    );
+          />
+        </div>
+      </Toolbar>
+    </AppBar>);
+
+    return renderComponent;
   }
 }
+
+/*
+ *
+ <AppSecNavDrawer
+   { ...properties }
+   open={ open }
+   type={ type }
+   onClickClose={ this.handleCloseSettings }
+ />
+ <AppBar
+   title={ <LogoText
+     isFullScreen={ isFullScreen }
+     id="logo-title"
+   /> }
+   style={ this.styles.appbar }
+   titleStyle={ this.styles.title }
+   iconStyleLeft={ this.styles.icon }
+   iconStyleRight={ this.styles.iconRight }
+   iconElementLeft={ this.renderBurger() }
+   onLeftIconButtonTouchTap={ handleMenuIconClick }
+   iconElementRight={ <SignInOut
+     onCloseTouchTap={ handleClickClose }
+     onSignOutTouchTap={ handleClickSignout }
+   /> }
+ />
+ * */
 
 Bar.propTypes = {
   handleClickClose: PropTypes.func.isRequired,
@@ -462,4 +518,4 @@ Bar.propTypes = {
   initializeDraggableArea: PropTypes.func.isRequired,
 };
 
-export default Bar;
+export default withStyles(componentStyles, { withTheme: true })(Bar);

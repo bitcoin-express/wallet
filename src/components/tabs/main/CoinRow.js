@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {
   TableRow,
   TableRowColumn,
-} from 'material-ui/Table';
+} from '@material-ui/core/Table';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
 import CoinDialog from '../../dialogs/CoinDialog';

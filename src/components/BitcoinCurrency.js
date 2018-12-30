@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FlatButton from 'material-ui/FlatButton';
-import FloatingActionButton from 'material-ui/FloatingActionButton';
+import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 
 import StorageIcon from './StorageIcon'
 
@@ -274,17 +274,17 @@ class BitcoinCurrency extends React.Component {
                     this.handleButtonClick();
                   }}
                 >
-                  <FlatButton
+                  <Button
                     disabled={ isFlipped }
                     style={{ minWidth: '20px', height: '20px' }}
                   >
                     <div style={ this.styles.buttonSmallText }>
                       { symbol }
                     </div>
-                  </FlatButton>
+                  </Button>
                 </div>
               :
-              <FloatingActionButton
+              <Fab
                 mini={ true }
                 style={ butBig }
                 secondary={ true }
@@ -297,7 +297,7 @@ class BitcoinCurrency extends React.Component {
                 <div style={ this.styles.buttonText }>
                   { symbol }
                 </div>
-              </FloatingActionButton>
+              </Fab>
             }
             </div>
           </div>
