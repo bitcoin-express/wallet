@@ -59,9 +59,6 @@ class AlertDialog extends React.Component {
 
   initializeStyles() {
     this.styles = {
-      buttonStyle: {
-        color: styles.colors.mainTextColor,
-      },
       fullSize: {
         width: '100%',
         maxWidth: 'none',
@@ -156,6 +153,7 @@ class AlertDialog extends React.Component {
         onClose={ onCloseClick }
         open={ open }
         style={ style }
+        transitionDuration={ 0 }
       >
         { showTitle ? <DialogTitle
           id="dialog-title"

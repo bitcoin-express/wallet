@@ -1,95 +1,83 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import { Radio, RadioGroup } from '@material-ui/core/Radio';
+import { withStyles } from '@material-ui/core/styles';
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
+import FormControlLabel from  '@material-ui/core/FormControlLabel';
 
 import styles from '../helpers/Styles';
 import Tools from '../helpers/Tools';
 
-export class CurrencyRadioGroup extends React.Component {
+// TO_DO: Get it from wallet initial settings
+const availableCurrencies = ["XBT", "ETH", "BCH"];
+
+const componentStyles = () => {
+  return {
+    root: {
+      justifyContent: 'space-between',
+    },
+  };
+};
+
+
+class CurrencyRadioGroup extends React.Component {
+
   constructor(props) {
     super(props);
 
     this.tools = new Tools();
+    this.onChange = this.onChange.bind(this);
 
-    this.styles = {
-      iconStyle: {
-        fill: styles.colors.mainTextColor,
-      },
-      labelRadio: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        color: styles.colors.mainTextColor,
-        fontSize: '16px',
-        width: 'inherit',
-        zIndex: '3',
-      },
-      radioButton: {
-        width: 'auto',
-        margin: '10px 0',
-      },
-      radioGroup: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-      },
-      radioLabel: {
-        display: 'flex',
-        flexWrap: 'nowrap',
-        marginRight: '10px',
-      },
+    this.state = {
+      currency: props.currency == 'BTC' ? 'XBT' : props.currency,
     };
+  }
+
+  onChange(event) {
+    const {
+      onChange,
+    } =  this.props;
+
+    this.setState({ currency: event.target.value });
+    onChange(event.target.value);
   }
 
   render() {
     let {
       active,
-      currency,
+      classes,
       onChange,
     } = this.props;
 
-    if (currency == 'BTC') {
-      currency = "XBT";
-    }
-
     return <RadioGroup
       name="currency-type"
-      defaultSelected={ currency }
-      onChange={ onChange }
-      style={ this.styles.radioGroup }
+      className={ classes.root }
+      value={ this.state.currency }
+      onChange={ this.onChange }
+      row
     >
-      <Radio
-        value="XBT"
-        disabled={ active.indexOf("XBT") == -1 }
-        label={ this.tools.getImageComponent("btce.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
-      <Radio
-        disabled={ active.indexOf("BCH") == -1 }
-        value="BCH"
-        label={ this.tools.getImageComponent("bche.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
-      <Radio
-        value="ETH"
-        disabled={ active.indexOf("ETH") == -1 }
-        label={ this.tools.getImageComponent("ethe.png", 25, 25, "currencies/") }
-        labelStyle={ this.styles.labelRadio }
-        iconStyle={ this.styles.iconStyle }
-        style={ this.styles.radioButton }
-      />
+      {availableCurrencies.map((key) => {
+        let img = key == "XBT" ? "btc" : key.toLowerCase();
+        img += "e.png";
+
+        return <FormControlLabel
+          control={<Radio
+            color={ styles.colors.mainTextColor }
+          />}
+          disabled={ active.indexOf(key) == -1 }
+          key={ key }
+          value={ key }
+          label={ this.tools.getImageComponent(img, 25, 25, "currencies/") }
+        />;
+      })}
     </RadioGroup>;
   }
 }
 
 CurrencyRadioGroup.defaultProps = {
-  active: ["XBT", "ETH", "BCH"],
+  active: availableCurrencies,
 };
 
-export default CurrencyRadioGroup;
+export default withStyles(componentStyles)(CurrencyRadioGroup);
+
