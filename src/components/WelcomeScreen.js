@@ -52,7 +52,7 @@ class WelcomeScreen extends React.Component {
         </div>
         <div>
           <LinearProgress
-            color="primary"
+            color="secondary"
             style={ this.styles.linearProgress }
             variant="indeterminate"
           />

@@ -2,12 +2,82 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
+import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import FormControl from '@material-ui/core/FormControl';
 import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 
 import styles from '../helpers/Styles';
+
+const componentStyles = (theme) => {
+  const {
+    colors,
+  } = styles;
+
+  const root = {
+    display: 'grid',
+    gridGap: '10px',
+    position: 'relative',
+    alignItems: 'flex-end',
+  };
+
+  return {
+    root: Object.assign({}, root, {
+      gridTemplateColumns: "95px 160px 30px",
+      gridTemplateAreas: '"select amount button"',
+    }),
+    rootExpand: Object.assign({}, root, {
+      gridTemplateColumns: "95px calc(100% - 135px) 50px 30px",
+      gridTemplateAreas: '"select amount max button"',
+    }),
+    rootMax: Object.assign({}, root, {
+      gridTemplateColumns: "95px calc(100% - 195px) 30px",
+      gridTemplateAreas: '"select amount button"',
+    }),
+    rootCentered: {
+      marginLeft: 'calc(50% - 142px)',
+    },
+    textFieldRoot: {
+      fontSize: "22px",
+      width: '100%',
+    },
+    amountRoot: {
+      gridArea: 'amount',
+    },
+    buttonRoot: {
+    },
+    maxButtonRoot: {
+      gridArea: 'max',
+      marginBottom: '13px',
+      color: styles.colors.mainTextColor,
+      cursor: 'pointer',
+      padding: "2px 10px",
+      borderRadius: "10px",
+      backgroundColor: styles.colors.secondaryBlue,
+      verticalAlign: "top",
+      fontSize: '13px',
+      fontFamily: 'Roboto, sans-serif',
+    },
+    selectRoot: {
+      gridArea: 'select',
+      width: '100%',
+    },
+    sizeSmall: {
+      backgroundColor: styles.colors.mainBlack,
+      color: styles.colors.mainTextColor,
+      fontSize: '12px',
+      fontWeight: 'normal',
+      height: '25px',
+      lineHeight: '20px',
+      minHeight: '25px',
+      width: '25px',
+    },
+  };
+};
+
 
 class CoinSelector extends React.Component {
 
@@ -15,7 +85,7 @@ class CoinSelector extends React.Component {
     super(props);
 
     this._updateValues = this._updateValues.bind(this);
-    this._getOriginalBTCValue = this._getOriginalBTCValue.bind(this);
+    this._getOriginalValue = this._getOriginalValue.bind(this);
 
     // test correct way to build the currency amount
     this.regex = [
@@ -23,18 +93,17 @@ class CoinSelector extends React.Component {
       new RegExp(/^[0-9]{0,4}(\.[0-9]{0,5})?$/), //mBTC
       new RegExp(/^[0-9]{0,7}(\.[0-9]{0,2})?$/), //uBTC
     ];
-    this.fixedPos = [8, 5, 2]; // fixed positions
 
-    let btcValue = this._updateValues(props);
-    btcValue = props.initialCurrencyDisplay || btcValue;
+    let displayValue = this._updateValues(props);
+    displayValue = props.initialCurrencyDisplay || displayValue;
     this.state = {
-      btcValue,
-      btcOriginal: btcValue,
-      btcPreviousValue: btcValue,
+      displayValue,
+      btcOriginal: displayValue,
+      previousDisplayValue: displayValue,
       maxError: false,
       showAsCurrency: false,
       value: props.initialValue ?
-        this._getOriginalBTCValue(parseFloat(props.initialValue), btcValue, 1) :
+        this._getOriginalValue(parseFloat(props.initialValue), displayValue, 1) :
         "",
     };
 
@@ -45,17 +114,21 @@ class CoinSelector extends React.Component {
     this.handleButtonClick = this.handleButtonClick.bind(this);
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMaxClick = this.handleMaxClick.bind(this);
+
+    this.getRootClass = this.getRootClass.bind(this);
+    this.getTextField = this.getTextField.bind(this);
+    this.getMaxButton = this.getMaxButton.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
-    let btcValue = nextProps.initialCurrencyDisplay || this._updateValues(nextProps);
+    let displayValue = nextProps.initialCurrencyDisplay || this._updateValues(nextProps);
     this._updateStyles(nextProps);
 
-    if (btcValue != this.state.btcOriginal) {
+    if (displayValue != this.state.btcOriginal) {
       this.setState({
-        btcValue,
-        btcOriginal: btcValue,
-        btcPreviousValue: btcValue,
+        displayValue,
+        btcOriginal: displayValue,
+        previousDisplayValue: displayValue,
       });
     }
   }
@@ -66,18 +139,25 @@ class CoinSelector extends React.Component {
       max,
     } = this.props;
 
-    max = typeof max == "number" ? max.toFixed(8) : max;
+    const {
+      maxSelected,
+      value,
+    } = this.state;
 
-    if (this.props.max != prevProps.max && this.state.maxSelected) {
-      this.handleAmountChange(null, max, currency, true);
-    } else if (this.props.max != prevProps.max) {
-      const {
-        value,
-      } = this.state;
-
-      if (parseFloat(value) > parseFloat(max)) {
-        this.handleAmountChange(null, max);
+    const maxValue = typeof max == "number" ? max.toFixed(8) : max;
+    const fakeEvent = {
+      target: {
+        value: maxValue,
       }
+    };
+
+    if (max != prevProps.max && maxSelected) {
+      this.handleAmountChange(fakeEvent, currency, true);
+      return;
+    }
+
+    if (max != prevProps.max && parseFloat(value) > parseFloat(maxValue)) {
+      this.handleAmountChange(fakeEvent);
     }
   }
 
@@ -111,36 +191,7 @@ class CoinSelector extends React.Component {
         gridArea: 'button',
         marginBottom: '13px',
       },
-      buttonLink: {
-        border: '10px',
-        boxSizing: 'border-box',
-        display: 'inline-block',
-        WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
-        cursor: 'pointer',
-        size: '50%',
-        textDecoration: 'none',
-        margin: '0px',
-        padding: '0px',
-        outline: 'none',
-        fontSize: 'inherit',
-        fontWeight: 'inherit',
-        position: 'relative',
-        verticalAlign: 'bottom',
-        zIndex: '1',
-        backgroundColor: 'rgba(0, 0, 0, 0.87)',
-        //'rgb(128, 129, 255)',
-        transition: 'all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms',
-        //height: (props.small ? '22px' : '20px'),
-        width: (props.small ? '22px' : '20px'),
-        overflow: 'hidden',
-        borderRadius: '50%',
-        textAlign: 'center',
-      },
       buttonText: {
-        color: styles.colors.mainTextColor,
-        fontSize: '12px',
-        fontWeight: 'normal',
-        lineHeight: '20px',
       },
       inputStyle: Object.assign({
         fontSize: "22px",
@@ -149,18 +200,6 @@ class CoinSelector extends React.Component {
         width: "28px",
         padding: "12px 3px",
       },
-      maxButton: {
-        gridArea: 'max',
-        marginBottom: '13px',
-        color: styles.colors.mainTextColor,
-        cursor: 'pointer',
-        padding: "2px 10px",
-        borderRadius: "10px",
-        backgroundColor: styles.colors.secondaryBlue,
-        verticalAlign: "top",
-        fontSize: '13px',
-        fontFamily: 'Roboto, sans-serif',
-      }
     };
 
     if (props.centered && !props.fullSize) {
@@ -198,10 +237,9 @@ class CoinSelector extends React.Component {
     }, 3000);
   }
   
-  handleAmountChange(ev, amount, currency=this.props.currency, maxSelected=false) {
-    let {
-      max,
-    } = this.props;
+  handleAmountChange(event, currency=this.props.currency, maxSelected=false) {
+    let amount = event.target.value;
+    let { max } = this.props;
     max = typeof max == "number" ? max.toFixed(8) : max;
 
     if (amount == "") {
@@ -210,11 +248,12 @@ class CoinSelector extends React.Component {
         maxSelected,
         value: "",
       });
-      this.props.onAmountChange(0, this.state.btcValue, "");
+
+      this.props.onAmountChange(0, this.state.displayValue, "");
       return;
     }
 
-    if (isNaN(parseFloat(amount)) || !this.regex[this.state.btcValue - 1].test(amount)) {
+    if (isNaN(parseFloat(amount)) || !this.regex[this.state.displayValue - 1].test(amount)) {
       return;
     }
 
@@ -232,41 +271,53 @@ class CoinSelector extends React.Component {
         maxSelected,
         value: amount,
       });
-      this.props.onAmountChange(this._getOriginalBTCValue(amount), this.state.btcValue, amount);
+      this.props.onAmountChange(this._getOriginalValue(amount), this.state.displayValue, amount);
     }
   }
 
-  /* If not provided newBTC and prevBTC, returns the value as BTC */
-  _getOriginalBTCValue(amount, newBTC = 1, prevBTC = this.state.btcValue) {
-    // save always as BTC
-    let val = parseFloat(amount) * Math.pow(10, 3 * (newBTC - prevBTC));
-    return val.toFixed(this.fixedPos[newBTC - 1]).toString().replace(/^0+(\d)|(\d)0+$/gm, '$1$2');
+  /* If not provided newDisplay and prevDisplay, returns the original value */
+  _getOriginalValue(amount, newDisplay = 1, prevDisplay = this.state.displayValue) {
+    const factor = Math.pow(10, 3 * (newDisplay - prevDisplay));
+    const finalValue = parseFloat(amount) * factor;
+    const numDecimalsDisplayed = [8, 5, 2][newDisplay - 1];
+
+    return finalValue.toFixed(numDecimalsDisplayed)
+      .toString()
+      .replace(/^0+(\d)|(\d)0+$/gm, '$1$2');
   }
 
-  handleCurrencyChange(event, key, currency) {
+  handleCurrencyChange(event) {
     const {
-      value,
       onAmountChange,
+      value,
     } = this.props;
 
-    const prevBTC = this.state.btcValue;
+    const key = parseInt(event.target.value);
+    const prevDisplay = this.state.displayValue;
+
     let newState = {
-      btcPreviousValue: prevBTC,
-      btcValue: key + 1,
+      previousDisplayValue: prevDisplay,
+      displayValue: key,
     };
 
-    if (value !== null && onAmountChange) {
-      if (!value) {
-        onAmountChange("", key + 1, "");
-      } else {
-        const newValue = this._getOriginalBTCValue(value, key + 1, prevBTC);
-        onAmountChange(this._getOriginalBTCValue(value), key + 1, newValue);
+    // Component does not update value in props, we use the value from state.
+    if (value == undefined) {
+      let stateValue = this.state.value;
+      if (stateValue !== "") {
+        stateValue = this._getOriginalValue(stateValue, key, prevDisplay);
       }
-    } else {
-      newState['value'] = this.state.value == "" ? "" : 
-        this._getOriginalBTCValue(this.state.value, key + 1, prevBTC);
+      newState['value'] = stateValue;
+      this.setState(newState);
+      return;
     }
 
+    // Currency display changed, but not amount entered
+    if (value === "" || !value) {
+      return;
+    }
+
+    const newValue = this._getOriginalValue(value, key, prevDisplay);
+    newState['value'] = onAmountChange(this._getOriginalValue(value), key, newValue);
     this.setState(newState);
   }
 
@@ -277,154 +328,196 @@ class CoinSelector extends React.Component {
     } = this.props;
 
     max = typeof max == "number" ? max.toFixed(8) : max;
-    this.handleAmountChange(event, max, currency, true);
+    event.target.value = max;
+    this.handleAmountChange(event, currency, true);
   }
 
-  render() {
+  getRootClass() {
     const {
-      disabled,
-      floatingLabelFocusStyle,
-      floatingLabelStyle,
-      id,
-      inputStyle,
-      label,
-      labelCurrency,
-      xr,
-    } = this.props;
-
-    let {
-      currency,
-      error,
+      centered,
+      classes,
+      expand,
+      fullSize,
       max,
     } = this.props;
-    currency = currency.toUpperCase();
-    max = typeof max == "number" ? max.toFixed(8) : max;
 
+    let rootClass = classes.root;
+    if (fullSize && expand && max != null) {
+      rootClass = classes.rootMax;
+    } else if (fullSize && expand) {
+      rootClass = classes.rootExpand;
+    }
+
+    if (centered) {
+      rootClass += " " + classes.rootCentered;
+    }
+
+    return rootClass;
+  }
+
+  getTextField(amount="") {
     const {
-      btcValue,
-      showAsCurrency,
-      maxError,
-    } = this.state;
+      classes,
+      disabled,
+      id,
+      label,
+    } = this.props;
 
-    if (maxError) {
-      error = "Amount higher than max";
+    if (this.state.showAsCurrency) {
+
+      const { xr } = this.props;
+      const currency = this.props.currency.toUpperCase();
+      const rates = xr.getRates(currency);
+      const originalAmount = this._getOriginalValue(parseFloat(amount || 0));
+
+      return <TextField
+        className={ classes.textFieldRoot }
+        disabled={ true }
+        id={ id }
+        label={ <span>
+          &asymp; { rates[xr.currency].code } value
+        </span> }
+        value={ xr.get(originalAmount, 2, currency) }
+      />
     }
 
+    return <TextField
+      className={ classes.textFieldRoot }
+      disabled={ disabled }
+      id={ id }
+      label={ label }
+      onChange={ this.handleAmountChange }
+      value={ amount }
+    />;
+  }
 
-    let finalValue = this.props.value;
-    if (finalValue == null) {
-      finalValue = this.state.value;
-    }
+  getMaxButton() {
+    const {
+      classes,
+      currency,
+      max,
+    } = this.props;
 
-    const symbol = xr.getRates(currency)[xr.currency].symbol;
-
-    let props = {};
-    let amountStyle = this.styles.amount;
-    let selectStyle = this.styles.select;
-    let buttonStyle = this.styles.button;
-    let maxStyle = this.styles.maxButton;
-
-    if (error && (showAsCurrency || label != "")) {
-      props.errorText = error;
-      props.errorStyle = {
-        color: 'red'
-      };
-      // amountStyle = Object.assign({ marginBottom: '35px' }, amountStyle);
-      selectStyle = Object.assign({}, selectStyle, { marginBottom: '30px' });
-      buttonStyle = Object.assign({}, buttonStyle, { marginBottom: '40px' });
-      maxStyle = Object.assign({}, maxStyle, { marginBottom: '40px' });
-    } else if (error) {
-      props.errorText = error;
-      props.errorStyle = {
-        color: 'red'
-      };
-      // amountStyle = Object.assign({ marginBottom: '35px' }, amountStyle);
-      selectStyle = Object.assign({}, selectStyle, { marginBottom: '15px' });
-      buttonStyle = Object.assign({}, buttonStyle, { marginBottom: '30px' });
-      maxStyle = Object.assign({}, maxStyle, { marginBottom: '30px' });
-    }
-
-    return <div style={ this.styles.container }>
-      <Select
-        disabled={ disabled || showAsCurrency }
-        floatingLabelText={ labelCurrency || "Show as" }
-        floatingLabelStyle={ floatingLabelStyle }
-        iconStyle={ this.styles.selectorIcon }
-        labelStyle={ Object.assign({
-          paddingRight: "0px"
-        }, inputStyle) } 
-        onChange={ this.handleCurrencyChange }
-        style={ selectStyle }
-        value={ btcValue }
-      >
-        <MenuItem
-          value={1}
-          primaryText={ this.btcDisplay }
-        />
-        <MenuItem
-          value={2}
-          primaryText={ `m${this.btcDisplay}` }
-        />
-        <MenuItem
-          value={3}
-          primaryText={ `μ${this.btcDisplay}` }
-        />
-      </Select>
-      <div style={ amountStyle }>
-        { showAsCurrency ? <TextField
-          { ...props }
-          id={ id }
-          value={ xr.get(this._getOriginalBTCValue(parseFloat(finalValue) || 0), 2, currency) }
-          disabled={ true }
-          floatingLabelText={ <span>
-            &asymp; { xr.getRates(currency)[xr.currency].code } value
-          </span> }
-          floatingLabelFocusStyle={ floatingLabelFocusStyle }
-          floatingLabelStyle={ floatingLabelStyle }
-          inputStyle={ this.styles.inputStyle }
-          style={{
-            width: '100%',
-          }} 
-        /> : <TextField
-          { ...props }
-          disabled={ disabled }
-          id={ id }
-          inputStyle={ this.styles.inputStyle }
-          style={{
-            width: '100%',
-          }} 
-          floatingLabelText={ label }
-          floatingLabelFocusStyle={ floatingLabelFocusStyle }
-          floatingLabelStyle={ floatingLabelStyle }
-          onChange={ this.handleAmountChange }
-          value={ finalValue }
-        /> }
-      </div>
-      { max != null ? <div
-        style={ maxStyle }
+    if (max != null) {
+      return <div
+        className={ classes.maxButtonRoot }
         title={ currency + " " + max }
         onClick={ this.handleMaxClick }
       >
         MAX
-      </div> : null }
-      <div style={ buttonStyle }>
-        <div
-          style={ this.styles.buttonLink }
+      </div>;
+    }
+    return null;
+  }
+
+  render() {
+    const {
+      classes,
+      currency,
+      value,
+      xr,
+    } = this.props;
+
+    const {
+      displayValue,
+    } = this.state;
+
+
+    const textFieldComponent = this.getTextField(value || this.state.value);
+    const maxButton = this.getMaxButton();
+
+    return <div className={ this.getRootClass() }>
+
+      <FormControl className={ classes.selectRoot }>
+        <Select
+          native
+          value={ displayValue }
+          onChange={ this.handleCurrencyChange }
+          inputProps={{
+            name: 'display-sel',
+            id: 'display-native-selector',
+          }}
         >
-          <Button
-            style={{ minWidth: '20px', height: '20px' }}
-            disabled={ showAsCurrency }
-            onClick={ this.handleButtonClick }
-          >
-            <div style={ this.styles.buttonText }>
-              { symbol }
-            </div>
-          </Button>
-        </div>
+          <option value={1}>
+            { this.btcDisplay }
+          </option>
+          <option value={2}>
+            { `m${this.btcDisplay}` }
+          </option>
+          <option value={3}>
+            { `μ${this.btcDisplay}` }
+          </option>
+        </Select>
+      </FormControl>
+
+      <div className={ classes.amountRoot }>
+        { textFieldComponent }
       </div>
+
+      { maxButton }
+
+      <Fab
+        aria-label={ `To ${xr.currency}` }
+        classes={{
+          root: classes.buttonRoot,
+          sizeSmall: classes.sizeSmall,
+        }}
+        onClick={ this.handleButtonClick }
+        size="small"
+      >
+        { xr.getRates(currency.toUpperCase())[xr.currency].symbol }
+      </Fab>
+
     </div>;
   }
 }
+
+/*
+floatingLabelFocusStyle={ floatingLabelFocusStyle }
+floatingLabelStyle={ floatingLabelStyle }
+<div className={ classes.buttonRoot }>
+  <div
+    style={ this.styles.buttonLink }
+  >
+    <Button
+      style={{ minWidth: '20px', height: '20px' }}
+      disabled={ showAsCurrency }
+    >
+      <div style={ this.styles.buttonText }>
+        { xr.getRates(currency.toUpperCase())[xr.currency].symbol }
+      </div>
+    </Button>
+  </div>
+</div>
+*/
+
+/*
+<Select
+  disabled={ disabled || showAsCurrency }
+  floatingLabelText={ labelCurrency || "Show as" }
+  floatingLabelStyle={ floatingLabelStyle }
+  iconStyle={ this.styles.selectorIcon }
+  labelStyle={ Object.assign({
+    paddingRight: "0px"
+  }, inputStyle) } 
+  onChange={ this.handleCurrencyChange }
+  style={ selectStyle }
+  value={ displayValue }
+>
+  <MenuItem
+    value={1}
+    primaryText={ this.btcDisplay }
+  />
+  <MenuItem
+    value={2}
+    primaryText={ `m${this.btcDisplay}` }
+  />
+  <MenuItem
+    value={3}
+    primaryText={ `μ${this.btcDisplay}` }
+  />
+</Select>
+*/
 
 CoinSelector.propTypes = {
   centered: PropTypes.bool,
@@ -460,4 +553,5 @@ CoinSelector.defaultProps = {
   max: null,
 }
 
-export default CoinSelector;
+export default withStyles(componentStyles)(CoinSelector);
+

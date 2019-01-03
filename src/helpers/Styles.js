@@ -6,7 +6,7 @@ export default {
     secondaryColor: "#8ea7fb", // second-background
     mainTextColor: "white",
     secondaryTextColor: "#ecf1ff",
-    mainGrey: "#989898", // bottombar color
+    mainGrey: "#ededed", // bottombar color
     darkBlue: "#2f447e", // support color - titles
     mainBlue: "#2f447e", // support color - titles
     secondaryBlue: "#6d86ca", // border color table row

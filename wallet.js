@@ -17,8 +17,18 @@ import styles from './src/helpers/Styles';
 
 const theme = createMuiTheme({
   palette: {
-    primaryColor: styles.colors.mainColor,
-    secondaryColor: styles.colors.mainColor,
+    primary: {
+      main: styles.colors.mainColor,
+      light: styles.colors.secondaryBlue,
+      dark: styles.colors.darkBlue,
+      contrastText: styles.colors.mainTextColor,
+    },
+    secondary: {
+      main: styles.colors.secondaryColor,
+      light: styles.colors.mainGrey,
+      dark: styles.colors.mainBlack,
+      contrastText: styles.colors.secondaryTextColor,
+    },
   },
 });
 

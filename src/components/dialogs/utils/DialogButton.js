@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 
-import styles from '../../helpers/Styles';
+import styles from '../../../helpers/Styles';
 
-const componentStyles = (theme) => {
+const componentStyles = () => {
   const {
     colors,
   } = styles;
@@ -38,9 +38,7 @@ class DialogButton extends React.Component {
     });
 
     return <Button
-      classes={{
-        root: classes.root,
-      }}
+      className={ classes.root }
       onClick={ onClick }
       style={ style }
     >
@@ -60,4 +58,4 @@ DialogButton.defaultProps = {
   style: {},
 };
 
-export default withStyles(componentStyles, { withTheme: true })(DialogButton);
+export default withStyles(componentStyles)(DialogButton);

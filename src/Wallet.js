@@ -21,7 +21,6 @@ import BottomBar from './components/BottomBar';
 import DateComponent from './components/DateComponent';
 import Loading from './components/Loading';
 import LogonScreen from './components/LogonScreen';
-import LogoText from './components/LogoText';
 import Notification from './components/Notification'
 import WalletBalance from './components/WalletBalance';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -36,10 +35,10 @@ import PayTab from './components/tabs/PayTab';
 import ExchangeTab from './components/tabs/ExchangeTab';
 
 // Dialogs
-import AboutDialog from './components/dialogs/AboutDialog';
-import AddFundsDialog from './components/dialogs/AddFundsDialog';
+import DialogButton from './components/dialogs/utils/DialogButton';
+import { default as AlertDialog, getDialog } from './components/dialogs/utils/Dialogs';
+
 import AuthenticateDialog from './components/dialogs/AuthenticateDialog';
-import AlertDialog from './components/dialogs/AlertDialog';
 import CloseDialog from './components/dialogs/CloseDialog';
 import CoinDialog from './components/dialogs/CoinDialog';
 import DiscardDialog from './components/dialogs/DiscardDialog';
@@ -845,22 +844,28 @@ class Wallet extends React.Component {
   }
   
   _recoverTransactionsInProgress() {
+    const {
+      debug,
+    } = this.props;
+
     const notification = (state, args) => {
       if (state == "displayItem") {
         return this.handleShowItemPurchased(args.item);
       }
       return Promise.resolve(true);
     };
-    const params = [this._successRecoveryTx, this._failureRecoveryTx];
-    return this.wallet.recovery(...params).then(() => {
-      // Check if missing payment
-      return this.wallet.paymentRecovery(notification);
-    }).then((value) => {
-      return this.refreshCoinBalance();
-    }).catch((err) => {
-      console.log(err);
+
+    const handleError = (err) => {
+      if (err) {
+        console.log(err);
+      }
       return Promise.reject(err);
-    });
+    }
+
+    return this.wallet.recovery(this._successRecoveryTx, this._failureRecoveryTx)
+      .then(() => this.wallet.paymentRecovery(notification))
+      .then((value) =>  this.refreshCoinBalance())
+      .catch(handleError);
   }
 
   /**
@@ -2168,7 +2173,9 @@ class Wallet extends React.Component {
    */
   openDialog(alertObj, open=true) {
     alertObj = Object.assign({}, alertObj, { open });
-    this.setState({ alert: alertObj });
+    this.setState({
+      alert: alertObj,
+    });
   }
 
   _closeDialog(event) {
@@ -2538,49 +2545,41 @@ class Wallet extends React.Component {
       navDrawerOpen: false,
     });
 
-    this.openDialog({
-      title: <div>
-        About <br/>
-        <LogoText />
-      </div>,
-      showCancelButton: false,
-      body: <AboutDialog />,
-    });
+    this.openDialog(getDialog("AboutDialog"));
   }
 
   handleClickAddFunds() {
-    const {
-      isFlipped,
-    } = this.state;
 
-    let actions = [
-      <Button
-        label="Close"
-        variant="contained"
-        primary={ true }
-        onClick={ this.clearDialog }
-      />
-    ];
-    let targetValue = 0;
+    const handleResponse = (depositRef) => {
+      let buttons = [
+        <DialogButton
+          id="close"
+          key="close"
+          label="CLOSE"
+          onClick={ this.clearDialog }
+        />
+      ];
 
-    this.wallet.getDepositRef().then((depositRef) => {
       if (depositRef) {
-        actions.push(<Button
-          variant="contained"
-          style={{ marginLeft: '5px' }}
+        buttons.push(<DialogButton
+          id="forget-addess"
+          key="forget-addess"
           label="FORGET ADDRESS"
           onClick={ this.handleRemoveDepositRef }
         />);
-        actions.push(<Button
-          variant="contained"
-          style={{ marginLeft: '5px' }}
+
+        buttons.push(<DialogButton
+          id="collect-coins"
+          key="collect-coins"
           label="COLLECT COINS"
           onClick={ this.issueCollect }
         />);
-      } else {
-        actions.push(<Button
-          variant="contained"
-          style={{ marginLeft: '5px' }}
+      }
+      
+      if (!depositRef) {
+        buttons.push(<DialogButton
+          id="get-address"
+          key="get-address"
           label="GET ADDRESS"
           onClick={ this.handleClickDeposit }
         />);
@@ -2590,45 +2589,24 @@ class Wallet extends React.Component {
         navDrawerOpen: false,
       });
 
-      this.openDialog({
-        title: <div>
-          <div style={{
-            position: 'absolute',
-            right: '30px',
-            display: 'flex',
-          }}>
-            { this.tools.getImageComponent("b.svg") } 
-            { this.tools.getImageComponent("arrowRight.svg") } 
-            { this.tools.getImageComponent("b-e.svg") } 
-          </div>
-          <div style={{
-            textAlign: 'left',
-            fontSize: '35px',
-          }}>
-            Add funds
-          </div>
-        </div>,
-        showCancelButton: true,
-        cancelLabel: "OK",
-        body: <AddFundsDialog
-          closeDialog={ this.clearDialog }
-          isFlipped={ isFlipped }
-          issueCollect={ this.issueCollect }
-          loading={ this.loading }
-          snackbarUpdate={ this.handleNotificationUpdate }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          openDialog={ this.handleClickAddFunds }
-          updateTargetValue={(value) => {
-            this.setState({
-              targetValue: value,
-            });
-          }}
-          wallet={ this.wallet }
-          xr={ this.xr }
-        />,
-        actions,
-      });
-    });
+      const dialog = getDialog("AddFunds", {
+        closeDialog: this.clearDialog,
+        isFlipped: this.state.isFlipped,
+        issueCollect: this.issueCollect,
+        loading: this.loading,
+        snackbarUpdate: this.handleNotificationUpdate,
+        showValuesInCurrency: this.showValuesInCurrency,
+        openDialog: this.handleClickAddFunds,
+        updateTargetValue: (targetValue) => this.setState({ targetValue }),
+        wallet: this.wallet,
+        xr: this.xr,
+      }, buttons);
+
+      this.openDialog(dialog);
+    };
+
+    this.wallet.getDepositRef()
+      .then(handleResponse);
   }
 
   handleClickSend() {

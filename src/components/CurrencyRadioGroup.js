@@ -61,10 +61,12 @@ class CurrencyRadioGroup extends React.Component {
         let img = key == "XBT" ? "btc" : key.toLowerCase();
         img += "e.png";
 
+        // TO_DO: invalid color for radio...
+        // color={ styles.colors.mainTextColor }
+        // must be "primary", "secondary", "default"
+
         return <FormControlLabel
-          control={<Radio
-            color={ styles.colors.mainTextColor }
-          />}
+          control={<Radio />}
           disabled={ active.indexOf(key) == -1 }
           key={ key }
           value={ key }
