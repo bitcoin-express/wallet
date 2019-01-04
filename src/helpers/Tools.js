@@ -1,5 +1,18 @@
 import React from 'react';
 
+export function getImageComponent(url, width=40, height=40, path='history/', style={}) {
+  let defaultStyle = {
+    background: `url('css/img/${path}${url}')`,
+    backgroundSize: `${width}px ${height}px`,
+    backgroundRepeat: "no-repeat",
+    display: 'inline-block',
+    height: `${height}px`,
+    width: `${width}px`,
+  };
+
+  return <div style={ Object.assign(defaultStyle, style) } />
+};
+
 export default class Tools {
 
   constructor () {

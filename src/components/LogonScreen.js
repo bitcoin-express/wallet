@@ -4,96 +4,224 @@ import PropTypes from 'prop-types';
 
 import { CSSTransitionGroup } from 'react-transition-group';
 
+import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dropzone from 'react-dropzone';
 
 import StorageIcon from './StorageIcon';
 
-import Tools from '../helpers/Tools';
+import { getImageComponent } from '../helpers/Tools';
 import styles from '../helpers/Styles';
+
+
+const componentStyles = (theme) => {
+  const {
+    colors,
+  } = styles;
+
+  return {
+    root: {
+      textAlign: 'center',
+      color: styles.colors.mainTextColor,
+      height: '580px',
+      width: 'calc(100vw - 50px)',
+      height: 'calc(100% - 26px)',
+      minHeight: 'calc(100vh - 26px)',
+      padding: '0 25px 26px 25px',
+    },
+    rootMin: {
+      margin: '10px',
+      textAlign: 'center',
+      color: styles.colors.mainTextColor,
+      height: '580px',
+    },
+    button: {
+      color: styles.colors.mainTextColor,
+      maxWidth: '400px',
+      justifyContent: 'space-between',
+      width: '100%',
+      margin: theme.spacing.unit,
+    },
+    header: {
+      [theme.breakpoints.down('xs')]: {
+        display: 'none',
+      },
+      color: styles.colors.mainBlue,
+      fontFamily: styles.fontFamily,
+    },
+    logoText: {
+      marginTop: '10vh',
+      width: '20vh',
+      height: '20vh',
+      maxWidth: '150px',
+      maxHeight: '150px',
+    },
+    logoTextMin: {
+      marginTop: '20px',
+      width: '20vh',
+      height: '20vh',
+    },
+    logoIcon: {
+      height: '80%',
+      cursor: 'crosshair',
+    },
+    logoIconMin: {
+      height: '70%',
+      cursor: 'crosshair',
+    },
+    section: {
+      marginTop: '5vh',
+      display: 'grid',
+    },
+    text: {
+      marginBottom: '35px',
+      fontSize: 'inherit',
+      color: styles.colors.mainBlue,
+      fontFamily: styles.fontFamily,
+    },
+    textMinimized: {
+      marginBottom: '15px',
+      fontSize: '11px',
+      color: styles.colors.mainBlue,
+      fontFamily: styles.fontFamily,
+    },
+  };
+};
+
 
 class LogonScreen extends React.Component {
 
   constructor(props) {
     super(props);
 
-    this.tools = new Tools();
+    this.state = {
+      hasError: false,
+    };
 
-    this._initializeStyles = this._initializeStyles.bind(this);
-    this._initializeStyles(props);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this._initializeStyles(nextProps);
-  }
-
-  _initializeStyles(props) {
     this.styles = {
-      container: props.isFullScreen ? null : { margin: '10px' },
-      section: {
-        marginTop: '5vh',
-      },
-      welcomeLabelButton: {
-        color: styles.colors.mainTextColor,
-      },
-      welcomeButton: {
-        maxWidth: '400px',
-        width: '100%',
-        textAlign: 'left',
-      },
-      divider: {
-        marginBottom: '15px',
-      },
-      imgName: {
-        marginTop: props.isFullScreen ? '10vh' : '20px',
-        width: '20vh',
-        height: '20vh',
-      },
-      imgLogo: {
-        height: props.isFullScreen ? '80%': '70%',
-        cursor: 'crosshair',
-      },
-      iconButton: {
-        fontSize: '1.5em',
-        position:'absolute',
-        left:'0',
-        top:'5px',
-        color: styles.colors.mainTextColor,
-      },
       storageIcon: {
         marginTop: '5px',
+        position: 'inherit',
       },
-      text: {
-        color: styles.colors.mainBlue,
-        fontFamily: styles.fontFamily,
-        marginBottom: props.isFullScreen ? '35px' : '15px',
-        fontSize: props.isFullScreen ? 'inherit' : '11px',
-      },
-      backgroundColor: styles.colors.thirdBlue,
     };
+
+    this.handleOnDropDropzone = this.handleOnDropDropzone.bind(this);
+    this.renderButtonSection = this.renderButtonSection.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      debug,
+      snackbarUpdate,
+    } = this.props;
+
+    if (debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info, true);
+  }
+
+  handleOnDropDropzone(accepted, rejected) {
+    const {
+      onAuthLocalStorage,
+      onFinishLoadingFile,
+      onLoadFile,
+    } = this.props;
+
+    onAuthLocalStorage()
+      .then(() => onLoadFile(accepted, rejected, false))
+      .then(onFinishLoadingFile);
+  }
+
+  renderButtonSection() {
+    const {
+      classes,
+      isFullScreen,
+      onAuthGDrive,
+      onAuthLocalStorage,
+      wallet,
+    } = this.props;
+
+    const importIcon = getImageComponent("import.svg", 25, 25, "./tabs/");
+
+    return <section className={ classes.section }>
+
+      <p className={ isFullScreen ? classes.text : classes.textMinimized }>
+        Looks like this is the first time this Wallet has been used.
+        <br/>
+        Please select one of the following options:
+      </p>
+
+      <div>
+        <Button
+          className={ classes.button }
+          color="secondary"
+          onClick={ onAuthGDrive }
+          title="Please allow pop-ups for bitcoin-e.org"
+          variant="contained"
+        >
+          Connect to Google Drive
+          <StorageIcon
+            drive={ true }
+            wallet={ wallet }
+            small={ true }
+            style={ this.styles.storageIcon }
+          />
+        </Button>
+      </div>
+
+      <div>
+        <Button
+          className={ classes.button }
+          color="secondary"
+          onClick={ () => onAuthLocalStorage(true) }
+          variant="contained"
+        >
+          Start Local Wallet
+          <StorageIcon
+            browser={ true }
+            wallet={ wallet }
+            small={ true }
+            style={ this.styles.storageIcon }
+          />
+        </Button>
+      </div>
+
+      <Dropzone
+        accept="application/json"
+        style={{}}
+        onDrop={ this.handleOnDropDropzone }
+      >
+        <Button
+          className={ classes.button }
+          color="secondary"
+          variant="contained"
+        >
+          Import coins from file
+          { importIcon }
+        </Button>
+      </Dropzone>
+    </section>;
   }
 
   render() {
     const {
-      alert,
-      onCloseClick,
+      classes,
       isFullScreen,
-      onAuthGDrive,
-      onAuthLocalStorage,
-      onFinishLoadingFile,
-      onLoadFile,
-      wallet,
     } = this.props;
 
-    const importIcon = this.tools.getImageComponent("import_blue.svg", 25, 25, "./", {
-      display: 'inherit',
-      position: 'absolute',
-      marginTop: '5px',
-    });
+    const {
+      hasError,
+    } = this.state;
 
-    return <div
-      className="welcome-page"
-      style={ this.styles.container }
+    return <section
+      className={ isFullScreen ? classes.root : classes.rootMinimized }
     >
       <CSSTransitionGroup
         transitionName="welcome"
@@ -102,95 +230,31 @@ class LogonScreen extends React.Component {
         transitionEnter={ false }
         transitionLeave={ false }
       >
-        <img
-          src="css/img/Bitcoin-express.png"
-          className="wp-header"
-          style={ this.styles.imgName }
-        />
-        <div className="wp-header">
+
+        <div className={ classes.header }>
+          <img
+            src="css/img/Bitcoin-express.png"
+            className={ isFullScreen ? classes.logoText : classes.logoTextMin }
+          />
           <img
             alt="Bitcoin express"
-            style={ this.styles.imgLogo }
             src="css/img/BitcoinExpress.svg"
+            className={ isFullScreen ? classes.logoIcon : classes.logoIconMin }
           />
           <br />
           <small>
             v{ window.version }
           </small>
+
+          { hasError ? <h1>Wallet under maintainance. Try again later.</h1> : null }
         </div>
-        <section style={ this.styles.section }>
-          <div style={ this.styles.text }>
-            Looks like this is the first time this Wallet has been used.<br/>
-            Please select one of the following options:
-          </div>
-          <div style={ this.styles.divider }>
-            <Button
-              backgroundColor={ this.styles.backgroundColor }
-              icon={ <div style={ this.styles.welcomeButton } >
-                <StorageIcon
-                  drive={ true }
-                  wallet={ wallet }
-                  small={ true }
-                  style={ this.styles.storageIcon }
-                />
-              </div> }
-              label="Connect to Google Drive"
-              labelStyle={ this.styles.welcomeLabelButton }
-              onClick={ onAuthGDrive }
-              style={ this.styles.welcomeButton }
-              title="Please allow pop-ups for bitcoin-e.org"
-              variant="contained"
-            />
-          </div>
-          <div style={ this.styles.divider }>
-            <Button
-              label="Start Local Wallet"
-              labelStyle={ this.styles.welcomeLabelButton }
-              icon={ <div style={ this.styles.welcomeButton } >
-                <StorageIcon
-                  browser={ true }
-                  wallet={ wallet }
-                  small={ true }
-                  style={ this.styles.storageIcon }
-                />
-              </div> }
-              style={ this.styles.welcomeButton }
-              onClick={ () => onAuthLocalStorage(true) }
-              backgroundColor={ this.styles.backgroundColor }
-              variant="contained"
-            />
-          </div>
-          <div>
-            <Dropzone
-              accept="application/json"
-              style={{}}
-              onDrop={(accepted, rejected) => {
-                onAuthLocalStorage().then(() => {
-                  return onLoadFile(accepted, rejected, false);
-                }).then(onFinishLoadingFile);
-              }}
-            >
-              <Button
-                label="Import coins from file"
-                labelStyle={ this.styles.welcomeLabelButton }
-                icon={ importIcon }
-                style={ this.styles.welcomeButton }
-                backgroundColor={ this.styles.backgroundColor }
-                variant="contained"
-              />
-            </Dropzone>
-          </div>
-        </section>
+
+        { hasError ? null : this.renderButtonSection() }
       </CSSTransitionGroup>
-    </div>;
+    </section>;
   }
 }
 
-/*
-<i
-  className="fa fa-upload"
-  style={ this.styles.iconButton }
-/> 
-*/
 
-export default LogonScreen;
+export default withStyles(componentStyles)(LogonScreen);
+

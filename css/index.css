@@ -44,6 +44,15 @@ body {
   font-weight: 100;
   margin: 5px 0 5px 0;
 }
+/*
+rootName: {
+  color: styles.colors.mainTextColor,
+  fontFamily: "'Anton', impact",
+  fontStyle: 'italic',
+  fontWeight: '100',
+  margin: '5px 0 5px 0',
+},
+*/
 
 .welcome-page img {
   max-width: 150px;

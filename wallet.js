@@ -24,11 +24,17 @@ const theme = createMuiTheme({
       contrastText: styles.colors.mainTextColor,
     },
     secondary: {
+      main: "#7b95dc", //styles.colors.thirdBlue,
+      light: styles.colors.mainGrey,
+      dark: "#687eb9", //styles.colors.darkBlue,
+      contrastText: styles.colors.secondaryTextColor,
+    },
+    /*secondary: {
       main: styles.colors.secondaryColor,
       light: styles.colors.mainGrey,
       dark: styles.colors.mainBlack,
       contrastText: styles.colors.secondaryTextColor,
-    },
+    },*/
   },
 });
 
