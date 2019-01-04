@@ -1,74 +1,118 @@
 import React from 'react';
 
-import {
-  Toolbar,
-  ToolbarGroup,
-} from '@material-ui/core/Toolbar';
+import { withStyles } from '@material-ui/core/styles';
+import Toolbar from '@material-ui/core/Toolbar';
 
 import BitcoinCurrency from './BitcoinCurrency'
-
 import styles from '../helpers/Styles';
 
-export default class BottomBar extends React.Component {
+
+const componentStyles = (theme) => {
+  const {
+    colors,
+  } = styles;
+
+  return {
+    bottombar: {
+      position: 'absolute',
+      top: styles.minimizedHeight - 12,
+      width: `${styles.minimizedWidth - 20}px`,
+      backgroundColor: 'transparent',
+      zIndex: 100,
+      borderRadius: '50px 0',
+    },
+    icon: {
+      color: styles.colors.mainTextColor,
+      cursor: 'pointer',
+    },
+    resizeIcon: {
+      width: '24px',
+      height: '24px',
+      cursor: 'pointer',
+      padding: '4px 0 0 6px',
+    },
+    toolbar: {
+      position: 'fixed',
+      width: '100%',
+      bottom: '0',
+      zIndex: 100,
+      height: `${styles.bottombarHeight}px`,
+      backgroundColor: styles.colors.mainGrey,
+      [theme.breakpoints.down('md')]: {
+        padding: '0 5px 0 0',
+      },
+      [theme.breakpoints.up('md')]: {
+        padding: '0 calc(5vw + 24px) 0 0',
+      },
+      [theme.breakpoints.up('lg')]: {
+        padding: '0 calc(15vw + 24px) 0 0',
+      },
+      [theme.breakpoints.up('xl')]: {
+        padding: '0 calc(15vw + 24px) 0 0',
+      },
+    },
+    toolbarMin: {
+      width: `${styles.minimizedWidth - 20}px`,
+      height: `${styles.bottombarHeight}px`,
+      borderRadius: '20px',
+      backgroundColor: styles.colors.mainGrey,
+      padding: '0 10px 0 5px',
+      //padding: '0px !important',
+    },
+    total: {
+      color: styles.colors.mainTextColor,
+      fontFamily: "monospace, mono",
+      fontSize: '18px',
+      marginLeft: '10px',
+    },
+  };
+};
+
+
+class BottomBar extends React.Component {
 
   constructor(props) {
     super(props);
 
-    this.styles = {
-      bottombar: {
-        position: 'absolute',
-        top: styles.minimizedHeight - 12,
-        width: `${styles.minimizedWidth - 20}px`,
-        backgroundColor: 'transparent',
-        zIndex: 100,
-        borderRadius: '50px 0',
-      },
-      icon: {
-        color: styles.colors.mainTextColor,
-        cursor: 'pointer',
-      },
-      toolbar: {
-        position: 'fixed',
-        width: '100%',
-        bottom: '0',
-        zIndex: 100,
-        height: `${styles.bottombarHeight}px`,
-        backgroundColor: styles.colors.mainGrey,
-      },
-      toolbarMin: {
-        width: `${styles.minimizedWidth - 20}px`,
-        height: `${styles.bottombarHeight}px`,
-        borderRadius: '20px',
-        backgroundColor: styles.colors.mainGrey,
-        padding: '0px !important',
-      },
-      total: {
-        color: styles.colors.mainTextColor,
-        fontFamily: "monospace, mono",
-        fontSize: '18px',
-        marginLeft: '10px',
-      },
-    };
-
     this.state = {
+      hasError: false,
       total: 0.0,
       totalAvailable: false,
     };
 
-    this._updateTotal = this._updateTotal.bind(this);
+    this.updateTotal = this.updateTotal.bind(this);
+    this.getTotal = this.getTotal.bind(this);
   }
 
-  componentWillMount() {
-    this._updateTotal();
+  componentDidCatch(error, info) {
+    const {
+      debug,
+      snackbarUpdate,
+    } = this.props;
+
+    if (debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info, true);
+  }
+
+  componentDidMount() {
+    this.updateTotal();
   }
 
   componentWillReceiveProps(nextProps) {
     if (this.props.balance != nextProps.balance) {
-      this._updateTotal();
+      this.updateTotal();
     }
   }
 
-  _updateTotal() {
+  updateTotal() {
     const {
       wallet,
       xr,
@@ -89,10 +133,9 @@ export default class BottomBar extends React.Component {
     });
   }
 
-  render() {
-    let {
-      handleResizeClick,
-      isFullScreen,
+  getTotal() {
+    const {
+      classes,
       showValuesInCurrency,
       xr,
     } = this.props;
@@ -102,53 +145,59 @@ export default class BottomBar extends React.Component {
       totalAvailable,
     } = this.state;
 
-    let totalText = "not available";
+    let text = "not available";
     if (totalAvailable && !isNaN(total)) {
-      totalText = "≈ " + xr.getCurrencySymbol() + total.toFixed(2);
+      text = "≈ " + xr.getCurrencySymbol() + total.toFixed(2);
     }
-    return null;
+    return <div className={ classes.total }>
+      { text } &nbsp;<i
+        className="fa fa-university"
+        onClick={ showValuesInCurrency }
+        classes={{
+          root: classes.icon,
+        }}
+        title="Display all in fiat"
+      />
+    </div>;
+  }
 
-    return (
-      <div style={ isFullScreen ? {} : this.styles.bottombar }>
-        <Toolbar
-          style={ isFullScreen ? this.styles.toolbar : this.styles.toolbarMin }
-          className={ isFullScreen ? "appbar bottom" : "appbar minimized" }
+  render() {
+    const {
+      classes,
+      handleResizeClick,
+      isFullScreen,
+    } = this.props;
+
+    if (this.state.hasError) {
+      return null;
+    }
+
+    return <div style={ isFullScreen ? "" : classes.bottombar }>
+      <Toolbar className={ isFullScreen ? classes.toolbar : classes.toolbarMin }>
+        <div
+          style={{
+            marginLeft: '0',
+          }}
         >
-          <ToolbarGroup
-            firstChild={ true }
-            style={{
-              marginLeft: '0',
+          <div
+            className={ isFullScreen ? "fullscreen" : "" }
+            onClick={ (event) => {
+              event.preventDefault();
+              handleResizeClick();
             }}
           >
-            <div
-              className={ isFullScreen ? "fullscreen" : "" }
-              onClick={ (event) => {
-                event.preventDefault();
-                handleResizeClick();
-              }}
-            >
-              <img
-                src={ `css/img/resize_${isFullScreen ? 'down' : 'up'}.svg` }
-                title={ isFullScreen ? 'Resize down' : 'Resize up' }
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  cursor: 'pointer',
-                  padding: '4px 0 0 6px',
-                }}
-              />
-            </div>
-          </ToolbarGroup>
-          <ToolbarGroup style={ this.styles.total }>
-            { totalText } &nbsp;<i
-              className="fa fa-university"
-              onClick={ showValuesInCurrency }
-              style={ this.styles.icon }
-              title="Display all in fiat"
+            <img
+              src={ `css/img/resize_${isFullScreen ? 'down' : 'up'}.svg` }
+              title={ isFullScreen ? 'Resize down' : 'Resize up' }
+              className={ classes.resizeIcon }
             />
-          </ToolbarGroup>
-        </Toolbar>
-      </div>
-    );
+          </div>
+        </div>
+        { this.getTotal() }
+      </Toolbar>
+    </div>;
   }
 }
+
+export default withStyles(componentStyles)(BottomBar);
+

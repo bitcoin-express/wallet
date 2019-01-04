@@ -3066,6 +3066,7 @@ class Wallet extends React.Component {
         xr={ this.xr }
         wallet={ this.wallet }
         isFullScreen={ isFullScreen }
+        snackbarUpdate={ this.handleNotificationUpdate }
         showValuesInCurrency={ this.showValuesInCurrency }
       />
     </div>;
