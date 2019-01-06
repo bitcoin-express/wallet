@@ -2,6 +2,8 @@ import React from 'react';
 
 import { withStyles } from '@material-ui/core/styles';
 import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@material-ui/core/AppBar';
+import IconButton from '@material-ui/core/IconButton';
 
 import BitcoinCurrency from './BitcoinCurrency'
 import styles from '../helpers/Styles';
@@ -13,13 +15,21 @@ const componentStyles = (theme) => {
   } = styles;
 
   return {
-    bottombar: {
-      position: 'absolute',
-      top: styles.minimizedHeight - 12,
-      width: `${styles.minimizedWidth - 20}px`,
-      backgroundColor: 'transparent',
-      zIndex: 100,
-      borderRadius: '50px 0',
+    appBarColor: {
+      backgroundColor: styles.colors.mainGrey,
+    },
+    appBar: {
+      top: 'auto',
+      bottom: 0,
+      height: `${styles.bottombarHeight}px`,
+    },
+    appBarMin: {
+      top: 'auto',
+      bottom: 0,
+      borderRadius: '20px',
+      height: `${styles.bottombarHeight}px`,
+      width: '290px',
+      margin: '0 35px 16px',
     },
     icon: {
       color: styles.colors.mainTextColor,
@@ -32,32 +42,30 @@ const componentStyles = (theme) => {
       padding: '4px 0 0 6px',
     },
     toolbar: {
-      position: 'fixed',
-      width: '100%',
-      bottom: '0',
-      zIndex: 100,
-      height: `${styles.bottombarHeight}px`,
-      backgroundColor: styles.colors.mainGrey,
-      [theme.breakpoints.down('md')]: {
-        padding: '0 5px 0 0',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: `${styles.bottombarHeight}px`,
+      [theme.breakpoints.down('xs')]: {
+        padding: '0 24px 0 24px',
+      },
+      [theme.breakpoints.up('xs')]: {
+        padding: '0 24px',
       },
       [theme.breakpoints.up('md')]: {
-        padding: '0 calc(5vw + 24px) 0 0',
+        padding: '0 calc(5vw + 24px)',
       },
       [theme.breakpoints.up('lg')]: {
-        padding: '0 calc(15vw + 24px) 0 0',
+        padding: '0 calc(15vw + 24px)',
       },
       [theme.breakpoints.up('xl')]: {
-        padding: '0 calc(15vw + 24px) 0 0',
+        padding: '0 calc(20vw + 24px)',
       },
     },
     toolbarMin: {
-      width: `${styles.minimizedWidth - 20}px`,
-      height: `${styles.bottombarHeight}px`,
-      borderRadius: '20px',
-      backgroundColor: styles.colors.mainGrey,
-      padding: '0 10px 0 5px',
-      //padding: '0px !important',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: `${styles.bottombarHeight}px`,
+      paddingLeft: '0px',
     },
     total: {
       color: styles.colors.mainTextColor,
@@ -151,11 +159,8 @@ class BottomBar extends React.Component {
     }
     return <div className={ classes.total }>
       { text } &nbsp;<i
-        className="fa fa-university"
+        className={ "fa fa-university " + classes.icon }
         onClick={ showValuesInCurrency }
-        classes={{
-          root: classes.icon,
-        }}
         title="Display all in fiat"
       />
     </div>;
@@ -172,30 +177,34 @@ class BottomBar extends React.Component {
       return null;
     }
 
-    return <div style={ isFullScreen ? "" : classes.bottombar }>
+    return <AppBar
+      position="fixed"
+      color="primary"
+      classes={{
+        root: isFullScreen ? classes.appBar : classes.appBarMin,
+        colorPrimary: classes.appBarColor,
+      }}
+    >
       <Toolbar className={ isFullScreen ? classes.toolbar : classes.toolbarMin }>
-        <div
-          style={{
-            marginLeft: '0',
+        <IconButton
+          aria-label={ isFullScreen ? 'Resize down' : 'Resize up' }
+          color="inherit"
+          onClick={ (event) => {
+            event.preventDefault();
+            handleResizeClick();
           }}
         >
-          <div
-            className={ isFullScreen ? "fullscreen" : "" }
-            onClick={ (event) => {
-              event.preventDefault();
-              handleResizeClick();
-            }}
-          >
-            <img
-              src={ `css/img/resize_${isFullScreen ? 'down' : 'up'}.svg` }
-              title={ isFullScreen ? 'Resize down' : 'Resize up' }
-              className={ classes.resizeIcon }
-            />
-          </div>
+          <img
+            src={ `css/img/resize_${isFullScreen ? 'down' : 'up'}.svg` }
+            title={ isFullScreen ? 'Resize down' : 'Resize up' }
+            className={ classes.resizeIcon }
+          />
+        </IconButton>
+        <div>
+          { this.getTotal() }
         </div>
-        { this.getTotal() }
       </Toolbar>
-    </div>;
+    </AppBar>;
   }
 }
 

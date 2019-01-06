@@ -3,10 +3,9 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
 import Paper from '@material-ui/core/Paper';
-import {
-  BottomNavigation,
-  BottomNavigationItem
-} from '@material-ui/core/BottomNavigation';
+import { withStyles } from '@material-ui/core/styles';
+import BottomNavigation from '@material-ui/core/BottomNavigation';
+import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 
 import SettingsMain from './SettingsMain';
 import SettingsDisplay from './SettingsDisplay';
@@ -56,7 +55,7 @@ export default class Settings extends React.Component {
     };
 
     let items = [
-      <BottomNavigationItem
+      <BottomNavigationAction
         key="settings"
         style={{
           minWidth: '40px',
@@ -68,7 +67,7 @@ export default class Settings extends React.Component {
         /> }
         onClick={ () => this.setState({ display: 0 }) }
       />,
-      <BottomNavigationItem
+      <BottomNavigationAction
         key="display"
         style={{
           minWidth: '40px',
@@ -80,7 +79,7 @@ export default class Settings extends React.Component {
         /> }
         onClick={ () => this.setState({ display: 1 }) }
       />,
-      <BottomNavigationItem
+      <BottomNavigationAction
         key="recovery"
         disabled={ display == 2 }
         icon={ <i

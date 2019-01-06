@@ -57,6 +57,7 @@ class SignInOut extends React.Component {
       handleClickClose,
       handleClickSignout,
       iconsStyle,
+      withSettings,
     } = this.props;
 
     if (!auth) {
@@ -67,7 +68,7 @@ class SignInOut extends React.Component {
     const style = Object.assign({}, this.styles.icon, iconsStyle);
 
     return <div style={ iconsStyle }>
-      <IconButton
+      { withSettings ? <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-haspopup="true"
         color="inherit"
@@ -76,7 +77,7 @@ class SignInOut extends React.Component {
           className="fa fa-cog"
           aria-hidden="true"
         />
-      </IconButton>
+      </IconButton> : null }
       <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-haspopup="true"

@@ -25,51 +25,71 @@ const componentStyles = (theme) => {
 
   // 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-  const root = {
-    background: colors.mainColor,
-    borderRadius: 'inherit',
-    fontFamily: "'Anton', impact",
-    fontWeight: 100,
-    height: `${appbarHeight}px`,
+  const icon = {
+    margin: '6px 0px 0px -16px',
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
+    textDecoration: 'none',
+    outline: 'none',
+    fontSize: '0px',
+    fontWeight: 'inherit',
+    position: 'relative',
     zIndex: '1',
-    [theme.breakpoints.down('xs')]: {
-      padding: '0 24px 0 24px',
-    },
-    [theme.breakpoints.up('xs')]: {
-      padding: '0 24px',
-    },
-    [theme.breakpoints.up('md')]: {
-      padding: '0 calc(5vw + 24px)',
-    },
-    [theme.breakpoints.up('lg')]: {
-      padding: '0 calc(15vw + 24px)',
-    },
-    [theme.breakpoints.up('xl')]: {
-      padding: '0 calc(20vw + 24px)',
-    },
   };
 
   return {
-    icon: {
-      margin: '6px 0px 0px -16px',
-      cursor: 'pointer',
-      WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
-      textDecoration: 'none',
-      outline: 'none',
-      fontSize: '0px',
-      fontWeight: 'inherit',
-      position: 'relative',
-      zIndex: '1',
-    },
+    icon,
+    iconMin: Object.assign({}, icon, {
+      margin: '6px 0px 0px -35px',
+    }),
     iconSignInOut: {
       position: 'absolute',
       right: `${appbarHeight}px`,
     },
-    root,
-    rootMin: Object.assign({}, root, {
+    iconSignInOutMin: {
+      position: 'absolute',
+      right: '0',
+    },
+    root: {
+      background: colors.mainColor,
+      borderRadius: 'inherit',
+      fontFamily: "'Anton', impact",
+      fontWeight: 100,
+      height: `${appbarHeight}px`,
+      zIndex: '1',
+      [theme.breakpoints.down('xs')]: {
+        padding: '0 24px 0 24px',
+      },
+      [theme.breakpoints.up('xs')]: {
+        padding: '0 24px',
+      },
+      [theme.breakpoints.up('md')]: {
+        padding: '0 calc(5vw + 24px)',
+      },
+      [theme.breakpoints.up('lg')]: {
+        padding: '0 calc(15vw + 24px)',
+      },
+      [theme.breakpoints.up('xl')]: {
+        padding: '0 calc(20vw + 24px)',
+      },
+    },
+    rootMin: {
       borderRadius: '50px 20px 0 0',
-    }),
+      background: colors.mainColor,
+      fontFamily: "'Anton', impact",
+      fontWeight: 100,
+      height: `${appbarHeight}px`,
+      zIndex: '1',
+      margin: '25px 16px 0 25px',
+      width: '310px',
+      padding: '0',
+    },
     title: {
+      height: 'inital',
+      lineHeight: '10px',
+      marginLeft: '-15px',
+    },
+    titleMin: {
       height: 'inital',
       lineHeight: '10px',
       marginLeft: '-15px',
@@ -459,7 +479,7 @@ class Bar extends React.Component {
           color="inherit"
           onClick={ handleMenuIconClick }
           classes={{
-            root: classes.icon,
+            root: isFullScreen ? classes.icon : classes.iconMin,
           }}
         >
           { this.renderBurger() }
@@ -472,8 +492,9 @@ class Bar extends React.Component {
             isFullScreen={ isFullScreen }
           />
         </div>
-        <div className={classNames(classes.iconSignInOut)}>
+        <div className={ isFullScreen ? classes.iconSignInOut : classes.iconSignInOutMin }>
           <SignInOut
+            withSettings={ isFullScreen }
             onCloseTouchTap={ handleClickClose }
             onSignOutTouchTap={ handleClickSignout }
           />
@@ -484,32 +505,6 @@ class Bar extends React.Component {
     return renderComponent;
   }
 }
-
-/*
- *
- <AppSecNavDrawer
-   { ...properties }
-   open={ open }
-   type={ type }
-   onClickClose={ this.handleCloseSettings }
- />
- <AppBar
-   title={ <LogoText
-     isFullScreen={ isFullScreen }
-     id="logo-title"
-   /> }
-   style={ this.styles.appbar }
-   titleStyle={ this.styles.title }
-   iconStyleLeft={ this.styles.icon }
-   iconStyleRight={ this.styles.iconRight }
-   iconElementLeft={ this.renderBurger() }
-   onLeftIconButtonTouchTap={ handleMenuIconClick }
-   iconElementRight={ <SignInOut
-     onCloseTouchTap={ handleClickClose }
-     onSignOutTouchTap={ handleClickSignout }
-   /> }
- />
- * */
 
 Bar.propTypes = {
   handleClickClose: PropTypes.func.isRequired,
