@@ -9,7 +9,6 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 
 import DialogButton from './utils/DialogButton';
-
 import styles from '../../helpers/Styles';
 
 
@@ -40,51 +39,40 @@ const componentStyles = (theme) => {
       textOverflow: 'ellipsis',
       overflow: 'hidden',
     },
+    body: {
+      color: styles.colors.mainBlue,
+      fontFamily: styles.fontFamily,
+    }
   };
 };
+
 
 class AlertDialog extends React.Component {
   constructor(props) {
     super(props);
 
-    this.initializeStyles = this.initializeStyles.bind(this);
-    this.initializeStyles();
-
-    this._getActionButtons = this._getActionButtons.bind(this);
+    this.getActionButtons = this.getActionButtons.bind(this);
   }
 
-  componentWillUpdate(nextProps, nextState) {
-    this.initializeStyles();
+  componentDidCatch(error, info) {
+    const {
+      debug,
+      snackbarUpdate,
+    } = this.props;
+
+    if (debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info, true);
   }
 
-  initializeStyles() {
-    this.styles = {
-      fullSize: {
-        width: '100%',
-        maxWidth: 'none',
-        height: '100%',
-        maxHeight: 'none',
-        position: 'absolute',
-        top: '-65px',
-      },
-      fullSizeBottom: {
-        position: 'absolute',
-        bottom: '0',
-      },
-      fullSizeBody: {
-        height: '100%',
-        maxHeight: 'none',
-        position: 'relative',
-      },
-      fullSizeStyle: {
-        height: '100%',
-        maxHeight: 'none',
-        backgroundColor: 'white',
-      },
-    };
-  }
-
-  _getActionButtons() {
+  getActionButtons() {
     const {
       buttonStyle,
       cancelLabel,
@@ -131,8 +119,9 @@ class AlertDialog extends React.Component {
 
   render() {
     const {
-      actionsContainerStyle,
       body,
+      bodyStyle,
+      bottomStyle,
       classes,
       open,
       onCloseClick,
@@ -142,62 +131,71 @@ class AlertDialog extends React.Component {
       titleStyle,
     } = this.props;
 
-    let containerStyle = {};
-
-    return (
-      <Dialog
+    let titleComponent = null;
+    if (title) {
+      titleComponent = <DialogTitle
+        id="dialog-title"
         classes={{
-          paper: classes.paper,
+          root: classes.rootTitle,
         }}
-        onBackdropClick={ () => {} }
-        onClose={ onCloseClick }
-        open={ open }
-        style={ style }
-        transitionDuration={ 0 }
+        style={ titleStyle }
       >
-        { showTitle ? <DialogTitle
-          id="dialog-title"
-          classes={{
-            root: classes.rootTitle,
-          }}
-          style={ titleStyle }
-        >
-          { title }
-        </DialogTitle> : null }
-        <DialogContent>
-          { body }
-        </DialogContent>
-        <DialogActions
-          classes={{
-            root: classes.rootActions,
-          }}
-          style={ actionsContainerStyle }
-        >
-          { this._getActionButtons() }
-        </DialogActions>
-      </Dialog>
-    );
+        { title }
+      </DialogTitle>;
+    }
+
+    return <Dialog
+      classes={{
+        paper: classes.paper,
+      }}
+      onBackdropClick={ () => {} }
+      onClose={ onCloseClick }
+      open={ open }
+      style={ style }
+      transitionDuration={ 0 }
+    >
+      { titleComponent }
+
+      <DialogContent
+        classes={{
+          root: classes.body,
+        }}
+        style={ bodyStyle }
+      >
+        { body }
+      </DialogContent>
+
+      <DialogActions
+        classes={{
+          root: classes.rootActions,
+        }}
+        style={ bottomStyle }
+      >
+        { this.getActionButtons() }
+      </DialogActions>
+    </Dialog>;
   }
 }
 
 AlertDialog.propTypes = {
-  actionsContainerStyle: PropTypes.object,
-  buttonStyle: PropTypes.object,
+  bodyStyle: PropTypes.object,
+  bottomStyle: PropTypes.object,
   hideOkButton: PropTypes.bool,
   onCloseClick: PropTypes.func.isRequired,
   onClickOk: PropTypes.func,
   opened: PropTypes.bool,
-  showTitle: PropTypes.bool,
   style: PropTypes.object,
   titleStyle: PropTypes.object,
 };
 
 AlertDialog.defaultProps = {
-  actionsContainerStyle: {},
+  bottomStyle: {},
+  bodyStyle: {},
   hideOkButton: false,
   opened: false,
-  showTitle: true,
   style: {},
+  title: null,
+  titleStyle: {},
 };
 
 export default withStyles(componentStyles, { withTheme: true })(AlertDialog);
