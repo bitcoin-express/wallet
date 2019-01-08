@@ -2845,18 +2845,19 @@ export default class WalletBF extends SwapBF {
 
       let redeemRequest = {
         issuerRequest: {
-          tid: tid,
+          blockchainAddress: address,
+          blockchainSpeed: args.speed,
+          coin: base64Coins,
+          currency: args.currency || "XBT",
           expiry: new Date(newExpiry).toISOString(),
           fn: "redeem",
-          blockchainAddress: address,
-          coin: base64Coins,
           issuePolicy: args.policy || DEFAULT_SETTINGS.issuePolicy,
-          blockchainSpeed: args.speed,
+          tid: tid,
         },
         recovery: {
-          fn: "redeem",
-          domain: beginResponse.headerInfo.domain,
           action: args.action,
+          domain: beginResponse.headerInfo.domain,
+          fn: "redeem",
         },
       };
 
