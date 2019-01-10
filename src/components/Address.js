@@ -173,27 +173,32 @@ class Address extends React.Component {
         }}
       >
         <Button
-          label="Copy URI"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleCopyURI }
-        />
+        >
+          Copy URI
+        </Button>
+
         <Button
-          label="Copy address"
           labelStyle={ this.styles.labelStyle }
           style={ this.styles.button }
           onClick={ this.handleCopyAddress }
-        />
-        { idQR ? [
+        >
+          Copy address
+        </Button>
+
+        { idQR ? <React.Fragment>
           <Button
             key="button"
-            label="Save Image..."
             labelStyle={ this.styles.labelStyle }
             style={ this.styles.button }
             onClick={ this.handleSaveImage }
-          />,
+          >
+            Save Image...
+          </Button>
           <a id={ idQR } key="link"></a>
-        ] : null }
+        </React.Fragment> : null }
       </div>
       { expiry ? <div style={{ textAlign: 'center' }}>
         <b>Address available until</b>: { this.time.formatDate(expiry) }

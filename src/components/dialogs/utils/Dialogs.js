@@ -12,37 +12,44 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 
 import AddFundsDialog from '../AddFundsDialog';
 import AboutDialog from '../AboutDialog';
-
+import Settings from '../../bar/settings/Settings';
 import styles from '../../../helpers/Styles';
 
 
-export function getDialog(key, props={}, buttons=[]) {
+export function getDialog(key, componentProps={}, props={}) {//buttons=[]) {
   if (!key) {
     return null;
   }
-
-  console.log(key);
 
   const title = <CustomDialogTitle type={ key } />;
   switch (key) {
 
     case "AddFunds":
-      return {
+      return Object.assign(props, {
         title,
         showCancelButton: true,
         cancelLabel: "OK",
         body: <AddFundsDialog
-          { ...props }
+          { ...componentProps }
         />,
-        actions: buttons,
-      };
+      });
 
     case "AboutDialog":
-      return {
+      return Object.assign(props, {
         title,
         showCancelButton: false,
         body: <AboutDialog />,
-      };
+      });
+
+    case "Settings":
+      return Object.assign(props, {
+        okLabel: "Confirm Changes",
+        showCancelButton: true,
+        withBackground: false,
+        body: <Settings
+          { ...componentProps }
+        />,
+      });
 
     default:
       return null;
@@ -143,12 +150,11 @@ class AlertDialog extends React.Component {
   getTitle() {
     const {
       classes,
-      showTitle,
       title,
       titleStyle,
     } = this.props;
 
-    if (!showTitle) {
+    if (!title) {
       return null;
     }
 
@@ -209,7 +215,6 @@ AlertDialog.propTypes = {
   onCloseClick: PropTypes.func.isRequired,
   onClickOk: PropTypes.func,
   opened: PropTypes.bool,
-  showTitle: PropTypes.bool,
   style: PropTypes.object,
   titleStyle: PropTypes.object,
 };
@@ -218,8 +223,8 @@ AlertDialog.defaultProps = {
   actionsContainerStyle: {},
   hideOkButton: false,
   opened: false,
-  showTitle: true,
   style: {},
+  title: null,
   titleStyle: {},
 };
 

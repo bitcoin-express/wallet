@@ -7,6 +7,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import { withStyles } from '@material-ui/core/styles';
 import {
   MuiThemeProvider,
   createMuiTheme
@@ -14,6 +15,8 @@ import {
 
 import Wallet from './src/Wallet';
 import styles from './src/helpers/Styles';
+import { getParameterByName } from './src/helpers/Tools';
+
 
 const theme = createMuiTheme({
   palette: {
@@ -36,11 +39,49 @@ const theme = createMuiTheme({
       contrastText: styles.colors.secondaryTextColor,
     },*/
   },
+  props: {
+    isFullScreen: false,
+  },
 });
+
 
 const states = {
   REVEAL_APP: 0,
   PROCESS_PAYMENT: 1,
+};
+
+
+const componentStyles = (theme) => {
+
+  const {
+    colors,
+    minimizedWidth,
+    minimizedHeight,
+  } = styles;
+
+  console.log("MUI theme: ", theme);
+
+  return {
+    rootMin: {
+      width: `${minimizedWidth}px`,
+      height: `${minimizedHeight}px`,
+      position: 'absolute',
+      boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.05), 0 0 10px 10px rgba(0, 0, 0, 0.05)',
+      textAlign: 'center',
+      margin: '20px',
+      backgroundColor: colors.mainColor,
+      border: 'solid white 4px',
+      borderRadius: '50px 22px',
+      overflow: 'hidden',
+    },
+    root: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      backgroundColor: colors.mainColor,
+    },
+  };
+
 };
 
 
@@ -59,26 +100,6 @@ class App extends React.Component {
       status: states.REVEAL_APP,
       paymentRequest: null,
     }
-
-    this.styles = {
-      minimized: {
-        width: `${styles.minimizedWidth}px`,
-        height: `${styles.minimizedHeight}px`,
-        boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.05), 0 0 10px 10px rgba(0, 0, 0, 0.05)',
-        textAlign: 'center',
-        margin: '20px',
-        backgroundColor: styles.colors.mainColor,
-        border: 'solid white 4px',
-        borderRadius: '50px 22px',
-        overflow: 'hidden',
-      },
-      normal: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%', // 'calc(100% - 56px)',
-        backgroundColor: styles.colors.mainColor,
-      },
-    };
 
     this.close = this.close.bind(this);
     this.switchWalletSize = this.switchWalletSize.bind(this);
@@ -160,35 +181,46 @@ class App extends React.Component {
   }
 
   handleShowAlert () {
-    if (!this.state.isFullScreen) {
 
-      $(".settings-drawer").css('display', 'none');
-      $("#wallet").fadeOut(0);
-
-      BitcoinExpress.Host.WalletGoModal(
-        true,
-        this.MINIMAL_WALLET_WIDTH,
-        this.MINIMAL_WALLET_HEIGHT,
-        "wallet"
-      );
+    if (this.state.isFullScreen) {
+      return;
     }
+
+    $("#settings-drawer").css('display', 'none');
+    $("#wallet").fadeOut(0);
+
+    BitcoinExpress.Host.WalletGoModal(
+      true,
+      this.MINIMAL_WALLET_WIDTH,
+      this.MINIMAL_WALLET_HEIGHT,
+      "wallet"
+    );
   }
 
   handleHideAlert () {
-    if (!this.state.isFullScreen) {
-      // move to 0, 0
-      $("#wallet").fadeOut(0);
-      setTimeout(() => {
-        BitcoinExpress.Host.WalletGoModal(
-          false,
-          this.MINIMAL_WALLET_WIDTH,
-          this.MINIMAL_WALLET_HEIGHT
-        );
-        $("#wallet").css({ left: 0, top: 0, position: 'inherit' });
-        $("#wallet").fadeIn('fast');
-        $(".settings-drawer").css('display', 'block');
-      }, 600);
+
+    if (this.state.isFullScreen) {
+      return;
     }
+
+    // move to 0, 0
+    $("#wallet").fadeOut(0);
+    setTimeout(() => {
+      BitcoinExpress.Host.WalletGoModal(
+        false,
+        this.MINIMAL_WALLET_WIDTH,
+        this.MINIMAL_WALLET_HEIGHT
+      );
+
+      $("#wallet").css({
+        left: 0,
+        top: 0,
+        position: 'inherit',
+      });
+
+      $("#wallet").fadeIn('fast');
+      $("#settings-drawer").css('display', 'block');
+    }, 600);
   }
 
   renderContent() {
@@ -223,41 +255,29 @@ class App extends React.Component {
       isFullScreen,
     } = this.state;
 
-    return (
-      <MuiThemeProvider theme={ theme }>
-        <div
-          id="container"
-          className={ isFullScreen ? "desktop" : "wallet" }
-          style={ isFullScreen ? this.styles.normal : this.styles.minimized }
-        >
-          { this.renderContent() }
-        </div>
-      </MuiThemeProvider>
-    );
+    const {
+      classes,
+    } = this.props;
+
+    return <MuiThemeProvider theme={ theme }>
+      <div
+        id="container"
+        className={ isFullScreen ? classes.root : classes.rootMin }
+      >
+        { this.renderContent() }
+      </div>
+    </MuiThemeProvider>;
   }
 }
 
-function getParameterByName (name, url) {
-  if (!url) {
-    url = window.location.href;
-  }
-  name = name.replace(/[\[\]]/g, "\\$&");
-  let regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
-  let results = regex.exec(url);
 
-  if (!results) {
-    return null;
-  }
-  if (!results[2]) {
-    return '';
-  }
-  return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
+const BitcoinExpressWallet = withStyles(componentStyles)(App);
 
 ReactDOM.render(
-  <App
+  <BitcoinExpressWallet
     isFullScreen={ getParameterByName('fullScreen') == 'true' }
     paymentRequest={ JSON.parse(getParameterByName('paymentRequest')) }
   />,
   document.getElementById('wallet')
 );
+

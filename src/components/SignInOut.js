@@ -57,6 +57,7 @@ class SignInOut extends React.Component {
       handleClickClose,
       handleClickSignout,
       iconsStyle,
+      showSettings,
       withSettings,
     } = this.props;
 
@@ -70,7 +71,8 @@ class SignInOut extends React.Component {
     return <div style={ iconsStyle }>
       { withSettings ? <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
-        aria-haspopup="true"
+        aria-label="Settings"
+        onClick={ showSettings }
         color="inherit"
       >
         <i
@@ -81,6 +83,7 @@ class SignInOut extends React.Component {
       <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-haspopup="true"
+        aria-label="Wallet options"
         onClick={ this.handleMenu }
         color="inherit"
       >

@@ -2,11 +2,41 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
+import IconButton from '@material-ui/core/IconButton';
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControl from '@material-ui/core/FormControl';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 
-export default class SettingsMain extends React.Component {
+import Box from '../../Box';
+
+
+const componentStyles = (theme) => {
+  return {
+    info: {
+      fontSize: 'small',
+      color: '#a9331d',
+    },
+    select: {
+      width: '90%',
+    },
+    selectInfo: {
+      width: '10%',
+    },
+    textField: {
+      marginBottom: theme.spacing.unit,
+      width: '100%',
+    },
+  };
+};
+
+
+class SettingsMain extends React.Component {
 
   constructor(props) {
     super(props);
@@ -15,54 +45,31 @@ export default class SettingsMain extends React.Component {
       settings: props.settings,
       newPassword: null,
       password1: props.password,
+      showPassword1: false,
       password2: props.password,
+      showPassword2: false,
+
+      showPasswordInfo: false,
+      showIssuerNameInfo: false,
+      showIssuerPolicyInfo: false,
     };
 
-    this.styles = {
-      info: {
-        transition: 'height .5s',
-        height: '0px',
-        overflow: 'hidden',
-        // margin: '15px 0',
-        fontSize: 'small',
-      },
-      infoIcon: function (top='-15px') {
-        return {
-          cursor: 'pointer',
-          color: 'black',
-          position: 'relative',
-          top,
-          left: '100%',
-        };
-      }.bind(this),
-      pwd: {
-        color: 'green',
-      },
-      pwd2: {
-        color: 'red',
-      }
-    };
-
-    this.handleTextFieldChange = this.handleTextFieldChange.bind(this);
-    this.handlePassword1Change = this.handlePassword1Change.bind(this);
-    this.handlePassword2Change = this.handlePassword2Change.bind(this);
+    this.handleIssuerChange = this.handleIssuerChange.bind(this);
+    this.handlePasswordChange = this.handlePasswordChange.bind(this);
+    this.handleRepeatPasswordChange = this.handleRepeatPasswordChange.bind(this);
+    this.handlePolicyChange = this.handlePolicyChange.bind(this);
+    this.negateStateValue = this.negateStateValue.bind(this);
   }
 
-  handleShowInfo(secondElementSibling=false) {
+  negateStateValue(key) {
     return (event) => {
-      let el = event.target.parentElement.nextElementSibling;
-      if (secondElementSibling) {
-        el = el.nextElementSibling;
-      }
-      let height = 0; 
-      if (el.clientHeight == 0) {
-        height = el.firstChild.clientHeight + 30;
-      }
-      el.style.height = `${height}px`;
+      this.setState({
+        [key]: !this.state[key],
+      });
     };
   }
 
-  handlePassword1Change(event, password1) {
+  handlePasswordChange(event, password1) {
     const {
       setSettingsKey,
     } = this.props;
@@ -85,7 +92,7 @@ export default class SettingsMain extends React.Component {
     }
   }
 
-  handlePassword2Change(event, password2) {
+  handleRepeatPasswordChange(event, password2) {
     const {
       setSettingsKey,
     } = this.props;
@@ -108,7 +115,7 @@ export default class SettingsMain extends React.Component {
     }
   }
 
-  handleTextFieldChange(event, issuer) {
+  handleIssuerChange(event, issuer) {
     const {
       setSettingsKey,
       wallet,
@@ -117,8 +124,29 @@ export default class SettingsMain extends React.Component {
     setSettingsKey(wallet.config.DEFAULT_ISSUER, issuer);
   }
 
+  handlePolicyChange(event) {
+    const {
+      setSettingsKey,
+      wallet,
+    } = this.props;
+
+    let {
+      settings,
+    } = this.state;
+
+    const issuePolicy = event.target.value;
+
+    setSettingsKey(wallet.config.ISSUE_POLICY, issuePolicy);
+    settings[wallet.config.ISSUE_POLICY] = issuePolicy;
+
+    this.setState({
+      settings,
+    });
+  }
+
   render() {
     const {
+      classes,
       password,
       settings,
       wallet,
@@ -133,142 +161,169 @@ export default class SettingsMain extends React.Component {
     const initialPwdSet = password != "" && password1 == password2;
     const newPwdSet = password1 == password2 && password1 != "";
 
-    return (
-      <section style={{
-        padding: '20px 5vw',
-      }}>
 
-        <h3 style={{
-          marginTop: '0',
-          color: '#8081ff',
-        }}>
-          Settings
-        </h3>
+    return <section>
 
-        <div>
-          <p>
-            <b><i className="fa fa-exclamation-triangle" /> Attention</b>. Once the password is set there is no way back. For security reasons Bitcoin-express does not provide a way to recover the password in case of loose. We strongly recommend to write it down in a paper and save it in case of future loose.
-          </p>
-          <TextField
-            floatingLabelText="Password"
-            style={{ width: '100%' }}
+      <Box title="Password Authentication">
+
+        <p>
+          <b><i className="fa fa-exclamation-triangle" /> Attention</b>. Once the password is set there is no way back. For security reasons Bitcoin-express does not provide a way to recover the password in case of loose. We strongly recommend to write it down in a paper and save it in case of future loose.
+        </p>
+
+        <FormControl className={ classes.textField }>
+          <InputLabel htmlFor="adornment-password">
+            { initialPwdSet || newPwdSet ? "Your password is correct." : "Password" }
+          </InputLabel>
+
+          <Input
+            id="adornment-password"
+            error={ initialPwdSet || newPwdSet }
+            type={ this.state.showPassword1 ? 'text' : 'password' }
             defaultValue={ password1 }
-            type="password"
-            onChange={ this.handlePassword1Change }
-            errorText={ initialPwdSet || newPwdSet ? "Your password is correct." : "" }
-            errorStyle={ this.styles.pwd }
+            onChange={ this.handlePasswordChange }
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="Toggle password visibility"
+                  onClick={ this.negateStateValue('showPassword1') }
+                >
+                  
+                  <i
+                    className={ this.state.showPassword1 ? "fa fa-eye" : "fa fa-eye-slash" }
+                  />
+                </IconButton>
+              </InputAdornment>
+            }
           />
-          <TextField
-            floatingLabelText="Repeat Password"
-            style={{ width: '100%' }}
+        </FormControl>
+
+        <FormControl className={ classes.textField }>
+          <InputLabel htmlFor="adornment-password-repeat">
+            { password1 != password2 ? "Passwords does not match" : "Repeat Password" }
+          </InputLabel>
+
+          <Input
+            id="adornment-password-repeat"
+            error={ password1 != password2  }
+            type={ this.state.showPassword1 ? 'text' : 'password' }
             defaultValue={ password2 }
-            type="password"
-            onChange={ this.handlePassword2Change }
-            errorText={ password1 != password2 ? "Passwords does not match" : "" }
-            errorStyle={ this.styles.pwd2 }
-          /> 
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon('-35px') }
-          />
-        </div>
-        <div style={ this.styles.info }>
-          <div>
-            <p>
-              Access to your wallet by password.
-            </p>
-          </div>
-        </div>
+            onChange={ this.handleRepeatPasswordChange }
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="Toggle password visibility"
+                  onClick={ this.negateStateValue('showPassword1') }
+                >
+                  
+                  <i
+                    className={ this.state.showPassword1 ? "fa fa-eye" : "fa fa-eye-slash" }
+                  />
+                </IconButton>
 
-        <div>
-          <TextField
+                <IconButton
+                  aria-label="More info"
+                  onClick={ this.negateStateValue('showPasswordInfo') }
+                >
+                  <i
+                    className="fa fa-question-circle"
+                  />
+                </IconButton>
+              </InputAdornment>
+            }
+          />
+        </FormControl>
+
+        { this.state.showPasswordInfo ? <p className={ classes.info }>
+          Access to your wallet by password.
+        </p> : null }
+
+      </Box>
+
+      <Box title="Issuer Settings">
+
+        <FormControl className={ classes.textField }>
+          <InputLabel htmlFor="adornment-issuer">
+            Home Issuer
+          </InputLabel>
+
+          <Input
+            id="adornment-issuer"
+            type='text'
             defaultValue={ settings[wallet.config.DEFAULT_ISSUER] }
-            floatingLabelText="Home Issuer"
-            style={{ width: '100%' }}
-            onChange={ this.handleTextFieldChange }
-          /> 
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon('-35px') }
+            onChange={ this.handleIssuerChange }
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="More info"
+                  onClick={ this.negateStateValue('showIssuerNameInfo') }
+                >
+                  <i
+                    className="fa fa-question-circle"
+                  />
+                </IconButton>
+              </InputAdornment>
+            }
           />
-        </div>
-        <div style={ this.styles.info }>
-          <div>
-            <p>
-              Set the domain name of your preferred Issuer.
-            </p>
-            <p>
-              The Home Issuer becomes the custodian of your cryptocurrencies and has the ultimate responsibility to redeem Coins back to the blockchain – so be sure to choose an Issuer that is trustworthy.
-            </p>
-            <p>
-              The Home Issuer will be used to convert blockchain assets into Bitcoin-express Coins, verify imported Coins, split Coins and exchange between cryptocurrencies.
-            </p>
-            <p>
-              You will need to pay Coin processing fees to the Home Issuer so it is in your own best interest to select an Issuer that is dependable and has reasonable fees.
-            </p>
-          </div>
-        </div>
+        </FormControl>
 
-        <div>
+        { this.state.showIssuerNameInfo ? <div className={ classes.info }>
+          <p>
+            Set the domain name of your preferred Issuer.
+          </p>
+          <p>
+            The Home Issuer becomes the custodian of your cryptocurrencies and has the ultimate responsibility to redeem Coins back to the blockchain – so be sure to choose an Issuer that is trustworthy.
+          </p>
+          <p>
+            The Home Issuer will be used to convert blockchain assets into Bitcoin-express Coins, verify imported Coins, split Coins and exchange between cryptocurrencies.
+          </p>
+          <p>
+            You will need to pay Coin processing fees to the Home Issuer so it is in your own best interest to select an Issuer that is dependable and has reasonable fees.
+          </p>
+        </div> : null }
+
+
+        <FormControl className={ classes.select }>
+          <InputLabel htmlFor="issue-policy">
+            Issue Policy
+          </InputLabel>
+
           <Select
-            floatingLabelText="Issue Policy"
+            id="issue-policy"
             value={ settings[wallet.config.ISSUE_POLICY] }
-            style={{
-              width: '90%',
-              marginRight: '10%',
-            }}
-            onChange={(ev, key, issuePolicy) => {
-              const {
-                setSettingsKey,
-                wallet,
-              } = this.props;
-
-              let {
-                settings,
-              } = this.state;
-
-              setSettingsKey(wallet.config.ISSUE_POLICY, issuePolicy);
-              settings[wallet.config.ISSUE_POLICY] = issuePolicy;
-              this.setState({
-                settings,
-              });
-            }}
+            onChange={ this.handlePolicyChange }
           >
-            { policies.map((p) => <MenuItem
-              key={p}
-              value={p}
-              primaryText={p}
-            />) }
+            { policies.map((p) => <MenuItem key={p} value={p}>{ p }</MenuItem>) }
           </Select> 
+        </FormControl>
+
+        <IconButton
+          aria-label="More info"
+          className={ classes.selectInfo }
+          onClick={ this.negateStateValue('showIssuerPolicyInfo') }
+        >
           <i
             className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon('-35px') }
           />
-        </div>
-        <div style={ this.styles.info }>
-          <div>
-            <p>
-              <b>single</b>: The <i>change</i> from a coin split returns a single coin.
-            </p>
-            <p>
-              <b>spread</b>: The <i>change</i> from a coin split returns 6 coins with a
-              spread of values. This is good for minimising coin split fees but the
-              number of coins grows quickly.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
+        </IconButton>
+
+
+        { this.state.showIssuerPolicyInfo ? <div className={ classes.info }>
+          <p>
+            <b>single</b>: The <i>change</i> from a coin split returns a single coin.
+          </p>
+          <p>
+            <b>spread</b>: The <i>change</i> from a coin split returns 6 coins with a
+            spread of values. This is good for minimising coin split fees but the
+            number of coins grows quickly.
+          </p>
+        </div> : null }
+
+      </Box>
+
+    </section>;
   }
 }
 
-/*
-<p>
-<b>repeat</b>: The <i>change</i> from a coin split returns multiple coins
-of the same value. This will speed up payments when the same value is
-repeatedly needed and will often reduce cost.
-</p>
-*/
+
+export default withStyles(componentStyles)(SettingsMain);
+

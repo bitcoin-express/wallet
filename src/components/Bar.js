@@ -11,6 +11,7 @@ import IconButton from '@material-ui/core/IconButton';
 import NavigationDrawer from './bar/NavigationDrawer';
 import AppSecNavDrawer from './bar/AppSecNavDrawer';
 import LogoText from './LogoText';
+import { getDialog } from './dialogs/utils/Dialogs';
 import Settings from './bar/settings/Settings';
 import SignInOut from './SignInOut';
 
@@ -74,25 +75,27 @@ const componentStyles = (theme) => {
       },
     },
     rootMin: {
-      borderRadius: '50px 20px 0 0',
       background: colors.mainColor,
+      borderRadius: '50px 20px 0 0',
       fontFamily: "'Anton', impact",
       fontWeight: 100,
       height: `${appbarHeight}px`,
-      zIndex: '1',
-      margin: '25px 16px 0 25px',
-      width: '310px',
+      //margin: '25px 16px 0 25px',
       padding: '0',
+      position: 'relative',
+      width: '310px',
+      zIndex: '1',
     },
     title: {
-      height: 'inital',
       lineHeight: '10px',
       marginLeft: '-15px',
+      zIndex: '3',
     },
     titleMin: {
-      height: 'inital',
+      cursor: 'pointer',
       lineHeight: '10px',
       marginLeft: '-15px',
+      zIndex: '3',
     },
   };
 };
@@ -162,7 +165,6 @@ class Bar extends React.Component {
   showSettings () {
     const {
       loading,
-      debug,
       handleMenuIconClick,
       openDialog,
       refreshSettings,
@@ -173,38 +175,32 @@ class Bar extends React.Component {
     const displaySettingsDialog = (settings) => {
       loading(false);
       handleMenuIconClick(null, false);
+
       this.setState({
         backupSettings: Object.assign({}, {}, settings),
       });
-      openDialog({
+
+      const onClickCancel = () => {
+        const {
+          backupSettings,
+        } = this.state;
+
+        const {
+          SETTINGS,
+        } = wallet.config;
+
+        return wallet.setPersistentVariable(SETTINGS, backupSettings);
+      };
+
+      const dialog = getDialog("Settings", this.props, {
         onClickOk: this.hideSettings,
-        onClickCancel: () => {
-          let {
-            backupSettings,
-          } = this.state;
-
-          const {
-            SETTINGS,
-          } = wallet.config;
-
-          return wallet.setPersistentVariable(SETTINGS, backupSettings);
-        },
-        okLabel: "Confirm Changes",
-        showCancelButton: true,
-        showTitle: false,
-        title: "Settings",
-        style: {
-          padding: '0',
-          background: styles.colors.mainTextColor,
-        },
-        body: <Settings
-          { ...this.props }
-        />,
+        onClickCancel,
       });
+      openDialog(dialog);
     };
 
     const handleError = (err) => {
-      if (debug) {
+      if (wallet.config.debug) {
         console.log(err);
       }
       snackbarUpdate("Problem on opening settings", true);
@@ -266,20 +262,22 @@ class Bar extends React.Component {
         wallet,
       } = this.props;
 
-      loading(true);
-      wallet.config.storage.readWallet().then(() => {
-        return refreshSettings();
-      }).then((settings) => {
+      const updateState = (settings) => {
         loading(false);
-        handleMenuIconClick(null, false); //navDrawerOpen: false
+        handleMenuIconClick(null, false);
+        //navDrawerOpen: false
         this.setState({
           open: true,
           type,
           backupSettings: Object.assign({}, {}, settings),
         });
-      }).catch(() => {
-        snackbarUpdate("Problem on opening settings", true);
-      });
+      };
+
+      loading(true);
+      wallet.config.storage.readWallet()
+        .then(() => refreshSettings())
+        .then(updateState)
+        .catch(() => snackbarUpdate("Problem on opening settings", true));
     };
   }
 
@@ -323,22 +321,25 @@ class Bar extends React.Component {
       });
     }
 
-    if (!this._isEquivalent(backupSettings, newSettings)) {
-      return executeInSession("save settings", true, () => {
-        return wallet.setPersistentVariable(SETTINGS, newSettings).then(() => {
-          this.setState({
-            open: false,
-            backupSettings: null,
-          });
-          return true;
-        });
+    // Closes the navigation bar
+    const updateState = () => {
+      this.setState({
+        open: false,
+        backupSettings: null,
       });
+      return true;
+    };
+
+    if (this._isEquivalent(backupSettings, newSettings)) {
+      return updateState();
     }
 
-    this.setState({
-      open: false,
-      backupSettings: null,
-    });
+    const callback = () => {
+      return wallet.setPersistentVariable(SETTINGS, newSettings)
+        .then(updateState);
+    };
+
+    return executeInSession("save settings", true, callback);
   }
 
   getMenuItems() {
@@ -456,53 +457,52 @@ class Bar extends React.Component {
     let properties = Object.assign({}, this.props);
     delete properties.classes;
 
-    let renderComponent = [];
-    
-    renderComponent.push(<NavigationDrawer
-      { ...properties }
-      items={ this.getMenuItems() }
-      key="navigation-drawer"
-      open={ opened }
-      onOverlayClick={ handleMenuIconClick }
-    />);
+    return <React.Fragment>
 
-    renderComponent.push(<AppBar
-      id="app-bar"
-      key="app-bar"
-      classes={{
-        root: isFullScreen ? classes.root : classes.rootMin,
-      }}
-    >
-      <Toolbar style={{ minHeight: '40px' }}>
-        <IconButton
-          aria-label="Open drawer"
-          color="inherit"
-          onClick={ handleMenuIconClick }
-          classes={{
-            root: isFullScreen ? classes.icon : classes.iconMin,
-          }}
-        >
-          { this.renderBurger() }
-        </IconButton>
-        <div
-          className={classNames(classes.title)}
-          id={ this.DRAGGABLE_AREA }
-        >
-          <LogoText
-            isFullScreen={ isFullScreen }
-          />
-        </div>
-        <div className={ isFullScreen ? classes.iconSignInOut : classes.iconSignInOutMin }>
-          <SignInOut
-            withSettings={ isFullScreen }
-            onCloseTouchTap={ handleClickClose }
-            onSignOutTouchTap={ handleClickSignout }
-          />
-        </div>
-      </Toolbar>
-    </AppBar>);
+      <NavigationDrawer
+        { ...properties }
+        items={ this.getMenuItems() }
+        key="navigation-drawer"
+        open={ opened }
+        onOverlayClick={ handleMenuIconClick }
+      />
 
-    return renderComponent;
+      <AppBar
+        id="app-bar"
+        key="app-bar"
+        className={ isFullScreen ? classes.root : classes.rootMin }
+      >
+        <Toolbar style={{ minHeight: '40px' }}>
+          <IconButton
+            aria-label="Open drawer"
+            color="inherit"
+            onClick={ handleMenuIconClick }
+            classes={{
+              root: isFullScreen ? classes.icon : classes.iconMin,
+            }}
+          >
+            { this.renderBurger() }
+          </IconButton>
+          <div
+            className={ isFullScreen ? classes.title : classes.titleMin }
+            id={ this.DRAGGABLE_AREA }
+          >
+            <LogoText
+              isFullScreen={ isFullScreen }
+            />
+          </div>
+          <div className={ isFullScreen ? classes.iconSignInOut : classes.iconSignInOutMin }>
+            <SignInOut
+              withSettings={ isFullScreen }
+              onCloseTouchTap={ handleClickClose }
+              onSignOutTouchTap={ handleClickSignout }
+              showSettings={ this.showSettings }
+            />
+          </div>
+        </Toolbar>
+      </AppBar>
+
+    </React.Fragment>;
   }
 }
 

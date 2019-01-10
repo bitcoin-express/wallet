@@ -2,11 +2,27 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import FormControl from '@material-ui/core/FormControl';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
-import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 
-export default class SettingsDisplay extends React.Component {
+import Box from '../../Box';
+
+
+const componentStyles = (theme) => {
+  return {
+    input: {
+      marginBottom: theme.spacing.unit,
+      width: '100%',
+    },
+  };
+};
+
+
+class SettingsDisplay extends React.Component {
 
   constructor(props) {
     super(props);
@@ -110,6 +126,7 @@ export default class SettingsDisplay extends React.Component {
 
   render() {
     const {
+      classes,
       isFlipped,
       wallet,
       xr,
@@ -122,107 +139,138 @@ export default class SettingsDisplay extends React.Component {
 
     const rateList = xr.getRates();
     const currencies = Object.keys(rateList).map((key) => {
-      // attrs code, symbol, name
+      console.log(key);
       let curr = rateList[key];
-      return (
-        <MenuItem
-          key={ key }
-          value={ curr.code }
-          primaryText={ `${curr.symbol} - ${curr.word}` }
-        />
-      );
+      return <MenuItem
+        key={ key }
+        value={ curr.code }
+      >
+        { `${curr.symbol} - ${curr.word}` }
+      </MenuItem>;
     });
 
     const policies = new Array("single", "repeated", "random", "spread", "order");
+    const isGoogleDrive = wallet.config.storage.config.name == 'googleDrive';
 
-    return (
-      <section style={{
-        padding: '20px 5vw',
-      }}>
-        <h3 style={{
-          marginTop: '0',
-          color: '#8081ff',
-        }}>
-          Display
-        </h3>
-        { (wallet.config.storage.config.name == 'googleDrive') ? <TextField
-          value={ settings[wallet.config.WALLET_DRIVE_NAME] }
-          floatingLabelText="Your Google Drive Wallet name"
-          style={{ width: '100%' }}
-          onChange={ this.handleChangeDriveName }
-        /> : <TextField
-          value={ settings[wallet.config.WALLET_LOCAL_NAME] }
-          floatingLabelText="Your Local Wallet name"
-          style={{ width: '100%' }}
-          onChange={ this.handleChangeLocalName }
-        />  }
-        <Select
-          floatingLabelText="Currency"
-          value={ settings[wallet.config.CURRENCY] }
-          style={{ width: '100%' }}
-          onChange={ this.handleCurrencyChange }
-        >
-          { currencies }
-        </Select>
-        <Select
-          floatingLabelText="Bitcoin Display Type"
-          value={ settings[wallet.config.BTC_DISPLAY] }
-          style={{ width: '100%' }}
-          onChange={ this.handleBitcoinDisplayChange }
-        >
-          <MenuItem
-            value="XBT"
-            primaryText="XBT"
+    return <section>
+
+      <Box title="Wallet Display">
+
+        { isGoogleDrive ? <FormControl className={ classes.input }>
+          <InputLabel htmlFor="drive-name">
+            Your Google Drive Wallet name
+          </InputLabel>
+
+          <Input
+            id="drive-name"
+            onChange={ this.handleChangeDriveName }
+            type="text"
+            value={ settings[wallet.config.WALLET_DRIVE_NAME] }
           />
-          <MenuItem
-            value="BTC"
-            primaryText="BTC"
+        </FormControl> : <FormControl className={ classes.input }>
+          <InputLabel htmlFor="local-name">
+            Your Local Wallet name
+          </InputLabel>
+
+          <Input
+            id="local-name"
+            onChange={ this.handleChangeLocalName }
+            type="text"
+            value={ settings[wallet.config.WALLET_LOCAL_NAME] }
           />
-          <MenuItem
-            value={ "&#x243;" }
-            primaryText="Ƀ"
-          />
-          <MenuItem
-            value="mXBT"
-            primaryText="mXBT"
-          />
-          <MenuItem
-            value="mBTC"
-            primaryText="mBTC"
-          />
-          <MenuItem
-            value={ "m&#x243;" }
-            primaryText="mɃ"
-          />
-          <MenuItem
-            value={ "&mu;XBT" }
-            primaryText="μXBT"
-          />
-          <MenuItem
-            value={ "&mu;BTC" }
-            primaryText="μBTC"
-          />
-          <MenuItem
-            value={ "&mu;&#x243;" }
-            primaryText="μɃ"
-          />
-        </Select>
-        <Select
-          floatingLabelText="Decimal separator"
-          value={ settings[wallet.config.SEPARATOR] }
-          style={{ width: '100%' }}
-          onChange={ this.handleSeparatorChange }
-        >
-          <MenuItem
-            value="."
-            primaryText=". full stop"
-          />
-          <MenuItem
-            value=","
-            primaryText=", comma"
-          />
-        </Select>
-      </section>
-    );
+        </FormControl> }
+
+        <FormControl className={ classes.input }>
+          <InputLabel htmlFor="currency">
+            Currency
+          </InputLabel>
+
+          <Select
+            className={ classes.input }
+            id="currency"
+            value={ settings[wallet.config.CURRENCY] }
+            onChange={ this.handleCurrencyChange }
+          >
+            { currencies }
+          </Select>
+        </FormControl>
+
+        <FormControl className={ classes.input }>
+          <InputLabel htmlFor="display-type">
+            Bitcoin Display Type
+          </InputLabel>
+
+          <Select
+            className={ classes.input }
+            id="display-type"
+            value={ settings[wallet.config.BTC_DISPLAY] }
+            onChange={ this.handleBitcoinDisplayChange }
+          >
+            <MenuItem value="XBT">
+              XBT
+            </MenuItem>
+
+            <MenuItem value="BTC">
+              BTC
+            </MenuItem>
+
+            <MenuItem value={ "&#x243;" }>
+              Ƀ
+            </MenuItem>
+
+            <MenuItem value="mXBT">
+              mXBT
+            </MenuItem>
+
+            <MenuItem value="mBTC">
+              mBTC
+            </MenuItem>
+
+            <MenuItem value={ "m&#x243;" }>
+              mɃ
+            </MenuItem>
+
+            <MenuItem value={ "&mu;XBT" }>
+              μXBT
+            </MenuItem>
+
+            <MenuItem value={ "&mu;BTC" }>
+              μBTC
+            </MenuItem>
+
+            <MenuItem value={ "&mu;&#x243;" }>
+              μɃ
+            </MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl className={ classes.input }>
+          <InputLabel htmlFor="decimal-separator">
+            Decimal separator
+          </InputLabel>
+
+          <Select
+            className={ classes.input }
+            id="decimal-separator"
+            value={ settings[wallet.config.SEPARATOR] }
+            onChange={ this.handleSeparatorChange }
+          >
+            <MenuItem value=".">
+              . full stop
+            </MenuItem>
+
+            <MenuItem value=",">
+              , comma
+            </MenuItem>
+          </Select>
+        </FormControl>
+
+      </Box>
+
+    </section>;
   }
 }
+
+
+export default withStyles(componentStyles)(SettingsDisplay);
+

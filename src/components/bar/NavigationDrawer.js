@@ -11,11 +11,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
 
 import styles from '../../helpers/Styles';
-
 import Logo from '../Logo';
-
-const marginLeftMinBar = 24;
-const marginRightMinBar = 0;
 
 
 const componentStyles = (theme) => {
@@ -25,27 +21,29 @@ const componentStyles = (theme) => {
     colors,
     fontFamily,
     minimizedHeight,
-    minimizedWidth,
-    marginRightMinBar,
     navDrawerWidth,
     tabsHeight,
   } = styles;
 
   return {
+    backdrop: {
+      opacity: '0 !important',
+    },
     paper: {
       background: colors.mainColor,
       width: `${navDrawerWidth}px`,
     },
     paperMin: {
+      background: colors.mainColor,
       borderRadius: '0px 0px 45px 18px',
       height: `${minimizedHeight - appbarHeight - tabsHeight}px`,
       position: 'absolute',
       top: '113px',
-      width: `${minimizedWidth - marginRightMinBar}px`,
+      width: '310px',
     },
     root: {},
     rootMin: {
-      left: `${marginLeftMinBar}px`,
+      left: '24px',
     },
     iconHeader: {
       display: 'block',
@@ -85,6 +83,24 @@ class NavigationDrawer extends React.Component {
   constructor(props) {
     super(props);
     this.handleOverlayClick = this.handleOverlayClick.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.props;
+
+    if (wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate("Error on rendering navigation drawer", true);
   }
 
   handleOverlayClick(open, reason) {
@@ -128,7 +144,6 @@ class NavigationDrawer extends React.Component {
       }
     });
 
-    const widthMinBar = styles.minimizedWidth - marginRightMinBar + marginLeftMinBar;
 
     let fullScreenHeader = [];
 
@@ -163,8 +178,15 @@ class NavigationDrawer extends React.Component {
         root: isFullScreen ? classes.root : classes.rootMin,
         paper: isFullScreen ? classes.paper : classes.paperMin,
       }}
+      id="settings-drawer"
       open={ open }
-      width={ isFullScreen ? styles.navDrawerWidth : widthMinBar }
+      ModalProps={ isFullScreen ? {} : {
+        BackdropProps:{
+          classes:{
+            root: classes.backdrop,
+          }
+        }
+      } }
       onClose={ this.handleOverlayClick }
     >
       <List>
@@ -175,11 +197,6 @@ class NavigationDrawer extends React.Component {
   }
 }
 
-/*
- overlayStyle={ isFullScreen ? null : {
-  opacity: '0',
- }}
- className="settings-drawer"
-*/
+
 export default withStyles(componentStyles, { withTheme: true })(NavigationDrawer);
 

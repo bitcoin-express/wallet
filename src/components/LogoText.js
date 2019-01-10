@@ -8,6 +8,7 @@ export default class LogoText extends React.Component {
 
   render() {
     const fillColor = "#ffffff";
+    //style={ this.props.isFullScreen ? {} : {cursor: 'pointer'}}
 
     return <svg
       strokeWidth="0.501"
@@ -19,7 +20,7 @@ export default class LogoText extends React.Component {
       height="22.5pt"
       viewBox="0 0 150 22.5"
       id={ this.props.id || "logo" }
-      style={ this.props.isFullScreen ? {} : {cursor: 'pointer'}}
+      style={{ zIndex: '0' }}
     >
       <g
         id="Document"

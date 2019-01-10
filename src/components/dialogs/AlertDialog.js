@@ -26,6 +26,10 @@ const componentStyles = (theme) => {
       backgroundColor: colors.mainWhite,
       overflowY: 'auto',
     },
+    paperClean: {
+      backgroundColor: colors.mainWhite,
+      overflowY: 'auto',
+    },
     rootActions: {
       //background: colors.mainColor,
       overflowX: 'auto',
@@ -38,10 +42,6 @@ const componentStyles = (theme) => {
       whiteSpace: 'nowrap',
       textOverflow: 'ellipsis',
       overflow: 'hidden',
-    },
-    body: {
-      color: styles.colors.mainBlue,
-      fontFamily: styles.fontFamily,
     }
   };
 };
@@ -129,6 +129,7 @@ class AlertDialog extends React.Component {
       style,
       title,
       titleStyle,
+      withBackground,
     } = this.props;
 
     let titleComponent = null;
@@ -146,7 +147,7 @@ class AlertDialog extends React.Component {
 
     return <Dialog
       classes={{
-        paper: classes.paper,
+        paper: withBackground ? classes.paper : classes.paperClean,
       }}
       onBackdropClick={ () => {} }
       onClose={ onCloseClick }
@@ -157,9 +158,6 @@ class AlertDialog extends React.Component {
       { titleComponent }
 
       <DialogContent
-        classes={{
-          root: classes.body,
-        }}
         style={ bodyStyle }
       >
         { body }
@@ -186,6 +184,7 @@ AlertDialog.propTypes = {
   opened: PropTypes.bool,
   style: PropTypes.object,
   titleStyle: PropTypes.object,
+  withBackground: PropTypes.bool,
 };
 
 AlertDialog.defaultProps = {
@@ -196,6 +195,7 @@ AlertDialog.defaultProps = {
   style: {},
   title: null,
   titleStyle: {},
+  withBackground: true,
 };
 
 export default withStyles(componentStyles, { withTheme: true })(AlertDialog);

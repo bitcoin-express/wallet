@@ -81,6 +81,7 @@ class Wallet extends React.Component {
         showCancelButton: true,
         style: {},
         titleStyle: null,
+        withBackground: true,
       },
       exchangeRates: {},
       balance: 0,
@@ -2199,6 +2200,7 @@ class Wallet extends React.Component {
         showCancelButton: true,
         style: {},
         titleStyle: null,
+        withBackground: true,
       }
     });
   }
@@ -2589,7 +2591,7 @@ class Wallet extends React.Component {
         navDrawerOpen: false,
       });
 
-      const dialog = getDialog("AddFunds", {
+      const componentProps = {
         closeDialog: this.clearDialog,
         isFlipped: this.state.isFlipped,
         issueCollect: this.issueCollect,
@@ -2597,11 +2599,18 @@ class Wallet extends React.Component {
         snackbarUpdate: this.handleNotificationUpdate,
         showValuesInCurrency: this.showValuesInCurrency,
         openDialog: this.handleClickAddFunds,
-        updateTargetValue: (targetValue) => this.setState({ targetValue }),
+        updateTargetValue: (targetValue) => {
+          this.setState({ targetValue })
+        },
         wallet: this.wallet,
         xr: this.xr,
-      }, buttons);
+      };
 
+      const dialogProps = {
+        actions: buttons,
+      };
+
+      const dialog = getDialog("AddFunds", componentProps, dialogProps);
       this.openDialog(dialog);
     };
 

@@ -24,12 +24,13 @@ const componentStyles = (theme) => {
       height: `${styles.bottombarHeight}px`,
     },
     appBarMin: {
-      top: 'auto',
-      bottom: 0,
       borderRadius: '20px',
+      bottom: '0',
       height: `${styles.bottombarHeight}px`,
+      position: 'absolute',
+      right: 'inherit',
+      top: 'auto',
       width: '290px',
-      margin: '0 35px 16px',
     },
     icon: {
       color: styles.colors.mainTextColor,
@@ -94,11 +95,11 @@ class BottomBar extends React.Component {
 
   componentDidCatch(error, info) {
     const {
-      debug,
       snackbarUpdate,
+      wallet,
     } = this.props;
 
-    if (debug) {
+    if (wallet.config.debug) {
       console.log(error);
       console.log(info);
     }
@@ -107,7 +108,7 @@ class BottomBar extends React.Component {
       hasError: true,
     });
 
-    snackbarUpdate(info, true);
+    snackbarUpdate("Error on rendering bottom bar", true);
   }
 
   componentDidMount() {
@@ -155,7 +156,7 @@ class BottomBar extends React.Component {
 
     let text = "not available";
     if (totalAvailable && !isNaN(total)) {
-      text = "≈ " + xr.getCurrencySymbol() + total.toFixed(2);
+      text = "≈ " + xr.getCurrencySymbol() + parseFloat(total).toFixed(2);
     }
     return <div className={ classes.total }>
       { text } &nbsp;<i

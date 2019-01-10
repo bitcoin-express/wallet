@@ -45,8 +45,6 @@ class DialogTitle extends React.Component {
       right: "",
     };
 
-    console.log(type);
-
     switch(type) {
       case "AddFunds":
         title = "Add funds"
