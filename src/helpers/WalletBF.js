@@ -3304,17 +3304,46 @@ export default class WalletBF extends SwapBF {
         return reject(Error("Unexpected response from server"));
       };
 
-      const handleError = (xhr, status, err) => {
+      const handleError = (xhr, statusCode, err) => {
+        /*
+         * The structure of the error response should be as follows:
+         *
+         * {"issuerResponse":{
+         *    "status":"error",
+         *    "retry_after_seconds":"60",
+         *    "error":[{
+         *       "message":"text description here",
+         *       "code":"000",
+         *       "reason":"bad_request|forbidden|timeout|system_failure|unavailable"
+         *    }]
+         * }}
+         */
+
         if (debug) {
-          console.log(xhr, status, err);
+          console.log(xhr, statusCode, err);
         }
 
+        // Default error message
         let message = "Can't connect to the issuer";
-        if (status === "timeout") {
-          message = `Server did not respond within ${localArgs.timeout} sec.`;
+
+        if (!err || typeof err != "object" || !err.issuerResponse) {
+          return reject(URIError(message));
         }
 
-        return reject(Error(message));
+        const {
+          error,
+          retry_after_seconds,
+          status,
+        } = err.issuerResponse;
+
+        if (error && Array.isArray(error) && error[0]) {
+          message = error[0].message || message;
+          if (error[0].reason === "timeout") {
+            message = `Server did not respond within ${localArgs.timeout} sec.`;
+          }
+        }
+
+        return reject(URIError(message));
       };
 
       $.ajax({
