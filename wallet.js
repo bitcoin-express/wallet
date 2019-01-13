@@ -13,9 +13,10 @@ import {
   createMuiTheme
 } from '@material-ui/core/styles';
 
-import Wallet from './src/Wallet';
+import App from './src/App';
 import styles from './src/helpers/Styles';
-import { getParameterByName } from './src/helpers/Tools';
+import i18n from './src/helpers/i18n';
+import { getParameterByName } from './src/helpers/tools';
 
 
 const theme = createMuiTheme({
@@ -85,7 +86,7 @@ const componentStyles = (theme) => {
 };
 
 
-class App extends React.Component {
+class WalletApp extends React.Component {
 
   constructor(props) {
     super(props);
@@ -97,12 +98,15 @@ class App extends React.Component {
 
     this.state = {
       isFullScreen: props.isFullScreen,
-      status: states.REVEAL_APP,
       paymentRequest: null,
-    }
+      status: states.REVEAL_APP,
+    };
+
+    this.lang = new i18n("en");
 
     this.close = this.close.bind(this);
     this.switchWalletSize = this.switchWalletSize.bind(this);
+    this.setLanguage = this.setLanguage.bind(this);
     this.renderContent = this.renderContent.bind(this);
     this.handleShowAlert = this.handleShowAlert.bind(this);
     this.handleHideAlert = this.handleHideAlert.bind(this);
@@ -112,18 +116,19 @@ class App extends React.Component {
   _shutdown(message, reason, isClose) {
     if (isClose) {
       BitcoinExpress.Host.WalletClose(message, reason);
-    } else {
-      BitcoinExpress.Host.WalletRemove(message, reason);
+      return;
     }
+    BitcoinExpress.Host.WalletRemove(message, reason);
+  }
+
+  setLanguage(lang) {
+    this.lang.setLanguage(lang);
   }
 
   close(isClose=true) {
-    let msg = 'Wallet closed';
-    let reason = 'Closed';
-    if (!isClose) {
-      msg = 'Wallet removed';
-    }
-    this._shutdown(msg, reason, isClose);
+    const key = isClose ? "wclosed" : "wremoved";
+    const reason = this.i18n.t("closed");
+    this._shutdown(this.i18n.t(key), reason, isClose);
   }
 
   _revealWallet() {
@@ -156,18 +161,18 @@ class App extends React.Component {
       paymentRequest,
     } = this.props;
 
-    // there's no payment request then simply display the Wallet
-    if (paymentRequest == null) {
-      console.log("No PaymentRequest present - just showing Wallet");
-      this.setState({
-        status: states.REVEAL_APP,
-      });
-    } else {
+    if (paymentRequest) {
       this.setState({
         status: states.PROCESS_PAYMENT,
         paymentRequest,
       });
+      return this._revealWallet();
     }
+
+    console.log("No PaymentRequest present - just showing Wallet");
+    this.setState({
+      status: states.REVEAL_APP,
+    });
     return this._revealWallet();
   }
 
@@ -203,9 +208,7 @@ class App extends React.Component {
       return;
     }
 
-    // move to 0, 0
-    $("#wallet").fadeOut(0);
-    setTimeout(() => {
+    const moveToOrigin = () => {
       BitcoinExpress.Host.WalletGoModal(
         false,
         this.MINIMAL_WALLET_WIDTH,
@@ -220,7 +223,10 @@ class App extends React.Component {
 
       $("#wallet").fadeIn('fast');
       $("#settings-drawer").css('display', 'block');
-    }, 600);
+    };
+
+    $("#wallet").fadeOut(0);
+    setTimeout(moveToOrigin, 600);
   }
 
   renderContent() {
@@ -230,8 +236,9 @@ class App extends React.Component {
       status,
     } = this.state;
 
-    return <Wallet
+    return <App
       close={ this.close }
+      i18n={ this.i18n }
       isFullScreen={ isFullScreen }
       initializeDraggableArea={(id) => {
         BitcoinExpress.Host.WalletMakeDraggable(id);
@@ -241,12 +248,7 @@ class App extends React.Component {
       onContractClick={ this.switchWalletSize(false) }
       onExpandClick={ this.switchWalletSize(true) }
       paymentRequest={ paymentRequest }
-      removePayment={() => {
-        BitcoinExpress.Host.PopupMessage("Payment failed", 1500);
-        /* this.setState({
-          paymentRequest: null,
-        }); */
-      }}
+      removePayment={() => BitcoinExpress.Host.PopupMessage(this.i18n.t("pay_failed"), 1500)}
     />;
   }
 
@@ -271,8 +273,7 @@ class App extends React.Component {
 }
 
 
-const BitcoinExpressWallet = withStyles(componentStyles)(App);
-
+const BitcoinExpressWallet = withStyles(componentStyles)(WalletApp);
 ReactDOM.render(
   <BitcoinExpressWallet
     isFullScreen={ getParameterByName('fullScreen') == 'true' }

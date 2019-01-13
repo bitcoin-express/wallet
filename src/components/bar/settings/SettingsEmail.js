@@ -2,14 +2,40 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
+import Checkbox from '@material-ui/core/Checkbox';
+import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import IconButton from '@material-ui/core/IconButton';
 import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import { withStyles } from '@material-ui/core/styles';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
 import CoinSelector from '../../CoinSelector';
+import Box from '../../Box';
+
+
+const componentStyles = (theme) => {
+  return {
+    textField: {
+      marginBottom: theme.spacing.unit,
+      marginTop: theme.spacing.unit,
+      width: '100%',
+    },
+    select: {
+      marginBottom: theme.spacing.unit,
+      marginTop: theme.spacing.unit,
+      width: 'calc(100% - 40px)',
+    },
+    icon: {
+      width: '40px',
+      color: 'rgba(0, 0, 0, 0.54)',
+    },
+  };
+};
 
 
 function getExpiryEmailFee(info, settings, config) {
@@ -169,7 +195,7 @@ class FeeExpiryEmail extends React.Component {
 }
 
 
-export default class SettingsEmail extends React.Component {
+class SettingsEmail extends React.Component {
 
   constructor(props) {
     super(props);
@@ -227,6 +253,7 @@ export default class SettingsEmail extends React.Component {
 
     this._setAutoTimes = this._setAutoTimes.bind(this);
     this._validatePassword = this._validatePassword.bind(this);
+    this.negateStateValue = this.negateStateValue.bind(this);
   }
 
   componentWillMount() {
@@ -255,6 +282,14 @@ export default class SettingsEmail extends React.Component {
 
     wallet.issuer("info", {}, args, "GET")
       .then(updateState);
+  }
+
+  negateStateValue(key) {
+    return (event) => {
+      this.setState({
+        [key]: !this.state[key],
+      });
+    };
   }
 
   validateAmount(s) {
@@ -303,7 +338,7 @@ export default class SettingsEmail extends React.Component {
     });
   }
 
-  handleSetEmailRecovery(ev, checked) {
+  handleSetEmailRecovery(event) {
     const {
       setSettingsKey,
       wallet,
@@ -320,6 +355,8 @@ export default class SettingsEmail extends React.Component {
       MIN_TRANSACTION_VALUE,
       TRANSACTION_EXPIRE_VALUE,
     } = wallet.config;
+
+    const checked = event.target.value;
 
     if (checked && !settings[MIN_TRANSACTION]) {
       let minTxValue = {};
@@ -617,6 +654,7 @@ export default class SettingsEmail extends React.Component {
 
   render() {
     const {
+      classes,
       isFlipped,
       isFullScreen,
       setEmailRecovery,
@@ -651,24 +689,17 @@ export default class SettingsEmail extends React.Component {
       />
     };
 
-    return (
-      <section style={{ 
-        padding: '20px 5vw',
-      }}>
-        <h3 style={{
-          marginTop: '0',
-          color: '#8081ff',
-        }}>
-          Transaction recovery <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={{
-              cursor: 'pointer',
-              color: '#8081ff',
-              marginLeft: '10px',
-            }}
-          />
-        </h3>
+    const titleButton = <IconButton
+      aria-label="More info"
+      onClick={ this.negateStateValue('showPasswordInfo') }
+    >
+      <i className="fa fa-question-circle" />
+    </IconButton>;
+
+    return <section>
+
+      <Box title="Transaction recovery" button={ titleButton }>
+
         <div style={ this.styles.info }>
           <div>
             <b>In brief</b>
@@ -701,57 +732,44 @@ export default class SettingsEmail extends React.Component {
             </p>
           </div>
         </div>
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-        }}>
-          <div style={{
-            fontWeight: 'bold',
-            margin: '16px 12px 0 0',
-            minWidth: 'fit-content',
-          }}>
-            Expired transaction email recovery
-          </div>
-          <div style={{
-            width: 'calc(100% - 300px)',
-            minWidth: '235px',
-          }}>
-            <TextField
-              id="email"
-              defaultValue={ settings['email'] }
-              hintText="Enter email address"
-              errorText={ errorEmail }
-              onChange={ this.handleTextFieldChange }
-              style={{
-                marginBottom: '20px',
-                width: '100%',
-              }}
-            />
-          </div>
-        </div>
-        <Checkbox
-          label="Enable recover email"
-          labelStyle={ isFullScreen ? {} : { fontSize: 'small' } }
-          checked={ settings[wallet.config.EMAIL_RECOVERY] }
-          disabled={ !this._checkIfEmailInString(settings[wallet.config.EMAIL]) }
-          onCheck={ this.handleSetEmailRecovery }
+
+        <TextField
+          id="email"
+          className={ classes.textField }
+          defaultValue={ settings['email'] }
+          label="Enter email address"
+          helperText="Expired transaction email recovery"
+          errorText={ errorEmail }
+          onChange={ this.handleTextFieldChange }
         />
-        { currencyInfo.map((info) => {
-            return <FeeExpiryEmail 
-              { ...this.props }
-              key={ "feeEmail" + info.currencyCode }
-              currency={ info.currencyCode }
-              feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
-              settings={ settings }
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={ settings[wallet.config.EMAIL_RECOVERY] }
+              disabled={ !this._checkIfEmailInString(settings[wallet.config.EMAIL]) }
+              onClick={ this.handleSetEmailRecovery }
             />
-        }) }
-        <div>
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon('-6em') }
-          />
-        </div>
+          }
+          label={ <React.Fragment>
+            Enable recover email <IconButton
+              aria-label="More info"
+              onClick={ this.negateStateValue('showPasswordInfo') }
+            >
+              <i className="fa fa-question-circle" />
+            </IconButton>
+          </React.Fragment> }
+          style={ isFullScreen ? {} : { fontSize: 'small' } }
+        />
+
+        { currencyInfo.map((info) => <FeeExpiryEmail 
+          { ...this.props }
+          key={ "feeEmail" + info.currencyCode }
+          currency={ info.currencyCode }
+          feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
+          settings={ settings }
+        />) }
+
         <div style={ this.styles.info }>
           <div>
             <b>Why enable expired transaction recovery emails?</b>
@@ -785,46 +803,33 @@ export default class SettingsEmail extends React.Component {
             </p>
           </div>
         </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateAreas: '"text selector"',
-          gridTemplateColumns: '200px calc(100% - 245px)',
-          gridGap: '5px',
-          height: '50px',
-        }}>
-          <div style={{
-            fontSize: 'small',
-            gridArea: 'text',
-            paddingTop: '20px',
-            marginLeft: isFullScreen ? '40px' : '0',
-          }}>
-            Min. transaction amount
-          </div>
+
+        <FormControl className={ classes.select }>
+
           <Select
             disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
             value={ settings[wallet.config.MIN_TRANSACTION] || 0 }
             onChange={ this.handleSetMinTransaction }
-            style={{
-              display: 'inline-flex',
-              gritArea: 'selector',
-              width: '100px',
-            }}
-            underlineStyle={{
-              display: 'inline-flex',
-              width: '90px',
-              marginLeft: '-100px',
-            }}
           >
-            <MenuItem
-              value={ 0 }
-              primaryText="User"
-            />
-            <MenuItem
-              value={ 1 }
-              primaryText="Auto"
-            />
+            <MenuItem value={ 0 }>
+              User
+            </MenuItem>
+            <MenuItem value={ 1 }>
+              Auto
+            </MenuItem>
           </Select>
-        </div>
+
+          <FormHelperText>Min. transaction amount</FormHelperText>
+
+        </FormControl>
+
+        <IconButton
+          aria-label="More info"
+          className={ classes.icon }
+          onClick={ this.negateStateValue('showPasswordInfo') }
+        >
+          <i className="fa fa-question-circle" />
+        </IconButton>
 
         { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
               const {
@@ -853,13 +858,6 @@ export default class SettingsEmail extends React.Component {
           }) }
         </div> }
 
-        <div>
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon(isAutoMinTx ? '-6.5em' : '-12em') }
-          />
-        </div>
         <div style={ this.styles.info }>
           <div>
             <p>
@@ -990,6 +988,7 @@ export default class SettingsEmail extends React.Component {
             </p>
           </div>
         </div>
+      </Box>
 
         <h3>Transaction expiry period</h3>
         <Select
@@ -1040,7 +1039,10 @@ export default class SettingsEmail extends React.Component {
             />
         }) }
 
-      </section>
-    );
+    </section>;
   }
 }
+
+
+export default withStyles(componentStyles)(SettingsEmail);
+

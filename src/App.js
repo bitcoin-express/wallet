@@ -63,7 +63,7 @@ const states = {
   APP: 2,
 };
 
-class Wallet extends React.Component {
+class App extends React.Component {
 
   constructor(props) {
     super(props);
@@ -3154,4 +3154,5 @@ class Wallet extends React.Component {
   }
 }
 
-export default Wallet;
+export default App;
+
