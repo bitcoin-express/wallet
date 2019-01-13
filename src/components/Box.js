@@ -21,6 +21,11 @@ const componentStyles = (theme) => {
       marginBlockStart: "-30px",
       width: "fit-content",
     },
+    titleButton: {
+      backgroundColor: "#d8dff7",
+      marginBlockStart: "-40px",
+      width: "fit-content",
+    },
   };
 };
 
@@ -35,15 +40,21 @@ class Box extends React.Component {
       classes,
       children,
       title,
+      button,
     } = this.props;
 
     return <div className={ classes.root }>
-      { title ? <h3 className={ classes.title }>{ title }</h3> : null }
+      { title ? <h3 className={ button ? classes.titleButton : classes.title }>
+          { title }{ button }
+        </h3> : null }
       { children }
     </div>;
   }
 };
 
+Box.defaultProps = {
+  button: null,
+};
 
 export default withStyles(componentStyles)(Box);
 

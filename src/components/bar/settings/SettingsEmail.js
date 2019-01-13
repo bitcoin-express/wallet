@@ -8,6 +8,7 @@ import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import IconButton from '@material-ui/core/IconButton';
+import InputLabel from '@material-ui/core/InputLabel';
 import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -16,23 +17,35 @@ import { withStyles } from '@material-ui/core/styles';
 import BitcoinCurrency from '../../BitcoinCurrency';
 import CoinSelector from '../../CoinSelector';
 import Box from '../../Box';
+import { AppContext } from "../../../AppContext";
 
 
 const componentStyles = (theme) => {
   return {
-    textField: {
+    checkbox: {},
+    checkboxMin: {
+      fontSize: 'small',
+    },
+    info: {
+      fontSize: 'small',
+      color: '#a9331d',
+    },
+    input: {
       marginBottom: theme.spacing.unit,
-      marginTop: theme.spacing.unit,
       width: '100%',
+    },
+    label: {
+      display: 'contents',
     },
     select: {
       marginBottom: theme.spacing.unit,
       marginTop: theme.spacing.unit,
-      width: 'calc(100% - 40px)',
+      width: 'calc(100% - 45px)',
     },
-    icon: {
-      width: '40px',
-      color: 'rgba(0, 0, 0, 0.54)',
+    textField: {
+      marginBottom: theme.spacing.unit,
+      marginTop: theme.spacing.unit,
+      width: '100%',
     },
   };
 };
@@ -209,6 +222,11 @@ class SettingsEmail extends React.Component {
       feeExpiry: 0,
       pwdType: 0,
       settings: props.settings,
+      showEnableRecoveryInfo: false,
+      showEncryptInfo: false,
+      showPasswordInfo: false,
+      showRecoveryInfo: false,
+      showTransactionRecoveryInfo: false,
     };
 
     this.styles = {
@@ -250,6 +268,7 @@ class SettingsEmail extends React.Component {
     this.handleSetTransactionExpire = this.handleSetTransactionExpire.bind(this);
     this.handleChangeTransactionExpire = this.handleChangeTransactionExpire.bind(this);
     this.handleShowInfo = this.handleShowInfo.bind(this);
+    this.renderRecoveryEmail = this.renderRecoveryEmail.bind(this);
 
     this._setAutoTimes = this._setAutoTimes.bind(this);
     this._validatePassword = this._validatePassword.bind(this);
@@ -356,7 +375,7 @@ class SettingsEmail extends React.Component {
       TRANSACTION_EXPIRE_VALUE,
     } = wallet.config;
 
-    const checked = event.target.value;
+    const { checked } = event.target;
 
     if (checked && !settings[MIN_TRANSACTION]) {
       let minTxValue = {};
@@ -382,7 +401,7 @@ class SettingsEmail extends React.Component {
     }
   }
 
-  handleSetEmailEncrypt(event, checked) {
+  handleSetEmailEncrypt(event) {
     const {
       setSettingsKey,
       wallet,
@@ -391,6 +410,8 @@ class SettingsEmail extends React.Component {
     let {
       settings,
     } = this.state;
+
+    const { checked } = event.target;
 
     if (checked && !settings[wallet.config.ENCRYPT_TYPE]) {
       setSettingsKey(wallet.config.ENCRYPT_TYPE, 0);
@@ -652,10 +673,9 @@ class SettingsEmail extends React.Component {
     });
   }
 
-  render() {
+  renderRecoveryEmail() {
     const {
       classes,
-      isFlipped,
       isFullScreen,
       setEmailRecovery,
       setEmailEncrypt,
@@ -673,6 +693,14 @@ class SettingsEmail extends React.Component {
       settings,
     } = this.state;
 
+    const {
+      i18n,
+    } = this.context;
+
+    if (!settings[wallet.config.EMAIL_RECOVERY]) {
+      return null;
+    }
+
     const showPwdField = settings[wallet.config.ENCRYPT_TYPE] == 1
       && settings[wallet.config.EMAIL_ENCRYPT];
 
@@ -689,9 +717,203 @@ class SettingsEmail extends React.Component {
       />
     };
 
+    return <React.Fragment>
+
+      { currencyInfo.map((info) => <FeeExpiryEmail 
+        { ...this.props }
+        key={ "feeEmail" + info.currencyCode }
+        currency={ info.currencyCode }
+        feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
+        settings={ settings }
+      />) }
+
+      <FormControl className={ classes.select }>
+
+        <Select
+          disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
+          value={ settings[wallet.config.MIN_TRANSACTION] || 0 }
+          onChange={ this.handleSetMinTransaction }
+        >
+          <MenuItem value={ 0 }>
+            User
+          </MenuItem>
+          <MenuItem value={ 1 }>
+            Auto
+          </MenuItem>
+        </Select>
+
+        <FormHelperText>Min. transaction amount</FormHelperText>
+
+      </FormControl>
+
+      <IconButton
+        aria-label="More info"
+        onClick={ this.negateStateValue('showRecoveryInfo') }
+      >
+        <i className="fa fa-question-circle" />
+      </IconButton>
+
+      { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
+          const {
+            EMAIL_RECOVERY,
+          } = wallet.config;
+
+          const fee = getExpiryEmailFee(info, settings, wallet.config);
+
+          return <CoinSelector
+            currency={ info.currencyCode }
+            id={ "minTransactionSel" + info.currencyCode }
+            key={ "minTransactionSel" + info.currencyCode }
+            label=""
+            labelCurrency=""
+            fullSize={ false }
+            xr={ xr }
+            disabled={ !settings[EMAIL_RECOVERY] }
+            style={{
+              margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
+              width: 'calc(100% - 60px)',
+            }}
+            initialValue={ fee.toString() }
+            error={ this.state.errorMinTx }
+            onAmountChange={ this.handleMinTransactionChange(info.currencyCode) }
+          />;
+        }) }
+      </div> }
+
+      { this.state.showRecoveryInfo ? <p className={ classes.info }>
+        { i18n.t("recovery_info") }
+        </p> : null }
+
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={ settings[wallet.config.EMAIL_ENCRYPT] }
+            disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
+            onClick={ this.handleSetEmailEncrypt }
+          />
+        }
+        label={ <React.Fragment>
+          Encrypt recovery email <IconButton
+            aria-label="More info"
+            onClick={ this.negateStateValue('showEncryptInfo') }
+          >
+            <i className="fa fa-question-circle" />
+          </IconButton>
+        </React.Fragment> }
+        classes={{
+          root: isFullScreen ? classes.checkbox : classes.checkboxMin,
+          label: classes.label,
+        }}
+      />
+
+      { this.state.showEncryptInfo ? <div className={ classes.info }>
+        <b>Why encrypt recovery emails?</b>
+        <p>
+          If you use a secure email protocols (like authenticated SMPT),
+          and you trust that your email supplier will never read the
+          contents of your emails, there is no strong need to use encrypted
+          recovery emails. However, if you have any doubts we suggest that
+          you select this option as it will prevent ANY person or device
+          from steeling your new coins.
+        </p>
+        <p>
+          Encryption is not automatically set because there is always a
+          change that the password could be lost or forgotten and your coins
+          would then be impossible to recover even if you possess the coin
+          recovery file.
+        </p>
+      </div> : null }
+
+      { settings[wallet.config.EMAIL_ENCRYPT] ? <React.Fragment>
+        <FormControl className={ classes.select }>
+          <Select
+            className={ classes.input }
+            id="pwd"
+            value={ settings[wallet.config.ENCRYPT_TYPE] || 0 }
+            onChange={ this.handleSetEncryptType }
+          >
+            <MenuItem value={ 0 }>
+              Auto
+            </MenuItem>
+            <MenuItem value={ 1 }>
+              Manual
+            </MenuItem>
+          </Select>
+
+          <FormHelperText>Password</FormHelperText>
+        </FormControl>
+
+        <IconButton
+          aria-label="More info"
+          onClick={ this.negateStateValue('showPasswordInfo') }
+        >
+          <i className="fa fa-question-circle" />
+        </IconButton>
+
+        { this.state.showPasswordInfo ? <div className={ classes.info }>
+          <b>Should I set a manual password or make it automatic?</b>
+          <p>
+            When Password is set to Auto, the Wallet will invent and record
+            a new random password each time the email recovery option is
+            used. This is the most secure option available, but if the Wallet
+            should lose the password (perhaps because you remove the Wallet
+            from a browser without making a backup), it would be impossible to
+            recover any coins from a recovery file.
+          </p>
+          <p>
+            However, if you set a manual password and remember it yourself,
+            you will always be able to recover coins from a recovery file
+            even if Wallet data is inadvertently lost.
+          </p>
+          <p style={{ color: 'red' }}>
+            Warning: If you set a manual password, be sure to make it hard to
+            guess. An easy to guess password is the number one factor in cyber
+            theft.
+            <br/><br/>&nbsp;
+          </p>
+        </div> : null }
+
+        { showPwdField ? <TextField
+          id="pwd"
+          value={ settings[wallet.config.PASSWORD_ENCRYPT] || "" }
+          floatingLabelText="Enter password"
+          type="password"
+          disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
+          onChange={ this.handleChangePasswordEncrypt }
+        /> : null }
+      </React.Fragment> : null }
+
+    </React.Fragment>;
+  }
+
+  render() {
+    const {
+      classes,
+      isFlipped,
+      setEmailRecovery,
+      setEmailEncrypt,
+      showValuesInCurrency,
+      wallet,
+      walletName,
+      xr,
+    } = this.props;
+
+    let {
+      errorEmail,
+      feeExpiry,
+      feeExpiryEmail,
+      currencyInfo,
+      settings,
+    } = this.state;
+
+    const {
+      i18n,
+      isFullScreen,
+    } = this.context;
+
     const titleButton = <IconButton
       aria-label="More info"
-      onClick={ this.negateStateValue('showPasswordInfo') }
+      onClick={ this.negateStateValue('showTransactionRecoveryInfo') }
     >
       <i className="fa fa-question-circle" />
     </IconButton>;
@@ -700,38 +922,19 @@ class SettingsEmail extends React.Component {
 
       <Box title="Transaction recovery" button={ titleButton }>
 
-        <div style={ this.styles.info }>
-          <div>
-            <b>In brief</b>
-            <ul>
-              <li>AUTO settings should be sufficient for most people.</li>
-              <li>Indicating if your device may be unreliable will help.</li>
-              <li>Enable email recovery for the most reliable service.</li>
-              <li>View fees instantly as you change the settings.</li>
-            </ul>
-            <b>In full</b>
-            <p>
-              This Wallet needs to communicate with servers on the Internet
-              and for increased reliability it uses a communications protocol
-              that is capable of recovery from network or power failures that
-              may last for hours or even days.
-            </p>
-            <p>
-              The settings in this section determine the parameters that your
-              Wallet will use when communicating with these servers, and hence
-              the fees that will be applied. For most people the AUTO settings
-              will be sufficient, alternatively you may customise the settings
-              according to your personal needs.
-            </p>
-            <p>
-              The length of the transaction recovery period should be affected
-              by the type of device this Wallet is running on. Devices with
-              unreliable power or network connections should have longer recovery
-              periods and those that enable email recover may safely have reduced
-              recovery periods.<br/><br/>
-            </p>
-          </div>
-        </div>
+        { this.state.showTransactionRecoveryInfo ? <div className={ classes.info }>
+          <b>{ i18n.t("in_brief") }</b>
+          <ul>
+            <li>{ i18n.t("tx_recovery_info_p1_b1") }</li>
+            <li>{ i18n.t("tx_recovery_info_p1_b2") }</li>
+            <li>{ i18n.t("tx_recovery_info_p1_b3") }</li>
+            <li>{ i18n.t("tx_recovery_info_p1_b4") }</li>
+          </ul>
+          <b>{ i18n.t("in_full") }</b>
+          <p>{ i18n.t("tx_recovery_info_p2") }</p>
+          <p>{ i18n.t("tx_recovery_info_p3") }</p>
+          <p>{ i18n.t("tx_recovery_info_p4") }</p>
+        </div> : null }
 
         <TextField
           id="email"
@@ -754,243 +957,55 @@ class SettingsEmail extends React.Component {
           label={ <React.Fragment>
             Enable recover email <IconButton
               aria-label="More info"
-              onClick={ this.negateStateValue('showPasswordInfo') }
+              onClick={ this.negateStateValue('showEnableRecoveryInfo') }
             >
               <i className="fa fa-question-circle" />
             </IconButton>
           </React.Fragment> }
-          style={ isFullScreen ? {} : { fontSize: 'small' } }
-        />
-
-        { currencyInfo.map((info) => <FeeExpiryEmail 
-          { ...this.props }
-          key={ "feeEmail" + info.currencyCode }
-          currency={ info.currencyCode }
-          feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
-          settings={ settings }
-        />) }
-
-        <div style={ this.styles.info }>
-          <div>
-            <b>Why enable expired transaction recovery emails?</b>
-            <p>
-              Transaction recovery emails contain new coins that your Wallet
-              has failed to confirm have been well received. This is most
-              often the result of power or network failure. 
-            </p>
-            <p>
-              A transaction recovery email will be sent to the specified email
-              address upon the rare occasion that a transaction expires before
-              it is properly ended. For this situation to occur, a transaction
-              that normally takes less than 10 seconds must have been abandoned
-              before it completed, and then the Wallet did not start again
-              until after the transaction had expired.
-            </p>
-            <p>
-              On these very rare occasions, you will lose any new coins that an
-              Issuer has created for you if email recovery is NOT enabled. When
-              you provide an email address, the Issuer is able to send you the new
-              coins even when your computer losses power or network connectivity
-              for prolonged periods.
-            </p>
-            <b>How long does the server retain the email address?</b>
-            <p>
-              The email address is only retained for as long as the transaction
-              is open (normally less than 10 seconds). As soon as a transaction
-              is ended by the Wallet or the transaction period expires, the email
-              address is discarded by the server and is never used for any other
-              purpose.
-            </p>
-          </div>
-        </div>
-
-        <FormControl className={ classes.select }>
-
-          <Select
-            disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
-            value={ settings[wallet.config.MIN_TRANSACTION] || 0 }
-            onChange={ this.handleSetMinTransaction }
-          >
-            <MenuItem value={ 0 }>
-              User
-            </MenuItem>
-            <MenuItem value={ 1 }>
-              Auto
-            </MenuItem>
-          </Select>
-
-          <FormHelperText>Min. transaction amount</FormHelperText>
-
-        </FormControl>
-
-        <IconButton
-          aria-label="More info"
-          className={ classes.icon }
-          onClick={ this.negateStateValue('showPasswordInfo') }
-        >
-          <i className="fa fa-question-circle" />
-        </IconButton>
-
-        { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
-              const {
-                EMAIL_RECOVERY,
-              } = wallet.config;
-
-              const fee = getExpiryEmailFee(info, settings, wallet.config);
-
-              return <CoinSelector
-                currency={ info.currencyCode }
-                id={ "minTransactionSel" + info.currencyCode }
-                key={ "minTransactionSel" + info.currencyCode }
-                label=""
-                labelCurrency=""
-                fullSize={ false }
-                xr={ xr }
-                disabled={ !settings[EMAIL_RECOVERY] }
-                style={{
-                  margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
-                  width: 'calc(100% - 60px)',
-                }}
-                initialValue={ fee.toString() }
-                error={ this.state.errorMinTx }
-                onAmountChange={ this.handleMinTransactionChange(info.currencyCode) }
-              />;
-          }) }
-        </div> }
-
-        <div style={ this.styles.info }>
-          <div>
-            <p>
-              When enabling recovery email, there is a fixed fee per
-              transaction. When the transaction value is large relative to the
-              fee, it make good sense to include it. However, when the
-              transaction value is very small, the cost of including email
-              recovery may not be justified. The Auto setting will only request
-              email recovery if the value of the coins being processed is at
-              least TWENTY TIMES the recovery email fee.
-              <br/><br/>&nbsp;
-            </p>
-          </div>
-        </div>
-        <br/>
-
-        <Checkbox
-          label="Encrypt recovery email"
-          labelStyle={ isFullScreen ? {} : { fontSize: 'small' } }
-          checked={ settings[wallet.config.EMAIL_ENCRYPT] }
-          disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
-          onCheck={ this.handleSetEmailEncrypt }
-        />
-        <div style={{
-          display: 'grid',
-          marginLeft: isFullScreen ? '40px' : '0',
-          gridTemplateAreas: '"text selector"',
-          gridTemplateColumns: '80px 130px',
-          gridGap: '5px',
-          height: '50px',
-        }}>
-          <div style={{
-            gridArea: 'text',
-            paddingTop: '20px',
-          }}>
-            Password
-          </div>
-          <Select
-            value={ settings[wallet.config.ENCRYPT_TYPE] || 0 }
-            onChange={ this.handleSetEncryptType }
-            style={{
-              display: 'inline-flex',
-              gridArea: 'selector',
-              width: '120px',
-            }}
-            underlineStyle={{
-              display: 'inline-flex',
-              width: '110px',
-              marginLeft: '-120px',
-            }}
-            disabled={ !settings[wallet.config.EMAIL_ENCRYPT] || !settings[wallet.config.EMAIL_RECOVERY] }
-          >
-            <MenuItem
-              value={ 0 }
-              primaryText="Auto"
-            />
-            <MenuItem
-              value={ 1 }
-              primaryText="Manual"
-            />
-          </Select>
-        </div>
-        { showPwdField ? <TextField
-          id="pwd"
-          value={ settings[wallet.config.PASSWORD_ENCRYPT] || "" }
-          floatingLabelText="Enter password"
-          type="password"
-          disabled={ !settings[wallet.config.EMAIL_RECOVERY] }
-          onChange={ this.handleChangePasswordEncrypt }
-          style={{
-            margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
+          classes={{
+            root: isFullScreen ? classes.checkbox : classes.checkboxMin,
+            label: classes.label,
           }}
-        /> : null }
+        />
 
-        <div style={{ marginBottom: '15px' }}>
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo() }
-            style={ this.styles.infoIcon(showPwdField ? '-120px' : '-70px') }
-          />
-          <br/>
-          <i
-            className="fa fa-question-circle"
-            onClick={ this.handleShowInfo(true) }
-            style={ this.styles.infoIcon(showPwdField ? '-100px' : '-50px') }
-          />
-        </div>
-        <div style={ this.styles.info }>
-          <div>
-            <b>Why encrypt recovery emails?</b>
-            <p>
-              If you use a secure email protocols (like authenticated SMPT),
-              and you trust that your email supplier will never read the
-              contents of your emails, there is no strong need to use encrypted
-              recovery emails. However, if you have any doubts we suggest that
-              you select this option as it will prevent ANY person or device
-              from steeling your new coins.
-            </p>
-            <p>
-              Encryption is not automatically set because there is always a
-              change that the password could be lost or forgotten and your coins
-              would then be impossible to recover even if you possess the coin
-              recovery file.
-            </p>
-          </div>
-        </div>
-        <div style={ this.styles.infoDouble }>
-          <div>
-            <b>Should I set a manual password or make it automatic?</b>
-            <p>
-              When Password is set to Auto, the Wallet will invent and record
-              a new random password each time the email recovery option is
-              used. This is the most secure option available, but if the Wallet
-              should lose the password (perhaps because you remove the Wallet
-              from a browser without making a backup), it would be impossible to
-              recover any coins from a recovery file.
-            </p>
-            <p>
-              However, if you set a manual password and remember it yourself,
-              you will always be able to recover coins from a recovery file
-              even if Wallet data is inadvertently lost.
-            </p>
-            <p style={{ color: 'red' }}>
-              Warning: If you set a manual password, be sure to make it hard to
-              guess. An easy to guess password is the number one factor in cyber
-              theft.
-              <br/><br/>&nbsp;
-            </p>
-          </div>
-        </div>
+        { this.state.showEnableRecoveryInfo ? <div className={ classes.info }>
+          <b>Why enable expired transaction recovery emails?</b>
+          <p>
+            Transaction recovery emails contain new coins that your Wallet
+            has failed to confirm have been well received. This is most
+            often the result of power or network failure. 
+          </p>
+          <p>
+            A transaction recovery email will be sent to the specified email
+            address upon the rare occasion that a transaction expires before
+            it is properly ended. For this situation to occur, a transaction
+            that normally takes less than 10 seconds must have been abandoned
+            before it completed, and then the Wallet did not start again
+            until after the transaction had expired.
+          </p>
+          <p>
+            On these very rare occasions, you will lose any new coins that an
+            Issuer has created for you if email recovery is NOT enabled. When
+            you provide an email address, the Issuer is able to send you the new
+            coins even when your computer losses power or network connectivity
+            for prolonged periods.
+          </p>
+          <b>How long does the server retain the email address?</b>
+          <p>
+            The email address is only retained for as long as the transaction
+            is open (normally less than 10 seconds). As soon as a transaction
+            is ended by the Wallet or the transaction period expires, the email
+            address is discarded by the server and is never used for any other
+            purpose.
+          </p>
+        </div> : null }
+
+        { this.renderRecoveryEmail() }
+
       </Box>
 
-        <h3>Transaction expiry period</h3>
+      <Box title="Transaction expiry period">
+
         <Select
           value={ settings[wallet.config.TRANSACTION_EXPIRE_VALUE] || 0 }
           onChange={ this.handleChangeTransactionExpire }
@@ -999,14 +1014,12 @@ class SettingsEmail extends React.Component {
             width: isFullScreen ? 'calc(100% - 60px)' : '100%',
           }}
         >
-          <MenuItem
-            value={ 0 }
-            primaryText="Auto"
-          />
-          <MenuItem
-            value={ 1 }
-            primaryText="Manual"
-          />
+          <MenuItem value={ 0 }>
+            Auto
+          </MenuItem>
+          <MenuItem value={ 1 }>
+            Manual
+          </MenuItem>
         </Select>
         { settings[wallet.config.TRANSACTION_EXPIRE_VALUE] == 1 ? <div
           style={{
@@ -1038,11 +1051,13 @@ class SettingsEmail extends React.Component {
               settings={ settings }
             />
         }) }
+      </Box>
 
     </section>;
   }
 }
 
 
+SettingsEmail.contextType = AppContext;
 export default withStyles(componentStyles)(SettingsEmail);
 

@@ -13,6 +13,7 @@ import {
   createMuiTheme
 } from '@material-ui/core/styles';
 
+import { AppProvider } from "./src/AppContext";
 import App from './src/App';
 import styles from './src/helpers/Styles';
 import i18n from './src/helpers/i18n';
@@ -51,6 +52,8 @@ const states = {
   PROCESS_PAYMENT: 1,
 };
 
+
+const WalletContext = React.createContext();
 
 const componentStyles = (theme) => {
 
@@ -102,7 +105,7 @@ class WalletApp extends React.Component {
       status: states.REVEAL_APP,
     };
 
-    this.lang = new i18n("en");
+    this.i18n = new i18n("en");
 
     this.close = this.close.bind(this);
     this.switchWalletSize = this.switchWalletSize.bind(this);
@@ -233,12 +236,10 @@ class WalletApp extends React.Component {
     const {
       isFullScreen,
       paymentRequest,
-      status,
     } = this.state;
 
     return <App
       close={ this.close }
-      i18n={ this.i18n }
       isFullScreen={ isFullScreen }
       initializeDraggableArea={(id) => {
         BitcoinExpress.Host.WalletMakeDraggable(id);
@@ -262,12 +263,19 @@ class WalletApp extends React.Component {
     } = this.props;
 
     return <MuiThemeProvider theme={ theme }>
-      <div
-        id="container"
-        className={ isFullScreen ? classes.root : classes.rootMin }
+      <AppProvider
+        value={{
+          i18n: this.i18n,
+          isFullScreen: isFullScreen,
+        }}
       >
-        { this.renderContent() }
-      </div>
+        <div
+          id="container"
+          className={ isFullScreen ? classes.root : classes.rootMin }
+        >
+          { this.renderContent() }
+        </div>
+      </AppProvider>
     </MuiThemeProvider>;
   }
 }
