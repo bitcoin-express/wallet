@@ -25,11 +25,11 @@ const componentStyles = (theme) => {
       margin: "0 !important",
     },
     iconActive: {
-      color: "rgb(128, 131, 145)",
+      color: "#d7dffb",
       fontSize: "20px",
     },
     rootMenu: {
-      background: "rgb(176, 182, 201)",
+      background: "#a8baf8",
     },
   };
 };

@@ -10,21 +10,27 @@ const componentStyles = (theme) => {
     root: {
       margin: '2rem 0 1rem 0',
       padding: '1rem',
-      border: '3px solid #63667130',
       borderRadius: '10px',
-      backgroundColor: "#d8dff7",
+      boxShadow: '0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12)',
+      backgroundColor: "white",
       color: '#636671',
       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     },
     title: {
-      backgroundColor: "#d8dff7",
+      backgroundColor: "white",
       marginBlockStart: "-30px",
       width: "fit-content",
+      padding: '0 10px',
+      borderRadius: '10px',
+      color: '#7990e0',
     },
     titleButton: {
-      backgroundColor: "#d8dff7",
+      backgroundColor: "white",
       marginBlockStart: "-40px",
       width: "fit-content",
+      padding: '0 10px',
+      borderRadius: '10px',
+      color: '#7990e0',
     },
   };
 };

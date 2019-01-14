@@ -454,7 +454,7 @@ class SettingsEmail extends React.Component {
     }
   }
 
-  handleChangeTransactionExpire(event, type, payload) {
+  handleChangeTransactionExpire(event) {
     const {
       setSettingsKey,
       wallet,
@@ -463,6 +463,8 @@ class SettingsEmail extends React.Component {
     let {
       settings,
     } = this.state;
+
+    const type = event.target.value;
 
     if (type == 0) {
       this._setAutoTimes();
@@ -474,7 +476,7 @@ class SettingsEmail extends React.Component {
     });
   }
 
-  handleSetEncryptType(event, type, payload) {
+  handleSetEncryptType(event) {
     const {
       setSettingsKey,
       wallet,
@@ -483,6 +485,8 @@ class SettingsEmail extends React.Component {
     let {
       settings,
     } = this.state;
+
+    const type = event.target.value;
 
     if (type == 0) {
       setSettingsKey(wallet.config.PASSWORD_ENCRYPT, "");
@@ -495,7 +499,7 @@ class SettingsEmail extends React.Component {
     });
   }
 
-  handleSetMinTransaction(event, type, payload) {
+  handleSetMinTransaction(event) {
     const {
       setSettingsKey,
       wallet,
@@ -505,6 +509,8 @@ class SettingsEmail extends React.Component {
       currencyInfo,
       settings,
     } = this.state;
+
+    const type = event.target.value;
 
     const {
       MIN_TRANSACTION,
@@ -736,13 +742,24 @@ class SettingsEmail extends React.Component {
 
     return <React.Fragment>
 
-      { currencyInfo.map((info) => <FeeExpiryEmail 
-        { ...this.props }
-        key={ "feeEmail" + info.currencyCode }
-        currency={ info.currencyCode }
-        feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
-        settings={ settings }
-      />) }
+      <div style={{ marginBottom: '20px' }}>
+        { currencyInfo.map((info) => <FeeExpiryEmail 
+          { ...this.props }
+          key={ "feeEmail" + info.currencyCode }
+          currency={ info.currencyCode }
+          feeExpiryEmail={ parseFloat(info.feeExpiryEmail) }
+          settings={ settings }
+        />) }
+      </div>
+
+      { this.state.showEnableRecoveryInfo ? <div className={ classes.info }>
+        <b>{ i18n.t("why_enable") }</b>
+        <p>{ i18n.t("enable_info_p1") }</p>
+        <p>{ i18n.t("enable_info_p2") }</p>
+        <p>{ i18n.t("enable_info_p3") }</p>
+        <b>{ i18n.t("how_long_retain") }</b>
+        <p>{ i18n.t("enable_info_p4") }</p>
+      </div> : null }
 
       <FormControl className={ classes.select }>
 
@@ -772,7 +789,9 @@ class SettingsEmail extends React.Component {
         <i className="fa fa-question-circle" />
       </IconButton>
 
-      { isAutoMinTx ? currencyInfo.map(displayMinTxFee) : <div> { currencyInfo.map((info) => {
+      { isAutoMinTx ? <div style={{ marginBottom: '20px' }}>
+          { currencyInfo.map(displayMinTxFee) }
+        </div> : <div> { currencyInfo.map((info) => {
           const {
             EMAIL_RECOVERY,
           } = wallet.config;
@@ -904,6 +923,8 @@ class SettingsEmail extends React.Component {
       isFullScreen,
     } = this.context;
 
+    // '#7990e0'
+    // color
     const titleButton = <IconButton
       aria-label={ i18n.t("more_info") }
       onClick={ this.negateStateValue('showTransactionRecoveryInfo') }
@@ -960,15 +981,6 @@ class SettingsEmail extends React.Component {
             label: classes.label,
           }}
         />
-
-        { this.state.showEnableRecoveryInfo ? <div className={ classes.info }>
-          <b>{ i18n.t("why_enable") }</b>
-          <p>{ i18n.t("enable_info_p1") }</p>
-          <p>{ i18n.t("enable_info_p2") }</p>
-          <p>{ i18n.t("enable_info_p3") }</p>
-          <b>{ i18n.t("how_long_retain") }</b>
-          <p>{ i18n.t("enable_info_p4") }</p>
-        </div> : null }
 
         { this.renderRecoveryEmail() }
 
