@@ -162,7 +162,7 @@ class Bar extends React.Component {
     </svg>;
   }
 
-  showSettings () {
+  showSettings (updateNavbar=false) {
     const {
       loading,
       handleMenuIconClick,
@@ -174,7 +174,9 @@ class Bar extends React.Component {
 
     const displaySettingsDialog = (settings) => {
       loading(false);
-      handleMenuIconClick(null, false);
+      if (updateNavbar) {
+        handleMenuIconClick(null, false);
+      }
 
       this.setState({
         backupSettings: Object.assign({}, {}, settings),
@@ -363,7 +365,7 @@ class Bar extends React.Component {
 
     let items = [{
       text: "Settings",
-      fn: this.showSettings,
+      fn: this.showSettings.bind(this, true),
       key: "settings",
       isGDrive: false,
       icon: <i
