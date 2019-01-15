@@ -23,6 +23,7 @@ const componentStyles = (theme) => {
       color: colors.mainTextColor,
       fontSize: "20px !important",
       margin: "0 !important",
+      paddingTop: "15px",
     },
     iconActive: {
       color: "#d7dffb",
@@ -58,7 +59,7 @@ class Settings extends React.Component {
     } = this.props;
 
     return <BottomNavigation
-      selectedIndex={ display }
+      value={ display }
       className={ classes.rootMenu }
     >
       <BottomNavigationAction
@@ -91,23 +92,27 @@ class Settings extends React.Component {
   }
 
   renderContent() {
-    switch (this.state.display) {
+    let other = Object.assign({}, this.props);
+    delete other.classes;
+    const { display } = this.state;
+
+    switch (display) {
       case 0:
         return (
           <SettingsMain
-            { ...this.props }
+            { ...other }
           />
         );
       case 1:
         return (
           <SettingsDisplay
-            { ...this.props }
+            { ...other }
           />
         );
       case 2:
         return (
           <SettingsEmail
-            { ...this.props }
+            { ...other }
           />
         );
     }
@@ -121,7 +126,7 @@ class Settings extends React.Component {
     } = this.props;
 
     return <React.Fragment>
-      <Paper zDepth={1}>
+      <Paper>
         { this.renderHeader() }
       </Paper>
       { this.renderContent() }

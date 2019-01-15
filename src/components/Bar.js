@@ -162,7 +162,7 @@ class Bar extends React.Component {
     </svg>;
   }
 
-  showSettings (updateNavbar=false) {
+  showSettings (event) {
     const {
       loading,
       handleMenuIconClick,
@@ -172,9 +172,13 @@ class Bar extends React.Component {
       wallet,
     } = this.props;
 
+    const eventClass = event.target.className;
+
     const displaySettingsDialog = (settings) => {
       loading(false);
-      if (updateNavbar) {
+
+      if (eventClass !== "fa fa-cog") {
+        // It's not the top bar button
         handleMenuIconClick(null, false);
       }
 
@@ -194,7 +198,10 @@ class Bar extends React.Component {
         return wallet.setPersistentVariable(SETTINGS, backupSettings);
       };
 
-      const dialog = getDialog("Settings", this.props, {
+      const other = Object.assign({}, this.props);
+      delete other.classes;
+
+      const dialog = getDialog("Settings", other, {
         onClickOk: this.hideSettings,
         onClickCancel,
       });
@@ -365,7 +372,7 @@ class Bar extends React.Component {
 
     let items = [{
       text: "Settings",
-      fn: this.showSettings.bind(this, true),
+      fn: this.showSettings,
       key: "settings",
       isGDrive: false,
       icon: <i

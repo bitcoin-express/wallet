@@ -214,7 +214,7 @@ class SettingsEmail extends React.Component {
     super(props);
 
     this.state = {
-      errorEmail: "",
+      errorEmail: null,
       errorMinTx: null,
       minTransaction: 0,
       currencyInfo: [],
@@ -619,7 +619,7 @@ class SettingsEmail extends React.Component {
     settings[wallet.config.ISSUE_EXPIRE] = expire;
     settings[wallet.config.REDEEM_EXPIRE] = expire;
     this.setState({
-      errorEmail: "", 
+      errorEmail: null, 
       settings,
     });
 
@@ -668,7 +668,7 @@ class SettingsEmail extends React.Component {
       settings[EMAIL_RECOVERY] = true;
 
       this.setState({
-        errorEmail: "", 
+        errorEmail: null, 
         settings,
       });
 
@@ -683,7 +683,7 @@ class SettingsEmail extends React.Component {
 
     if (!email) {
       this.setState({
-        errorEmail: "", 
+        errorEmail: null, 
         settings,
       });
 
@@ -954,9 +954,9 @@ class SettingsEmail extends React.Component {
           id="email"
           className={ classes.textField }
           defaultValue={ settings['email'] }
-          label={ i18n.t("enter_email") }
+          label={ errorEmail || i18n.t("enter_email") }
           helperText={ i18n.t("exp_tx_email") }
-          errorText={ errorEmail }
+          error={ errorEmail != null }
           onChange={ this.handleTextFieldChange }
         />
 

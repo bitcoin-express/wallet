@@ -41,8 +41,8 @@ const theme = createMuiTheme({
       contrastText: styles.colors.secondaryTextColor,
     },*/
   },
-  props: {
-    isFullScreen: false,
+  typography: {
+    useNextVariants: true,
   },
 });
 
