@@ -4,8 +4,7 @@ import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 
 import LogoText from '../../LogoText';
-
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
 
 
 const componentStyles = (theme) => {
@@ -28,8 +27,6 @@ class DialogTitle extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.tools = new Tools();
   }
 
   render() {
@@ -67,9 +64,9 @@ class DialogTitle extends React.Component {
 
     return <div>
       <div className={ classes.rootIcons }>
-        { this.tools.getImageComponent(icons.left) } 
-        { this.tools.getImageComponent(icons.arrow) } 
-        { this.tools.getImageComponent(icons.right) } 
+        { getImageComponent(icons.left) } 
+        { getImageComponent(icons.arrow) } 
+        { getImageComponent(icons.right) } 
       </div>
       <div className={ classes.rootTitle }>
         { title }

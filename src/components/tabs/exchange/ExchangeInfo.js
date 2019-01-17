@@ -2,16 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
-
 import styles from '../../../helpers/Styles';
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
+
 
 class ExchangeInfo extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.tools = new Tools();
 
     this._initializeStyles = this._initializeStyles.bind(this);
     this._initializeStyles(props);
@@ -114,7 +112,7 @@ class ExchangeInfo extends React.Component {
           />
         </div>
         <div style={ this.styles.image }>
-          { this.tools.getImageComponent(`${currSource.code.toLowerCase()}e_60.png`, 60, 60, 'currencies/') }
+          { getImageComponent(`${currSource.code.toLowerCase()}e_60.png`, 60, 60, 'currencies/') }
         </div>
       </div>
       <div style={ this.styles.arrow }>
@@ -122,7 +120,7 @@ class ExchangeInfo extends React.Component {
       </div>
       <div style={ this.styles.flex }>
         <div style={ this.styles.image }>
-          { this.tools.getImageComponent(`${currTarget.code.toLowerCase()}e_60.png`, 60, 60, 'currencies/') }
+          { getImageComponent(`${currTarget.code.toLowerCase()}e_60.png`, 60, 60, 'currencies/') }
         </div>
         <div style={ this.styles.receive }>
           <div style={ this.styles.label }>

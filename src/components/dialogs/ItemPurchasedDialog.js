@@ -5,9 +5,8 @@ import Avatar from '@material-ui/core/Avatar';
 import isURL from 'validator/lib/isURL';
 
 import BitcoinCurrency from '../BitcoinCurrency';
-
 import styles from '../../helpers/Styles';
-import Tools from '../../helpers/Tools';
+import { getDomainFromURL } from '../../helpers/tools';
 
 class ItemPurchasedDialog extends Component {
   constructor (props) {
@@ -24,8 +23,6 @@ class ItemPurchasedDialog extends Component {
         borderRadius: '15px',
       },
     };
-
-    this.tools = new Tools();
   }
 
   render() {
@@ -59,7 +56,7 @@ class ItemPurchasedDialog extends Component {
       <div style={ this.styles.container }>
         <p>
           <b>Payment to</b>: {
-            this.tools.getDomainFromURL(payment_url)
+            getDomainFromURL(payment_url)
           }
         </p>
       </div>
@@ -73,7 +70,7 @@ class ItemPurchasedDialog extends Component {
               fontSize: '10px',
             }}
           /> Seller</b>: {
-            this.tools.getDomainFromURL(return_url)
+            getDomainFromURL(return_url)
           }
         </p>
       </div> : null }

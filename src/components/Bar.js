@@ -16,6 +16,7 @@ import Settings from './bar/settings/Settings';
 import SignInOut from './SignInOut';
 
 import styles from '../helpers/Styles';
+import { AppContext } from "../AppContext";
 
 
 const componentStyles = (theme) => {
@@ -168,16 +169,19 @@ class Bar extends React.Component {
       handleMenuIconClick,
       openDialog,
       refreshSettings,
-      snackbarUpdate,
-      wallet,
     } = this.props;
 
-    const eventClass = event.target.className;
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    const { id, type } = event.target;
 
     const displaySettingsDialog = (settings) => {
       loading(false);
 
-      if (eventClass !== "fa fa-cog") {
+      if (id !== "settings-header" && type != "button") {
         // It's not the top bar button
         handleMenuIconClick(null, false);
       }
@@ -227,8 +231,11 @@ class Bar extends React.Component {
       closeDialog,
       executeInSession,
       setWalletPassword,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       backupSettings,
@@ -267,9 +274,12 @@ class Bar extends React.Component {
         loading,
         handleMenuIconClick,
         refreshSettings,
+      } = this.props;
+
+      const {
         snackbarUpdate,
         wallet,
-      } = this.props;
+      } = this.context;
 
       const updateState = (settings) => {
         loading(false);
@@ -308,12 +318,15 @@ class Bar extends React.Component {
   handleCloseSettings() {
     const {
       executeInSession,
-      wallet,
     } = this.props;
 
     let {
       backupSettings,
     } = this.state;
+
+    const {
+      wallet,
+    } = this.context;
 
     const {
       storage,
@@ -362,8 +375,11 @@ class Bar extends React.Component {
       handleSignoutGDrive,
       opened,
       loading,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     const {
       open,
@@ -452,11 +468,14 @@ class Bar extends React.Component {
       handleClickClose,
       handleClickSignout,
       handleMenuIconClick,
-      isFullScreen,
       opened,
       loading,
-      wallet,
     } = this.props;
+
+    const {
+      isFullScreen,
+      wallet,
+    } = this.context;
 
     const {
       open,
@@ -496,13 +515,10 @@ class Bar extends React.Component {
             className={ isFullScreen ? classes.title : classes.titleMin }
             id={ this.DRAGGABLE_AREA }
           >
-            <LogoText
-              isFullScreen={ isFullScreen }
-            />
+            <LogoText />
           </div>
           <div className={ isFullScreen ? classes.iconSignInOut : classes.iconSignInOutMin }>
             <SignInOut
-              withSettings={ isFullScreen }
               onCloseTouchTap={ handleClickClose }
               onSignOutTouchTap={ handleClickSignout }
               showSettings={ this.showSettings }
@@ -522,4 +538,7 @@ Bar.propTypes = {
   initializeDraggableArea: PropTypes.func.isRequired,
 };
 
+Bar.contextType = AppContext;
+
 export default withStyles(componentStyles, { withTheme: true })(Bar);
+

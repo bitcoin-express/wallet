@@ -2,16 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
-import Tools from '../../../helpers/Tools';
+import { getDomainFromURL } from '../../../helpers/tools';
 import styles from '../../../helpers/Styles';
 import DateCounter from './DateCounter';
+
 
 export default class SwapInfo extends React.Component {
   
   constructor(props) {
     super(props);
-
-    this.tools = new Tools();
 
     this.styles = {
       alertLabel: {
@@ -129,7 +128,7 @@ export default class SwapInfo extends React.Component {
           Payment to:
         </div>
         <div style={ this.styles.answer }>
-          { this.tools.getDomainFromURL(payment_url) }
+          { getDomainFromURL(payment_url) }
         </div>
       </div>
 

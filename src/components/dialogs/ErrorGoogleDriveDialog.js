@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Tools from '../../helpers/Tools';
+import { getImageComponent } from '../../helpers/tools';
+
 
 class ErrorGoogleDriveDialog extends React.Component {
+
   constructor(props) {
     super(props);
-
-    this.tools = new Tools();
   }
 
   render() {
@@ -25,7 +25,7 @@ class ErrorGoogleDriveDialog extends React.Component {
           <b>Bitcoin-express files have been removed in your Google Drive</b>. Please visit again Google Drive and try to recover those files from your History.
         </li> }
         <li>
-          The <b>pop-up blocking is turned on</b> by default in your browser. When blocking a pop-up, some browsers displays an information bar, as well as an icon similar to { this.tools.getImageComponent('Popup-blocked.png', 20, 20, 'info/') } in the address bar.<br />
+          The <b>pop-up blocking is turned on</b> by default in your browser. When blocking a pop-up, some browsers displays an information bar, as well as an icon similar to { getImageComponent('Popup-blocked.png', 20, 20, 'info/') } in the address bar.<br />
           <b>If you wish to store the coins of your wallet in your Google Drive</b>, modify your permisions in order to allow pop-ups for this site (bitcoin-e.org) from your browser preferences settings.
         </li>
       </ul>

@@ -14,6 +14,7 @@ import TextField from '@material-ui/core/TextField';
 import { withStyles } from '@material-ui/core/styles';
 
 import Box from '../../Box';
+import { AppContext } from "../../../AppContext";
 
 
 const componentStyles = (theme) => {
@@ -118,8 +119,11 @@ class SettingsMain extends React.Component {
   handleIssuerChange(event, issuer) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     setSettingsKey(wallet.config.DEFAULT_ISSUER, issuer);
   }
@@ -127,8 +131,11 @@ class SettingsMain extends React.Component {
   handlePolicyChange(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -149,8 +156,11 @@ class SettingsMain extends React.Component {
       classes,
       password,
       settings,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     const {
       password1,
@@ -324,6 +334,7 @@ class SettingsMain extends React.Component {
   }
 }
 
+SettingsMain.contextType = AppContext;
 
 export default withStyles(componentStyles)(SettingsMain);
 

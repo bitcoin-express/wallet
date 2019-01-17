@@ -7,8 +7,7 @@ import ListItem from '@material-ui/core/ListItem';
 
 import BitcoinCurrency from '../../BitcoinCurrency';
 import ItemsTableHeader from './ItemsTableHeader';
-
-import Tools from '../../../helpers/Tools';
+import { isURLImage, getDomainFromURL } from '../../../helpers/tools';
 import styles from '../../../helpers/Styles';
 
 class ItemsTable extends Component {
@@ -18,7 +17,6 @@ class ItemsTable extends Component {
     this._checkReturnUrl = this._checkReturnUrl.bind(this);
 
     this.itemsToShow = 5;
-    this.tools = new Tools();
   }
 
   _checkReturnUrl(url) {
@@ -32,7 +30,7 @@ class ItemsTable extends Component {
     </i>;
 
     let iurl = "css/img/ExportCoins.svg";
-    if (this.tools.isURLImage(url || "")) {
+    if (isURLImage(url || "")) {
       iurl = url;
     }
     return <Avatar
@@ -113,7 +111,7 @@ class ItemsTable extends Component {
               marginBottom: '5px',
             }}
           >
-            { this.tools.getDomainFromURL(paymentDetails.payment_url) }
+            { getDomainFromURL(paymentDetails.payment_url) }
           </div>
           <BitcoinCurrency
             buttonStyle={{

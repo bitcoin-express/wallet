@@ -10,9 +10,8 @@ import CurrencyRadioGroup from '../../CurrencyRadioGroup';
 import EncryptSelector from '../../EncryptSelector';
 import FormArea from '../../FormArea';
 import Title from '../../Title';
-
 import styles from '../../../helpers/Styles';
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
 
 class CoinsToFile extends React.Component {
 
@@ -45,8 +44,6 @@ class CoinsToFile extends React.Component {
         marginTop: '-15px',
       },
     };
-
-    this.tools = new Tools();
 
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
     this.handleAmountChange = this.handleAmountChange.bind(this);
@@ -197,8 +194,8 @@ class CoinsToFile extends React.Component {
               width={ 35 }
               height={ 35 }
             />
-            { this.tools.getImageComponent('arrowRight.svg', 30, 30) }
-            { this.tools.getImageComponent('export.svg', 30, 30) }
+            { getImageComponent('arrowRight.svg', 30, 30) }
+            { getImageComponent('export.svg', 30, 30) }
           </div> }
         />
 

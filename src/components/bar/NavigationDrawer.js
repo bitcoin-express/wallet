@@ -11,6 +11,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
 
 import styles from '../../helpers/Styles';
+import { AppContext } from "../../AppContext";
 import Logo from '../Logo';
 
 
@@ -111,9 +112,12 @@ class NavigationDrawer extends React.Component {
     const {
       classes,
       items,
-      isFullScreen,
       open,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     let menuItems = [];
     items.forEach((item) => {
@@ -197,6 +201,7 @@ class NavigationDrawer extends React.Component {
   }
 }
 
+NavigationDrawer.contextType = AppContext;
 
 export default withStyles(componentStyles, { withTheme: true })(NavigationDrawer);
 

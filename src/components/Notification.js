@@ -1,9 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
+import SnackbarContent from '@material-ui/core/SnackbarContent';
 
 import styles from '../helpers/Styles';
+
+
+/*
+ * Variant of notifications can be:
+ *   "success", "info", "warning", "error"
+ */
 
 class Notification extends React.Component {
 
@@ -13,9 +21,6 @@ class Notification extends React.Component {
     this.handleNotificationUpdate = this.handleNotificationUpdate.bind(this);
     this.handleActionClick = this.handleActionClick.bind(this);
     this.showNotifications = this.showNotifications.bind(this);
-    this._initializeStyles = this._initializeStyles.bind(this);
-
-    this._initializeStyles(props);
 
     this.state = {
       notification: {},
@@ -29,8 +34,6 @@ class Notification extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this._initializeStyles(nextProps);
-
     const {
       messages,
       index,
@@ -101,56 +104,52 @@ class Notification extends React.Component {
     });
   }
 
-  getNotificationMessage() {
-    const {
-      message,
-      error,
-    } = this.state.notification;
-
-    if (!message) {
-      return "";
-    }
-
-    if (error) {
-      return <span style={{
-        color: "#ff7e72",
-      }}>
-        { message }
-      </span>;
-    }
-
-    return message;
-    
-  }
-
-  _initializeStyles(props) {
-    this.styles = {};
-  }
-
   render() {
     const {
       onClose,
     } = this.props;
 
     const {
+      notification,
       open,
     } = this.state;
 
+    const {
+      message,
+      variant,
+    } = notification;
+
     return <Snackbar
-      open={ open }
-      message={ this.getNotificationMessage() }
-      action="x"
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'left',
+      }}
       onMouseEnter={ () => {
         this.mouseOver = true;
       }}
       onMouseLeave={ () => {
         this.mouseOver = false;
       }}
-      className="snackbar"
-      onActionTouchTap={ this.handleActionClick }
+      onClick={ this.handleActionClick }
+      open={ open }
       autoHideDuration={ 30000 }
-      onRequestClose={ onClose }
-    />;
+      onClose={ onClose }
+    >
+      <SnackbarContent
+        action={[
+          <IconButton
+            key="close"
+            aria-label="Close"
+            color="inherit"
+            onClick={ onClose }
+          >
+            x
+          </IconButton>,
+        ]}
+        message={ message || "" }
+        variant={ variant || "info" }
+      />
+    </Snackbar>;
   }
 }
 

@@ -7,7 +7,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from  '@material-ui/core/FormControlLabel';
 
 import styles from '../helpers/Styles';
-import Tools from '../helpers/Tools';
+import { getImageComponent } from '../helpers/tools';
 
 // TO_DO: Get it from wallet initial settings
 const availableCurrencies = ["XBT", "ETH", "BCH"];
@@ -26,7 +26,6 @@ class CurrencyRadioGroup extends React.Component {
   constructor(props) {
     super(props);
 
-    this.tools = new Tools();
     this.onChange = this.onChange.bind(this);
 
     this.state = {
@@ -70,7 +69,7 @@ class CurrencyRadioGroup extends React.Component {
           disabled={ active.indexOf(key) == -1 }
           key={ key }
           value={ key }
-          label={ this.tools.getImageComponent(img, 25, 25, "currencies/") }
+          label={ getImageComponent(img, 25, 25, "currencies/") }
         />;
       })}
     </RadioGroup>;

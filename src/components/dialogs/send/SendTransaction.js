@@ -5,11 +5,12 @@ import BitcoinCurrency from '../../BitcoinCurrency';
 import DateComponent from '../../DateComponent';
 import SendSuccessDialog from './SendSuccessDialog';
 import ReceiveSuccessDialog from './ReceiveSuccessDialog';
-
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
 import styles from '../../../helpers/Styles';
 
+
 class SendTransaction extends React.Component {
+
   constructor(props) {
     super(props);
 
@@ -17,7 +18,6 @@ class SendTransaction extends React.Component {
       hover: false,
     };
 
-    this.tools = new Tools();
     this.showReceiveDialog = this.showReceiveDialog.bind(this);
     this.showSendDialog = this.showSendDialog.bind(this);
   }
@@ -60,9 +60,9 @@ class SendTransaction extends React.Component {
           right: '30px',
           display: 'flex',
         }}>
-          { this.tools.getImageComponent("b-e.svg") } 
-          { this.tools.getImageComponent("arrowRight.svg") } 
-          { this.tools.getImageComponent("b.svg") } 
+          { getImageComponent("b-e.svg") } 
+          { getImageComponent("arrowRight.svg") } 
+          { getImageComponent("b.svg") } 
         </div>
         <div style={{
           textAlign: 'left',

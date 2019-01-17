@@ -17,9 +17,8 @@ import CoinSelector from '../CoinSelector';
 import SendConfirmDialog from './send/SendConfirmDialog';
 import SendSuccessDialog from './send/SendSuccessDialog';
 import SendList from './send/SendList';
-
-import Tools from '../../helpers/Tools';
 import styles from '../../helpers/Styles';
+
 
 class SendDialog extends React.Component {
 
@@ -53,8 +52,6 @@ class SendDialog extends React.Component {
         gridGap: '10px',
       },
     };
-
-    this.tools = new Tools();
 
     this.handleSendClick = this.handleSendClick.bind(this);
     this.handleAmountChange = this.handleAmountChange.bind(this);

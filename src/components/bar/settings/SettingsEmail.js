@@ -67,7 +67,9 @@ function getExpiryEmailFee(info, settings, config) {
   return fee;
 }
 
+
 class NetworkFee extends React.Component {
+
   constructor(props) {
     super(props);
   }
@@ -75,14 +77,14 @@ class NetworkFee extends React.Component {
   render() {
     const {
       currency,
-      isFlipped,
-      isFullScreen,
       feeExpiry,
       settings,
-      showValuesInCurrency,
-      wallet,
-      xr,
     } = this.props;
+
+    const {
+      isFullScreen,
+      wallet,
+    } = this.context;
 
     return <div>
       <small
@@ -94,7 +96,6 @@ class NetworkFee extends React.Component {
           centered={ false }
           currency={ currency }
           color="rgba(0, 0, 0, 0.87)"
-          isFlipped={ isFlipped }
           tiny={ true }
           style={{
             display: 'inline-block',
@@ -104,20 +105,20 @@ class NetworkFee extends React.Component {
             marginTop: '7px',
           }}
           displayStorage={ false }
-          showValuesInCurrency={ showValuesInCurrency }
           value={ parseFloat(feeExpiry) *
             Math.floor(settings[wallet.config.VERIFY_EXPIRE])
           }
-          wallet={ wallet }
-          xr={ xr }
         />&nbsp;)
       </small>
     </div>;
   }
 }
 
+NetworkFee.contextType = AppContext;
+
 
 class MinTransactionAmount extends React.Component {
+
   constructor(props) {
     super(props);
   }
@@ -125,14 +126,14 @@ class MinTransactionAmount extends React.Component {
   render() {
     const {
       currency,
-      isFlipped,
-      isFullScreen,
       feeExpiryEmail,
       settings,
-      showValuesInCurrency,
-      wallet,
-      xr,
     } = this.props;
+
+    const {
+      isFullScreen,
+      wallet,
+    } = this.context;
 
     return <div style={{
       fontSize: 'small',
@@ -143,7 +144,6 @@ class MinTransactionAmount extends React.Component {
         centered={ false }
         currency={ currency }
         color="rgba(0, 0, 0, 0.87)"
-        isFlipped={ isFlipped }
         tiny={ true }
         style={{
           display: 'inline-block',
@@ -153,16 +153,17 @@ class MinTransactionAmount extends React.Component {
           marginTop: '7px',
         }}
         displayStorage={ false }
-        showValuesInCurrency={ showValuesInCurrency }
         value={ parseFloat(feeExpiryEmail) }
-        wallet={ wallet }
-        xr={ xr }
       />&nbsp;)
     </div>;
   }
 }
 
+MinTransactionAmount.contextType = AppContext;
+
+
 class FeeExpiryEmail extends React.Component {
+
   constructor(props) {
     super(props);
   }
@@ -170,14 +171,14 @@ class FeeExpiryEmail extends React.Component {
   render() {
     const {
       currency,
-      isFlipped,
-      isFullScreen,
       feeExpiryEmail,
       settings,
-      showValuesInCurrency,
-      wallet,
-      xr,
     } = this.props;
+
+    const {
+      isFullScreen,
+      wallet,
+    } = this.context;
 
     const isRecovery = settings[wallet.config.EMAIL_RECOVERY];
 
@@ -187,7 +188,6 @@ class FeeExpiryEmail extends React.Component {
           centered={ false }
           color="rgba(0, 0, 0, 0.87)"
           currency={ currency }
-          isFlipped={ isFlipped }
           tiny={ true }
           style={{
             display: 'inline-block',
@@ -197,15 +197,14 @@ class FeeExpiryEmail extends React.Component {
             marginTop: '7px',
           }}
           displayStorage={ false }
-          showValuesInCurrency={ showValuesInCurrency }
           value={ isRecovery ? parseFloat(feeExpiryEmail) : 0 }
-          wallet={ wallet }
-          xr={ xr }
         />&nbsp;)
       </small>
     </div>;
   }
 }
+
+FeeExpiryEmail.contextType = AppContext;
 
 
 class SettingsEmail extends React.Component {
@@ -278,7 +277,7 @@ class SettingsEmail extends React.Component {
   componentWillMount() {
     const {
       wallet,
-    } = this.props;
+    } = this.context;
 
     const {
       DEFAULT_ISSUER,
@@ -333,8 +332,11 @@ class SettingsEmail extends React.Component {
   handleChangeExpireTime(ev, expire = 1) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -360,8 +362,11 @@ class SettingsEmail extends React.Component {
   handleSetEmailRecovery(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       currencyInfo,
@@ -404,8 +409,11 @@ class SettingsEmail extends React.Component {
   handleSetEmailEncrypt(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -427,8 +435,11 @@ class SettingsEmail extends React.Component {
   handleSetTransactionExpire(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -457,8 +468,11 @@ class SettingsEmail extends React.Component {
   handleChangeTransactionExpire(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -479,8 +493,11 @@ class SettingsEmail extends React.Component {
   handleSetEncryptType(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -502,8 +519,11 @@ class SettingsEmail extends React.Component {
   handleSetMinTransaction(event) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       currencyInfo,
@@ -538,8 +558,11 @@ class SettingsEmail extends React.Component {
     return (value) => {
       const {
         setSettingsKey,
-        wallet,
       } = this.props;
+
+      const {
+        wallet,
+      } = this.context;
 
       let {
         feeExpiryEmail,
@@ -577,8 +600,11 @@ class SettingsEmail extends React.Component {
   handleChangePasswordEncrypt(event, pwd) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -599,8 +625,11 @@ class SettingsEmail extends React.Component {
   _setAutoTimes() {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -648,8 +677,11 @@ class SettingsEmail extends React.Component {
   handleTextFieldChange(event, email) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -702,10 +734,7 @@ class SettingsEmail extends React.Component {
       isFullScreen,
       setEmailRecovery,
       setEmailEncrypt,
-      showValuesInCurrency,
-      wallet,
       walletName,
-      xr,
     } = this.props;
 
     let {
@@ -718,6 +747,7 @@ class SettingsEmail extends React.Component {
 
     const {
       i18n,
+      wallet,
     } = this.context;
 
     if (!settings[wallet.config.EMAIL_RECOVERY]) {
@@ -805,7 +835,6 @@ class SettingsEmail extends React.Component {
             label=""
             labelCurrency=""
             fullSize={ false }
-            xr={ xr }
             disabled={ !settings[EMAIL_RECOVERY] }
             style={{
               margin: isFullScreen ? '-20px 0 0 40px' : '-20px 0 0 0',
@@ -901,14 +930,14 @@ class SettingsEmail extends React.Component {
   render() {
     const {
       classes,
-      isFlipped,
       setEmailRecovery,
       setEmailEncrypt,
-      showValuesInCurrency,
-      wallet,
       walletName,
-      xr,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       errorEmail,
@@ -1050,5 +1079,6 @@ class SettingsEmail extends React.Component {
 
 
 SettingsEmail.contextType = AppContext;
+
 export default withStyles(componentStyles)(SettingsEmail);
 

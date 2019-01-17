@@ -2,14 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import styles from '../../../helpers/Styles';
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
+
 
 export default class CurrencyItem extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.tools = new Tools();
   }
 
   render() {
@@ -33,7 +32,7 @@ export default class CurrencyItem extends React.Component {
       fontSize: '12.5px'
     }}>
       <div>
-        { this.tools.getImageComponent(`${code.toLowerCase()}e.png`, 40, 40, 'currencies/') }
+        { getImageComponent(`${code.toLowerCase()}e.png`, 40, 40, 'currencies/') }
       </div>
       <div style={{ marginLeft: '10px' }}>
         <div style={{

@@ -12,7 +12,7 @@ import CoinSelector from '../CoinSelector';
 import CurrencyRadioGroup from '../CurrencyRadioGroup';
 import InfoBox from '../InfoBox';
 import DepositReferenceTable from './addFunds/DepositReferenceTable';
-
+import { AppContext } from "../../AppContext";
 import styles from '../../helpers/Styles';
 
 
@@ -35,7 +35,7 @@ class AddFundsDialog extends React.Component {
     this.state = {
       ready: false,
       depositef: null,
-      depositRefStore: props.wallet.getDepositRefList(),
+      depositRefStore: null,
       qr: false,
       showHistory: false,
     };
@@ -120,6 +120,7 @@ class AddFundsDialog extends React.Component {
       this.setState({
         depositRef,
         ready: true,
+        depositRefStore: this.context.wallet.getDepositRefList(),
       });
     };
 
@@ -200,7 +201,7 @@ class AddFundsDialog extends React.Component {
       }, 2000);
     };
 
-    this.props.wallet.getDepositRef()
+    this.context.wallet.getDepositRef()
       .then(updateQR);
   }
 
@@ -210,9 +211,12 @@ class AddFundsDialog extends React.Component {
       isTab,
       loading,
       openDialog,
+    } = this.props;
+
+    const {
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     const updateWalletStatus = (depositRefStore) => {
       if (!isTab) {
@@ -244,16 +248,17 @@ class AddFundsDialog extends React.Component {
       buttons,
       closeDialog,
       classes,
-      isFlipped,
       issueCollect,
       isTab,
       openDialog,
       showValuesInCurrency,
       snackbarUpdate,
       updateTargetValue,
-      wallet,
-      xr,
     } = this.props;
+
+    const{
+      wallet,
+    } = this.context;
 
     const {
       depositRef,
@@ -289,7 +294,6 @@ class AddFundsDialog extends React.Component {
         centered={ true }
         fullSize={ false }
         label="Amount to deposit"
-        xr={ xr }
         onAmountChange={(targetValue, currency) => {
           updateTargetValue(targetValue);
         }}
@@ -330,15 +334,10 @@ class AddFundsDialog extends React.Component {
       <DepositReferenceTable
         closeDialog={ closeDialog }
         removeFromDepositStore={ this.removeFromDepositStore.bind(this) }
-        isFlipped={ isFlipped }
         issueCollect={ issueCollect }
         list={ depositRefStore }
         open={ showHistory }
         openDialog={ openDialog }
-        showValuesInCurrency={ showValuesInCurrency }
-        snackbarUpdate={ snackbarUpdate }
-        wallet={ wallet }
-        xr={ xr }
       />
     </div>;
   }
@@ -348,8 +347,6 @@ class AddFundsDialog extends React.Component {
       isTab,
       qrLabel,
       buttons,
-      wallet,
-      xr,
     } = this.props;
 
     const {
@@ -381,7 +378,6 @@ class AddFundsDialog extends React.Component {
     }
 
     const {
-      isFlipped,
       snackbarUpdate,
       showValuesInCurrency,
     } = this.props;
@@ -404,8 +400,6 @@ class AddFundsDialog extends React.Component {
             expiry={ expiry }
             blockchainAddress={ blockchainAddress }
             idQR="img-download"
-            snackbarUpdate={ snackbarUpdate }
-            wallet={ wallet }
           />
         </div>
         <div style={ this.styles.gridQR }>
@@ -414,14 +408,11 @@ class AddFundsDialog extends React.Component {
             color="rgba(0, 0, 0, 0.87)"
             currency="XBT"
             displayStorage={ false }
-            isFlipped={ isFlipped }
             showValuesInCurrency={ showValuesInCurrency }
             style={{ display: 'inline-block' }}
             tiny={ true }
             centered={ !isTab }
             value={ parseFloat(targetValue) }
-            wallet={ wallet }
-            xr={ xr }
           />
         </div>
       </div>
@@ -461,6 +452,8 @@ AddFundsDialog.defaultProps = {
   centered: false,
   buttons: null,
 };
+
+AddFundsDialog.contextType = AppContext;
 
 export default withStyles(componentStyles)(AddFundsDialog);
 

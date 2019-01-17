@@ -12,8 +12,7 @@ import {
 
 import DateComponent from '../DateComponent';
 import Time from '../../helpers/Time';
-import Tools from '../../helpers/Tools';
-
+import { getDomainFromURL } from '../../helpers/tools';
 import styles from '../../helpers/Styles';
 
 class ItemPurchasedListDialog extends React.Component {
@@ -21,7 +20,6 @@ class ItemPurchasedListDialog extends React.Component {
     super(props);
 
     this.time = new Time();
-    this.tools = new Tools();
   }
 
   render() {
@@ -76,7 +74,7 @@ class ItemPurchasedListDialog extends React.Component {
                     color: styles.colors.darkBlue,
                   }}
                 >
-                  { this.tools.getDomainFromURL(paymentDetails.payment_url) }
+                  { getDomainFromURL(paymentDetails.payment_url) }
                 </div>
               </TableRowColumn>
               <TableRowColumn

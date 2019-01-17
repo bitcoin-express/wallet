@@ -9,7 +9,7 @@ import Button from '@material-ui/core/Button';
 import Dropzone from 'react-dropzone';
 
 import StorageIcon from './StorageIcon';
-import { getImageComponent } from '../helpers/Tools';
+import { getImageComponent } from '../helpers/tools';
 import styles from '../helpers/Styles';
 
 

@@ -2,9 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import StorageIcon from '../../StorageIcon';
-
 import Time from '../../../helpers/Time';
-import Tools from '../../../helpers/Tools';
+import { getImageComponent } from '../../../helpers/tools';
 import styles from '../../../helpers/Styles';
 
 class HistoryDialogTitle extends React.Component {
@@ -15,7 +14,6 @@ class HistoryDialogTitle extends React.Component {
     this.renderLogo = this.renderLogo.bind(this);
     this._getImgUrl = this._getImgUrl.bind(this);
 
-    this.tools = new Tools();
     this.time = new Time();
 
     this.styles = {
@@ -70,14 +68,14 @@ class HistoryDialogTitle extends React.Component {
 
       case 'import backup':
         return {
-          firstIcon: this.tools.getImageComponent("import.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("import.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
           reverse: true,
         };
 
       case 'backup':
         return {
-          firstIcon: this.tools.getImageComponent("export.svg"),
+          firstIcon: getImageComponent("export.svg"),
           unique: true,
         };
 
@@ -86,37 +84,37 @@ class HistoryDialogTitle extends React.Component {
       case 'import backup file':
       case 'import refund':
         return {
-          firstIcon: this.tools.getImageComponent("import.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("import.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'import coin':
       case 'import coin file':
         return {
-          firstIcon: this.tools.getImageComponent("import-coins-2.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("import-coins-2.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'coin recovery':
         return {
-          firstIcon: this.tools.getImageComponent("b-e_recovery.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("b-e_recovery.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'exist':
       case 'verify':
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'split coin':
       case 'export split':
       case 'payment split':
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          //secondIcon: this.tools.getImageComponent("b-e_split.png", 55, 40),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "split/"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          //secondIcon: getImageComponent("b-e_split.png", 55, 40),
+          secondIcon: getImageComponent(sc, 40, 40, "split/"),
         };
 
       //good
@@ -125,8 +123,8 @@ class HistoryDialogTitle extends React.Component {
       case 'payment':
       case 'buy item':
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          //secondIcon: this.tools.getImageComponent("export-coins.svg"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          //secondIcon: getImageComponent("export-coins.svg"),
           secondIcon: <i
             className="fa fa-shopping-cart"
             style={{
@@ -140,14 +138,14 @@ class HistoryDialogTitle extends React.Component {
       case 'extract failed coin':
       case 'export coin file':
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          secondIcon: this.tools.getImageComponent("export-coins.svg"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          secondIcon: getImageComponent("export-coins.svg"),
         };
 
       case 'issue':
         return {
-          firstIcon: this.tools.getImageComponent("b.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("b.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'move receive':
@@ -217,35 +215,35 @@ class HistoryDialogTitle extends React.Component {
       case 'receive swap':
         tc = this._getCurrencyImg(info.sourceCurrency);
         return {
-          firstIcon: this.tools.getImageComponent(tc, 40, 40, "currencies/"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent(tc, 40, 40, "currencies/"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'change from swap':
       case 'revert swap':
         return {
-          firstIcon: this.tools.getImageComponent("import-coins-2.svg"),
-          secondIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent("import-coins-2.svg"),
+          secondIcon: getImageComponent(sc, 40, 40, "currencies/"),
         };
 
       case 'send swap':
         tc = this._getCurrencyImg(info.sourceCurrency);
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          secondIcon: this.tools.getImageComponent(tc, 40, 40, "currencies/"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          secondIcon: getImageComponent(tc, 40, 40, "currencies/"),
         };
 
       case 'send swap':
         return {
-          firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-          secondIcon: this.tools.getImageComponent("b.svg"),
+          firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+          secondIcon: getImageComponent("b.svg"),
         };
 
       default:
         if (action.startsWith("send ") || action.endsWith(" deferred")) {
           return {
-            firstIcon: this.tools.getImageComponent(sc, 40, 40, "currencies/"),
-            secondIcon: this.tools.getImageComponent("b.svg"),
+            firstIcon: getImageComponent(sc, 40, 40, "currencies/"),
+            secondIcon: getImageComponent("b.svg"),
           };
         }
         return {
@@ -273,7 +271,7 @@ class HistoryDialogTitle extends React.Component {
         { firstIcon }
       </div>
       <div>
-        { this.tools.getImageComponent(arrowImg) }
+        { getImageComponent(arrowImg) }
       </div>
       <div>
         { secondIcon }

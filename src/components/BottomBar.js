@@ -5,6 +5,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
 
+import { AppContext } from "../AppContext";
 import BitcoinCurrency from './BitcoinCurrency'
 import styles from '../helpers/Styles';
 
@@ -97,7 +98,7 @@ class BottomBar extends React.Component {
     const {
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     if (wallet.config.debug) {
       console.log(error);
@@ -125,7 +126,7 @@ class BottomBar extends React.Component {
     const {
       wallet,
       xr,
-    } = this.props;
+    } = this.context;
 
     wallet.getTotalFiatBalance(xr).then((total) => {
       if (!total) {
@@ -145,9 +146,12 @@ class BottomBar extends React.Component {
   getTotal() {
     const {
       classes,
+    } = this.props;
+
+    const {
       showValuesInCurrency,
       xr,
-    } = this.props;
+    } = this.context;
 
     const {
       total,
@@ -171,8 +175,11 @@ class BottomBar extends React.Component {
     const {
       classes,
       handleResizeClick,
-      isFullScreen,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     if (this.state.hasError) {
       return null;
@@ -208,6 +215,8 @@ class BottomBar extends React.Component {
     </AppBar>;
   }
 }
+
+BottomBar.contextType = AppContext;
 
 export default withStyles(componentStyles)(BottomBar);
 

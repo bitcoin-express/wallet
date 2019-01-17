@@ -7,6 +7,8 @@ import Menu from '@material-ui/core/Menu';
 import IconButton from '@material-ui/core/IconButton';
 
 import styles from '../helpers/Styles';
+import { AppContext } from "../AppContext";
+
 
 class SignInOut extends React.Component {
 
@@ -58,8 +60,11 @@ class SignInOut extends React.Component {
       handleClickSignout,
       iconsStyle,
       showSettings,
-      withSettings,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     if (!auth) {
       return null;
@@ -69,7 +74,7 @@ class SignInOut extends React.Component {
     const style = Object.assign({}, this.styles.icon, iconsStyle);
 
     return <div style={ iconsStyle }>
-      { withSettings ? <IconButton
+      { isFullScreen ? <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-label="Settings"
         onClick={ showSettings }
@@ -77,6 +82,7 @@ class SignInOut extends React.Component {
       >
         <i
           className="fa fa-cog"
+          id="settings-header"
           aria-hidden="true"
         />
       </IconButton> : null }
@@ -111,6 +117,7 @@ class SignInOut extends React.Component {
   }
 }
 
+SignInOut.contextType = AppContext;
 
 export default SignInOut;
 

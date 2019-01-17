@@ -10,6 +10,7 @@ import { withStyles } from '@material-ui/core/styles';
 import SettingsMain from './SettingsMain';
 import SettingsDisplay from './SettingsDisplay';
 import SettingsEmail from './SettingsEmail';
+import { AppContext } from "../../../AppContext";
 import styles from '../../../helpers/Styles';
 
 
@@ -119,12 +120,6 @@ class Settings extends React.Component {
   }
 
   render() {
-    const {
-      open,
-      content,
-      isFullScreen,
-    } = this.props;
-
     return <React.Fragment>
       <Paper>
         { this.renderHeader() }
@@ -134,6 +129,7 @@ class Settings extends React.Component {
   }
 }
 
+Settings.contextType = AppContext;
 
 export default withStyles(componentStyles)(Settings);
 

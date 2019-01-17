@@ -7,6 +7,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import withMobileDialog from '@material-ui/core/withMobileDialog';
 
 import DialogButton from './utils/DialogButton';
 import styles from '../../helpers/Styles';
@@ -123,6 +124,7 @@ class AlertDialog extends React.Component {
       bodyStyle,
       bottomStyle,
       classes,
+      fullScreen,
       open,
       onCloseClick,
       showTitle,
@@ -149,6 +151,7 @@ class AlertDialog extends React.Component {
       classes={{
         paper: withBackground ? classes.paper : classes.paperClean,
       }}
+      fullScreen={ fullScreen }
       onBackdropClick={ () => {} }
       onClose={ onCloseClick }
       open={ open }
@@ -178,6 +181,7 @@ class AlertDialog extends React.Component {
 AlertDialog.propTypes = {
   bodyStyle: PropTypes.object,
   bottomStyle: PropTypes.object,
+  fullScreen: PropTypes.bool.isRequired,
   hideOkButton: PropTypes.bool,
   onCloseClick: PropTypes.func.isRequired,
   onClickOk: PropTypes.func,
@@ -198,4 +202,8 @@ AlertDialog.defaultProps = {
   withBackground: true,
 };
 
+AlertDialog.contextType = AppContext;
+AlertDialog = withMobileDialog()(AlertDialog);
+
 export default withStyles(componentStyles, { withTheme: true })(AlertDialog);
+

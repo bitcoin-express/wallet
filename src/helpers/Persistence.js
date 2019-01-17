@@ -1,4 +1,4 @@
-import Tools from './Tools';
+import { getBrowserName } from './tools';
 import GoogleDrive from './persistence/GoogleDrive';
 import LocalStorage from './persistence/LocalStorage';
 
@@ -31,8 +31,6 @@ export default class Persistence {
     this.gdrive = new GoogleDrive(handleDataLocked);
     this.lstorage = new LocalStorage();
 
-    this.tools = new Tools();
-
     this.needsAuthentication = this.needsAuthentication.bind(this);
     this.setPassword = this.setPassword.bind(this);
     this.setPasswordAndUpdate = this.setPasswordAndUpdate.bind(this);
@@ -61,7 +59,7 @@ export default class Persistence {
 
   sessionStart(action, device, timeout=30000) {
     if (!device) {
-      device = this.tools.getBrowserName();
+      device = getBrowserName();
     }
     return this.storage.sessionStart(action, device, timeout);
   }

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import HelpTooltip from '../../HelpTooltip';
 
 import styles from '../../../helpers/Styles';
-import Tools from '../../../helpers/Tools';
+import { countdown } from '../../../helpers/tools';
 
 export default class TimeCounter extends React.Component {
 
@@ -14,8 +14,6 @@ export default class TimeCounter extends React.Component {
     this.state = {
       counter: props.initialCounter || 1,
     };
-
-    this.tools = new Tools();
 
     this._initializeStyles = this._initializeStyles.bind(this);
     this._initializeStyles(props);
@@ -81,7 +79,7 @@ export default class TimeCounter extends React.Component {
       counter: seconds,
     });
 
-    this.interval = this.tools.countdown(seconds, (counter) => {
+    this.interval = countdown(seconds, (counter) => {
       if (counter <= 5) {
         setDisabled();
       }

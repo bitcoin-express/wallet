@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 
 import styles from '../../../helpers/Styles';
 
+
 class ItemsTableHeader extends Component {
+
   constructor(props) {
     super(props);
 

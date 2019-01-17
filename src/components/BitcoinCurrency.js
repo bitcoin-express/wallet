@@ -5,7 +5,7 @@ import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
 
 import StorageIcon from './StorageIcon'
-
+import { AppContext } from "../AppContext";
 import styles from '../helpers/Styles';
 
 class BitcoinCurrency extends React.Component {
@@ -195,9 +195,12 @@ class BitcoinCurrency extends React.Component {
       small,
       storageStyle,
       tiny,
+    } = this.props;
+
+    const {
       wallet,
       xr,
-    } = this.props;
+    } = this.context;
 
     let {
       currency,
@@ -314,20 +317,16 @@ BitcoinCurrency.propTypes = {
   clickableStorage: PropTypes.bool,
   currency: PropTypes.string,
   displayStorage: PropTypes.bool,
-  isFlipped: PropTypes.bool.isRequired,
   labelButtonStyle: PropTypes.object,
   labelStyle: PropTypes.object,
   onStorageIconClick: PropTypes.func,
   reactive: PropTypes.bool,
   removeInitialSpaces: PropTypes.bool,
-  showValuesInCurrency: PropTypes.func.isRequired,
   small: PropTypes.bool,
   style: PropTypes.object,
   storageStyle: PropTypes.object,
   tiny: PropTypes.bool,
   value: PropTypes.number.isRequired,
-  wallet: PropTypes.object.isRequired,
-  xr: PropTypes.object.isRequired,
 };
 
 BitcoinCurrency.defaultProps = {
@@ -341,5 +340,7 @@ BitcoinCurrency.defaultProps = {
   small: false,
   tiny: false,
 };
+
+BitcoinCurrency.contextType = AppContext;
 
 export default BitcoinCurrency;

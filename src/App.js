@@ -11,10 +11,6 @@ import WalletBF, { DEFAULT_SETTINGS } from './helpers/WalletBF';
 import Persistence from './helpers/Persistence';
 import LocalStorage from './helpers/persistence/LocalStorage';
 
-import ExchangeRate from './helpers/ExchangeRate';
-import Time from './helpers/Time';
-import Tools from './helpers/Tools';
-
 import Bar from './components/Bar';
 import BitcoinCurrency from './components/BitcoinCurrency';
 import BottomBar from './components/BottomBar';
@@ -24,6 +20,10 @@ import LogonScreen from './components/LogonScreen';
 import Notification from './components/Notification'
 import WalletBalance from './components/WalletBalance';
 import WelcomeScreen from './components/WelcomeScreen';
+
+import ExchangeRate from './helpers/ExchangeRate';
+import Time from './helpers/Time';
+import { getImageComponent } from './helpers/tools';
 
 // Tabs
 import AddFundsTab from './components/tabs/AddFundsTab';
@@ -37,6 +37,8 @@ import ExchangeTab from './components/tabs/ExchangeTab';
 // Dialogs
 import DialogButton from './components/dialogs/utils/DialogButton';
 import { default as AlertDialog, getDialog } from './components/dialogs/utils/Dialogs';
+
+import { AppContext, AppProvider } from "./AppContext";
 
 import AuthenticateDialog from './components/dialogs/AuthenticateDialog';
 import CloseDialog from './components/dialogs/CloseDialog';
@@ -105,7 +107,6 @@ class App extends React.Component {
     this.wallet.setStorageMethod(new Persistence(this.handleGoogleDriveLocked));
 
     this.time = new Time();
-    this.tools = new Tools();
 
     this.xr = new ExchangeRate();
     this.xr.setSeparator(DEFAULT_SETTINGS.separator);
@@ -247,7 +248,7 @@ class App extends React.Component {
       this.setState({
         status: states.WELCOME
       });
-      this.handleNotificationUpdate(warning, true);
+      this.handleNotificationUpdate(warning, "error");
     };
 
     this.xr.refreshExchangeRates()
@@ -267,7 +268,8 @@ class App extends React.Component {
 
       const {
         isFullScreen,
-      } = this.props;
+      } = this.context;
+
       const {
         tabIndex,
       } = this.state;
@@ -364,7 +366,7 @@ class App extends React.Component {
       }
 
       // Password is incorrect, let's try again.
-      this.handleNotificationUpdate(err.message, true);
+      this.handleNotificationUpdate(err.message, "warning");
       return this._authenticate(initialize);
     };
 
@@ -497,7 +499,7 @@ class App extends React.Component {
     const handleError = (err) => {
       return this.interceptError(err, (err) => {
         const errMsg = err.message || "Problem on initializing settings";
-        this.handleNotificationUpdate(errMsg, true);
+        this.handleNotificationUpdate(errMsg, "error");
         return Promise.reject(err);
       });
     }
@@ -788,7 +790,7 @@ class App extends React.Component {
           }).catch((err) => {
             console.log(err);
             this.loading(false);
-            this.handleNotificationUpdate(err.message || "Issue collect unsuccessful", true);
+            this.handleNotificationUpdate(err.message || "Issue collect unsuccessful", "error");
           });
           break;
         case "verify":
@@ -828,7 +830,7 @@ class App extends React.Component {
           console.log(`While redeeming coins found ${this.wallet.getResponseError(resp)}`);
           break;
         default:
-          this.handleNotificationUpdate(this.wallet.getResponseError(resp), true);
+          this.handleNotificationUpdate(this.wallet.getResponseError(resp), "error");
           break;
       }
       return;
@@ -842,7 +844,7 @@ class App extends React.Component {
     if (resp.message) {
       messages.push(resp.message);
     }
-    this.handleNotificationUpdate(messages, true);
+    this.handleNotificationUpdate(messages, "error");
   }
   
   _recoverTransactionsInProgress() {
@@ -895,7 +897,7 @@ class App extends React.Component {
       return this.refreshCoinBalance(crypto);
     }).catch((err) => {
       console.log(err);
-      !notify || this.handleNotificationUpdate(err.message, true);
+      !notify || this.handleNotificationUpdate(err.message, "error");
       return this.refreshCoinBalance(crypto);
     });
   }
@@ -926,7 +928,7 @@ class App extends React.Component {
         this.loading(false);
       }
       const msg = "Can't refresh issuer rates";
-      this.handleNotificationUpdate(err.message || msg, true);
+      this.handleNotificationUpdate(err.message || msg, "error");
       return err;
     });
   }
@@ -981,17 +983,16 @@ class App extends React.Component {
   /**
    * @param msgList: array of messages or string message to display
    */
-  handleNotificationUpdate(msgList, error=false) {
-    let notification;
-    if (typeof msgList == "string") {
-      notification = [{
-        error,
-        message: msgList,
-      }];
-    } else if (Array.isArray(msgList)) {
+  handleNotificationUpdate(msgList, variant) {
+    let notification = [{
+      variant,
+      message: msgList,
+    }];
+
+    if (Array.isArray(msgList)) {
       notification = msgList.map((str) => {
         return {
-          error,
+          variant,
           message: str,
         };
       });
@@ -1027,24 +1028,24 @@ class App extends React.Component {
 
     if (!file || !args) {
       const msg = "Wallet.importFile wrong params";
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "error");
       return Promise.reject(Error(msg));
     }
 
     if (!Array.isArray(file)) {
       const msg = "Accepted files from dropzone are not in an array";
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "error");
       return Promise.reject(Error(msg));
     }
 
     if (file.length == 0) {
       if (window.File && window.FileReader && window.FileList && window.Blob) {
         const msg = "File rejected";
-        this.handleNotificationUpdate(msg, true);
+        this.handleNotificationUpdate(msg, "error");
         return Promise.reject(Error(msg));
       }
       const msg = "File APIs are not fully supported in this browser";
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "warning");
       return Promise.reject(Error(msg));
     }
 
@@ -1054,7 +1055,7 @@ class App extends React.Component {
 
     if (!name.endsWith(".json") && !name.endsWith(".txt")) {
       const msg = "File has not a JSON or TXT extension";
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "error");
       return Promise.reject(Error(msg));
     }
 
@@ -1138,7 +1139,7 @@ class App extends React.Component {
         console.log(err);
       }
       const msg = err.message || "Invalid file or password";
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "warning");
       return Promise.reject(Error(msg));
     };
 
@@ -1241,7 +1242,7 @@ class App extends React.Component {
       this.handleNotificationUpdate([
         `Some outdated ${crypto} coins where erased in the process`,
         `Your balance decremented ${crypto}${Math.abs(difference).toFixed(8)}`
-      ], true);
+      ], "warning");
       return;
     }
 
@@ -1303,10 +1304,6 @@ class App extends React.Component {
         </div>,
         body: <ItemPurchasedDialog
           { ...item }
-          isFlipped={ isFlipped }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          wallet={ this.wallet }
-          xr={ this.xr }
         />,
       });
     };
@@ -1326,10 +1323,6 @@ class App extends React.Component {
       },
       body: <ItemPurchasedListDialog
         handleShowItemPurchased={ this.handleShowItemPurchased }
-        isFlipped={ isFlipped }
-        showValuesInCurrency={ this.showValuesInCurrency }
-        wallet={ this.wallet }
-        xr={ this.xr }
       />,
     });
   }
@@ -1364,11 +1357,7 @@ class App extends React.Component {
           closeDialog={ this.clearDialog }
           coin={ coin }
           currency={ args.crypto }
-          isFlipped={ this.state.isFlipped }
           showButtons={ false }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          wallet={ this.wallet }
-          xr={ this.xr }
         />;
 
         if (component) {
@@ -1389,10 +1378,6 @@ class App extends React.Component {
       const body = <FileDialog
         { ...args }
         coinList={ coinList }
-        isFlipped={ this.state.isFlipped }
-        showValuesInCurrency={ this.showValuesInCurrency }
-        wallet={ this.wallet }
-        xr={ this.xr }
       />;
 
       if (component) {
@@ -1640,7 +1625,7 @@ class App extends React.Component {
           return Promise.all(proms).then(() => {
             return storage.sessionEnd();
           }).then(() => {
-            this.handleNotificationUpdate(msg, true);
+            this.handleNotificationUpdate(msg, "error");
             this.setState({
               navDrawerOpen: false,
             });
@@ -1673,11 +1658,8 @@ class App extends React.Component {
           futureStorageName={ futureStorageName }
           futureStorageAnimal={ futureStorageAnimal }
           onCheckedMoveCoins={ () => moveCoins = !moveCoins }
-          showValuesInCurrency={ this.showValuesInCurrency }
           storageAnimal={ storageAnimal }
           storageName={ storageName }
-          wallet={ this.wallet }
-          xr={ this.xr }
         />,
       });
     });
@@ -1772,7 +1754,7 @@ class App extends React.Component {
     }).catch((error) => {
       console.log(err);
       let msg = typeof error == "object" ? this.wallet.getResponseError(error) : error;
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "error");
 
       if (cKeys.length > 0) {
         return storage.sessionStart("Cancel move coins").then(() => {
@@ -1867,7 +1849,7 @@ class App extends React.Component {
       let msg = err.message || this.wallet.getResponseError(err);
       msg = msg || "Error on connection to Google Drive";
 
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "error");
       this.setState({
         status: states.WELCOME,
       });
@@ -2020,9 +2002,6 @@ class App extends React.Component {
           }}
           balances={ balances }
           isClose={ isClose }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          wallet={ this.wallet }
-          xr={ this.xr }
         />,
         onClickOk: () => this.confirmCloseWallet(boolBackup, isClose),
       });
@@ -2103,9 +2082,6 @@ class App extends React.Component {
         showCancelButton: true,
         body: <DiscardDialog
           balance={ balance }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          wallet={ this.wallet }
-          xr={ this.xr }
         />,
         onClickOk: () => {
           localStorage.removeItem('loggedIn');
@@ -2129,9 +2105,12 @@ class App extends React.Component {
   onModifyTabIndex(index) {
     return () => {
       const {
-        isFullScreen,
         paymentRequest,
       } = this.props;
+
+      const {
+        isFullScreen,
+      } = this.context;
 
       let el = document.getElementsByClassName("tabsbar")[0].children[1].children[0];
       if (paymentRequest) {
@@ -2260,10 +2239,13 @@ class App extends React.Component {
 
   handleResizeClick(event) {
     const {
-      isFullScreen,
       onExpandClick,
       onContractClick,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     this.setState({
       navDrawerOpen: false,
@@ -2303,7 +2285,7 @@ class App extends React.Component {
     }).catch((err) => {
       this.loading(false);
       console.log(err);
-      this.handleNotificationUpdate("Failed to get Bitcoin address", true);
+      this.handleNotificationUpdate("Failed to get Bitcoin address", "error");
     });
   }
 
@@ -2337,7 +2319,7 @@ class App extends React.Component {
       if (err && err.message) {
         message = err.message;
       }
-      this.handleNotificationUpdate(message, true);
+      this.handleNotificationUpdate(message, "error");
       this.setState({
         targetValue: "",
       });
@@ -2427,7 +2409,7 @@ class App extends React.Component {
       if (msg === "Transaction unconfirmed") {
         msg = "Transaction unconfirmed, try again later";
       }
-      this.handleNotificationUpdate(msg, true);
+      this.handleNotificationUpdate(msg, "warning");
     };
 
     this.clearDialog();
@@ -2510,9 +2492,9 @@ class App extends React.Component {
           right: '30px',
           display: 'flex',
         }}>
-          { this.tools.getImageComponent("b.svg") } 
-          { this.tools.getImageComponent("arrowRight.svg") } 
-          { this.tools.getImageComponent("b-e.svg") } 
+          { getImageComponent("b.svg") } 
+          { getImageComponent("arrowRight.svg") } 
+          { getImageComponent("b-e.svg") } 
         </div>
         <div style={{
           textAlign: 'left',
@@ -2535,10 +2517,6 @@ class App extends React.Component {
         fee={ fee }
         received={ received }
         isFlipped={ isFlipped }
-        snackbarUpdate={ this.handleNotificationUpdate }
-        showValuesInCurrency={ this.showValuesInCurrency }
-        wallet={ this.wallet }
-        xr={ this.xr }
       />,
     });
   }
@@ -2643,9 +2621,9 @@ class App extends React.Component {
             right: '30px',
             display: 'flex',
           }}>
-            { this.tools.getImageComponent("b-e.svg") } 
-            { this.tools.getImageComponent("arrowRight.svg") } 
-            { this.tools.getImageComponent("b.svg") } 
+            { getImageComponent("b-e.svg") } 
+            { getImageComponent("arrowRight.svg") } 
+            { getImageComponent("b.svg") } 
           </div>
           <div style={{
             textAlign: 'left',
@@ -2705,10 +2683,10 @@ class App extends React.Component {
         const dec = Math.abs(difference).toFixed(8);
         messages.push(`Balance decreased XBT -${dec} after sync`);
       }
-      this.handleNotificationUpdate(messages, false);
+      this.handleNotificationUpdate(messages, "warning");
     }).catch((err) => {
       console.log(err);
-      this.handleNotificationUpdate(err.message || 'Not possible to sync', true);
+      this.handleNotificationUpdate(err.message || 'Not possible to sync', "error");
     });
   }
 
@@ -2721,8 +2699,11 @@ class App extends React.Component {
 
     const {
       initializeDraggableArea,
-      isFullScreen,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     const {
       total,
@@ -2743,8 +2724,6 @@ class App extends React.Component {
       handleSignoutGDrive={ this.handleSignoutGDrive }
       loading={ this.loading }
       initializeDraggableArea={ initializeDraggableArea }
-      isFlipped={ isFlipped }
-      isFullScreen={ isFullScreen }
       openDialog={ this.openDialog }
       opened={ navDrawerOpen }
       password={ this.state.password }
@@ -2753,10 +2732,6 @@ class App extends React.Component {
       setWalletPassword={ this.setWalletPassword }
       setSettingsKey={ this.setSettingsKey }
       settings={ settings }
-      showValuesInCurrency={ this.showValuesInCurrency }
-      snackbarUpdate={ this.handleNotificationUpdate }
-      wallet={ this.wallet }
-      xr={ this.xr }
     />;
   }
 
@@ -2775,7 +2750,7 @@ class App extends React.Component {
 
     const {
       isFullScreen,
-    } = this.props;
+    } = this.context;
 
     const isGDrive = this.wallet.isGoogleDrive();
     const transactions = this.wallet.getHistoryList();
@@ -2826,19 +2801,13 @@ class App extends React.Component {
           <AddFundsTab
             handleClickDeposit={ this.handleClickDeposit }
             handleRemoveDepositRef={ this.handleRemoveDepositRef }
-            isFlipped={ isFlipped }
-            isFullScreen={ isFullScreen }
             issueCollect={ this.issueCollect }
             loading={ this.loading }
-            snackbarUpdate={ this.handleNotificationUpdate }
-            showValuesInCurrency={ this.showValuesInCurrency }
             updateTargetValue={(value) => {
               this.setState({
                 targetValue: value,
               });
             }}
-            wallet={ this.wallet }
-            xr={ this.xr }
           />
         </div>
       </Tab>;
@@ -2863,16 +2832,10 @@ class App extends React.Component {
             active={ tabIndex == 3 }
             closeDialog={ this._closeDialog }
             exchangeRates={ exchangeRates }
-            isFlipped={ isFlipped }
-            isFullScreen={ isFullScreen }
             loading={ this.loading }
             openDialog={ this.openDialog }
             refreshCoinBalance={ this.refreshCoinBalance }
             refreshIssuerRates={ this.refreshIssuerRates }
-            showValuesInCurrency={ this.showValuesInCurrency }
-            snackbarUpdate={ this.handleNotificationUpdate }
-            wallet={ this.wallet }
-            xr={ this.xr }
           />
         </div>
       </Tab>;
@@ -2907,30 +2870,18 @@ class App extends React.Component {
             <WalletBalance
               balance={ balance }
               drive={ isGDrive }
-              isFlipped={ isFlipped }
-              isFullScreen={ isFullScreen }
               loading={ this.loading }
               onStorageIconClick={ this.handleSyncContent }
               refreshCoinBalance={ this.refreshCoinBalance }
-              showValuesInCurrency={ this.showValuesInCurrency }
-              snackbarUpdate={ this.handleNotificationUpdate }
-              wallet={ this.wallet }
-              xr={ this.xr }
             />
             <MainTab
               { ...this.props }
               closeDialog={ this._closeDialog }
               handleShowItemPurchased={ this.handleShowItemPurchased }
               handleShowItemPurchasedList={ this.handleShowItemPurchasedList }
-              isFlipped={ isFlipped }
-              isFullScreen={ isFullScreen }
               loading={ this.loading }
               openDialog={ this.openDialog }
               refreshCoinBalance={ this.refreshCoinBalance }
-              showValuesInCurrency={ this.showValuesInCurrency }
-              snackbarUpdate={ this.handleNotificationUpdate }
-              wallet={ this.wallet }
-              xr={ this.xr }
             />
           </div>
         </Tab>
@@ -2952,17 +2903,11 @@ class App extends React.Component {
             <ImportTab
               handleShowCoin={ this.handleShowCoin }
               closeDialog={ this._closeDialog }
-              isFullScreen={ isFullScreen }
               loading={ this.loading }
               refreshCoinBalance={ this.refreshCoinBalance }
               importFile={ this.importFile }
               openDialog={ this.openDialog }
               refreshSettings={ this.refreshSettings }
-              snackbarUpdate={ this.handleNotificationUpdate }
-              showValuesInCurrency={ this.showValuesInCurrency }
-              isFlipped={ isFlipped }
-              wallet={ this.wallet }
-              xr={ this.xr }
             />
           </div>
         </Tab>
@@ -2985,13 +2930,9 @@ class App extends React.Component {
             <ExportTab
               balance={ balance }
               closeDialog={ this._closeDialog }
-              isFullScreen={ isFullScreen }
               loading={ this.loading }
               openDialog={ this.openDialog }
               refreshCoinBalance={ this.refreshCoinBalance }
-              snackbarUpdate={ this.handleNotificationUpdate }
-              wallet={ this.wallet }
-              xr={ this.xr }
             />
           </div>
         </Tab>
@@ -3013,15 +2954,9 @@ class App extends React.Component {
             style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
           >
             <HistoryTab
-              isFlipped={ isFlipped }
-              isFullScreen={ isFullScreen }
               openDialog={ this.openDialog }
               refreshCoinBalance={ this.refreshCoinBalance }
-              showValuesInCurrency={ this.showValuesInCurrency }
-              snackbarUpdate={ this.handleNotificationUpdate }
               transactions={ transactions }
-              wallet={ this.wallet }
-              xr={ this.xr } 
             />
           </div>
         </Tab>
@@ -3040,17 +2975,11 @@ class App extends React.Component {
             balance={ balance }
             exchangeRates={ exchangeRates }
             expiryExchangeRates={ expiryExchangeRates }
-            isFlipped={ isFlipped }
-            isFullScreen={ isFullScreen }
             loading={ this.loading }
             paymentDetails={ this.props.paymentRequest.PaymentDetails }
             refreshCoinBalance={ this.refreshCoinBalance }
             refreshIssuerRates={ this.refreshIssuerRates }
             removePayment={ this.props.removePayment }
-            showValuesInCurrency={ this.showValuesInCurrency }
-            snackbarUpdate={ this.handleNotificationUpdate }
-            wallet={ this.wallet }
-            xr={ this.xr }
           />
         </Tab> : null }
       </Tabs>
@@ -3062,10 +2991,6 @@ class App extends React.Component {
       balance,
     } = this.state;
 
-    const {
-      isFullScreen,
-    } = this.props;
-
     return <div>
       { this._renderHeader() }
       { this._renderTabs() }
@@ -3073,11 +2998,6 @@ class App extends React.Component {
         { ...this.props }
         balance={ balance }
         handleResizeClick={ this.handleResizeClick }
-        xr={ this.xr }
-        wallet={ this.wallet }
-        isFullScreen={ isFullScreen }
-        snackbarUpdate={ this.handleNotificationUpdate }
-        showValuesInCurrency={ this.showValuesInCurrency }
       />
     </div>;
   }
@@ -3129,9 +3049,18 @@ class App extends React.Component {
         />;
     }
 
-    return (
-      <section>
+    const context = {
+      isFlipped: this.state.isFlipped,
+      showValuesInCurrency: this.showValuesInCurrency,
+      snackbarUpdate: this.handleNotificationUpdate,
+      wallet: this.wallet,
+      xr: this.xr,
+    };
 
+    return <section>
+      <AppProvider
+        value={ Object.assign(context, this.context) }
+      >
         { content }
 
         <Notification
@@ -3141,19 +3070,18 @@ class App extends React.Component {
 
         <AlertDialog
           { ...alert }
-          isFullScreen={ isFullScreen }
           onCloseClick={ this._closeDialog }
         />
 
         <Loading
           show={ loading }
-          isFullScreen={ isFullScreen }
         />
-
-      </section>
-    );
+      </AppProvider>
+    </section>;
   }
 }
+
+App.contextType = AppContext;
 
 export default App;
 

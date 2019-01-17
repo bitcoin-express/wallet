@@ -10,6 +10,7 @@ import Select from '@material-ui/core/Select';
 import { withStyles } from '@material-ui/core/styles';
 
 import Box from '../../Box';
+import { AppContext } from "../../../AppContext";
 
 
 const componentStyles = (theme) => {
@@ -42,8 +43,11 @@ class SettingsDisplay extends React.Component {
   handleChangeLocalName(ev, walletLocalName) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -59,8 +63,11 @@ class SettingsDisplay extends React.Component {
   handleChangeDriveName(ev, walletDriveName) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -76,8 +83,11 @@ class SettingsDisplay extends React.Component {
   handleCurrencyChange(ev, index, currency) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -93,8 +103,11 @@ class SettingsDisplay extends React.Component {
   handleSeparatorChange(ev, index, separator) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -110,8 +123,11 @@ class SettingsDisplay extends React.Component {
   handleBitcoinDisplayChange(ev, index, btc) {
     const {
       setSettingsKey,
-      wallet,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     let {
       settings,
@@ -127,10 +143,12 @@ class SettingsDisplay extends React.Component {
   render() {
     const {
       classes,
-      isFlipped,
+    } = this.props;
+
+    const {
       wallet,
       xr,
-    } = this.props;
+    } = this.context;
 
     let {
       errorMsg,
@@ -271,6 +289,7 @@ class SettingsDisplay extends React.Component {
   }
 }
 
+SettingsDisplay.contextType = AppContext;
 
 export default withStyles(componentStyles)(SettingsDisplay);
 

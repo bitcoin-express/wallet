@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Tools from '../../../helpers/Tools';
+import { countdown } from '../../../helpers/tools';
 import styles from '../../../helpers/Styles';
+
 
 export default class DateCounter extends React.Component {
 
@@ -12,12 +13,10 @@ export default class DateCounter extends React.Component {
     this.state = {
       counter: props.timeToExpire,
     };
-
-    this.tools = new Tools();
   }
 
   componentDidMount() {
-    this.interval = this.tools.countdown(this.state.counter, (counter) => {
+    this.interval = countdown(this.state.counter, (counter) => {
       this.setState({
         counter,
       });
