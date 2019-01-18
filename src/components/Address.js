@@ -32,6 +32,9 @@ const componentStyles = (theme) => {
       margin: '5px 0 15px 0',
     },
     chip: {
+      marginBottom: '5px',
+    },
+    chipLabel: {
       webkitTouchCallout: 'all', /* iOS Safari */
       WebkitUserSelect: 'all', /* Safari */
       KhtmlUserSelect: 'all', /* Konqueror HTML */
@@ -165,23 +168,20 @@ class Address extends React.Component {
 
     return <div className={ classes.address }>
 
-      <Grid container spacing={16}>
-        <Grid item xs={ info ? 9 : 12 }>
-          <Chip
-            avatar={ <Avatar size={32}>@</Avatar> }
-            label={ blockchainAddress }
-            classes={{
-              label: classes.chip,
-            }}
-          />
-        </Grid>
-        { info ? <Grid item xs={3}>
-          <HelpTooltip
-            tooltipclassName={{ marginLeft: '10vw', marginRight: '10vw' }}
-            note={ tooltipMessage }
-          />
-        </Grid> : null }
-      </Grid>
+      <Chip
+        avatar={ <Avatar size={32}>@</Avatar> }
+        label={ blockchainAddress }
+        color="secondary"
+        classes={{
+          root: classes.chip,
+          label: classes.chipLabel,
+        }}
+        deleteIcon={ info ? <HelpTooltip
+          note={ tooltipMessage }
+          style={{ marginRight: '5px' }}
+        /> : null }
+        onDelete={() => {}}
+      />
 
       <div className={ classes.buttons }>
         <Button

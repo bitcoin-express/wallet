@@ -74,12 +74,17 @@ const componentStyles = (theme) => {
       overflowY: 'auto',
     },
     rootActions: {
-      //background: colors.mainColor,
+      background: "#a8baf8",
+      margin: "0px",
+      padding: "5px",
       overflowX: 'auto',
       whiteSpace: 'nowrap',
     },
+    rootContent: {
+      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    },
     rootTitle: {
-      background: "#a8baf8b0",
+      background: "#a8baf8",
       color: colors.mainTextColor,
       textAlign: 'center',
       whiteSpace: 'nowrap',
@@ -195,7 +200,7 @@ class AlertDialog extends React.Component {
     >
       { this.getTitle() }
 
-      <DialogContent>
+      <DialogContent className={ classes.rootContent }>
         { body }
       </DialogContent>
 

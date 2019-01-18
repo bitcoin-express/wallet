@@ -16,6 +16,7 @@ class InfoBox extends React.Component {
         margin: '10px 2vw',
         padding: '20px 10px',
         position: 'relative',
+        boxShadow: '0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12)',
       },
       icon: {
         color: props.iconColor,
@@ -61,7 +62,7 @@ class InfoBox extends React.Component {
 InfoBox.defaultProps = {
   hidden: false,
   backgroundColor: 'rgba(253, 207, 79, 0.8)',
-  border: true,
+  border: false,
   iconColor: styles.colors.mainRed,
 };
 

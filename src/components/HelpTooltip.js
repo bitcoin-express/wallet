@@ -44,10 +44,7 @@ class HelpTooltip extends React.Component {
       open,
     } = this.state;
 
-    return <div style={ Object.assign({
-      display: 'inline',
-      color: 'black',
-    }, style) }>
+    return <div style={ style }>
       &nbsp;&nbsp;<i
         className="fa fa-question-circle fa-lg"
         onClick={ this.handleTouchTap }
