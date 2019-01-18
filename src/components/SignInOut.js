@@ -6,8 +6,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Menu from '@material-ui/core/Menu';
 import IconButton from '@material-ui/core/IconButton';
 
-import styles from '../helpers/Styles';
 import { AppContext } from "../AppContext";
+import styles from '../helpers/Styles';
 
 
 class SignInOut extends React.Component {
@@ -77,8 +77,9 @@ class SignInOut extends React.Component {
       { isFullScreen ? <IconButton
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-label="Settings"
-        onClick={ showSettings }
         color="inherit"
+        onClick={ showSettings }
+        style={{ backgroundColor: 'transparent' }}
       >
         <i
           className="fa fa-cog"
@@ -90,8 +91,9 @@ class SignInOut extends React.Component {
         aria-owns={open ? 'menu-appbar' : undefined}
         aria-haspopup="true"
         aria-label="Wallet options"
-        onClick={ this.handleMenu }
         color="inherit"
+        onClick={ this.handleMenu }
+        style={{ backgroundColor: 'transparent' }}
       >
         <i
           className="fa fa-power-off"

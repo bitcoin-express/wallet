@@ -503,11 +503,12 @@ class Bar extends React.Component {
         <Toolbar style={{ minHeight: '40px' }}>
           <IconButton
             aria-label="Open drawer"
-            color="inherit"
-            onClick={ handleMenuIconClick }
             classes={{
               root: isFullScreen ? classes.icon : classes.iconMin,
             }}
+            color="inherit"
+            onClick={ handleMenuIconClick }
+            style={{ backgroundColor: 'transparent' }}
           >
             { this.renderBurger() }
           </IconButton>

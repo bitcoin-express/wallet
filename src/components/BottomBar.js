@@ -197,6 +197,7 @@ class BottomBar extends React.Component {
         <IconButton
           aria-label={ isFullScreen ? 'Resize down' : 'Resize up' }
           color="inherit"
+          style={{ backgroundColor: 'transparent' }}
           onClick={ (event) => {
             event.preventDefault();
             handleResizeClick();

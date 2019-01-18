@@ -4,14 +4,16 @@ import PropTypes from 'prop-types';
 import { default as CustomDialogTitle } from './DialogTitle';
 import DialogButton from './DialogButton';
 
-import { withStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import withMobileDialog from '@material-ui/core/withMobileDialog';
+import { withStyles } from '@material-ui/core/styles';
 
-import AddFundsDialog from '../AddFundsDialog';
 import AboutDialog from '../AboutDialog';
+import AddFundsDialog from '../AddFundsDialog';
+import { AppContext } from "../../../AppContext";
 import Settings from '../../bar/settings/Settings';
 import styles from '../../../helpers/Styles';
 
@@ -174,6 +176,7 @@ class AlertDialog extends React.Component {
       actionsContainerStyle,
       body,
       classes,
+      fullScreen,
       open,
       onCloseClick,
       style,
@@ -183,6 +186,7 @@ class AlertDialog extends React.Component {
       classes={{
         paper: classes.paper,
       }}
+      fullScreen={ fullScreen }
       onBackdropClick={ () => {} }
       onClose={ onCloseClick }
       open={ open }
@@ -228,5 +232,8 @@ AlertDialog.defaultProps = {
   titleStyle: {},
 };
 
-export default withStyles(componentStyles)(AlertDialog);
+AlertDialog.contextType = AppContext;
+
+
+export default withMobileDialog()(withStyles(componentStyles)(AlertDialog));
 

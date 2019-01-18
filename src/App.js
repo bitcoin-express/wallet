@@ -3051,6 +3051,7 @@ class App extends React.Component {
 
     const context = {
       isFlipped: this.state.isFlipped,
+      openDialog: this.openDialog,
       showValuesInCurrency: this.showValuesInCurrency,
       snackbarUpdate: this.handleNotificationUpdate,
       wallet: this.wallet,

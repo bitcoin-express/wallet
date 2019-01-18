@@ -4,7 +4,7 @@ export default {
     bitcoinColor: "#f9a74c", // orange
     mainColor: "#a8baf8", // background
     secondaryColor: "#8ea7fb", // second-background
-    mainTextColor: "white",
+    mainTextColor: "#ffffff",
     secondaryTextColor: "#ecf1ff",
     mainGrey: "#989898", // bottombar color
     darkBlue: "#2f447e", // support color - titles

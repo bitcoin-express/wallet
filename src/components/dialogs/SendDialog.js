@@ -9,15 +9,15 @@ import { Radio, RadioGroup } from '@material-ui/core/Radio';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
 
-import Button from '../Button';
-import FormArea from '../FormArea';
-import Title from '../Title';
 import BitcoinCurrency from '../BitcoinCurrency';
+import Button from '../Button';
 import CoinSelector from '../CoinSelector';
+import FormArea from '../FormArea';
 import SendConfirmDialog from './send/SendConfirmDialog';
 import SendSuccessDialog from './send/SendSuccessDialog';
 import SendList from './send/SendList';
 import styles from '../../helpers/Styles';
+import Title from '../Title';
 
 
 class SendDialog extends React.Component {

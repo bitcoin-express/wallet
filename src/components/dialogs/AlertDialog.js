@@ -9,6 +9,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 
+import { AppContext } from "../../AppContext";
 import DialogButton from './utils/DialogButton';
 import styles from '../../helpers/Styles';
 
@@ -203,7 +204,7 @@ AlertDialog.defaultProps = {
 };
 
 AlertDialog.contextType = AppContext;
-AlertDialog = withMobileDialog()(AlertDialog);
 
-export default withStyles(componentStyles, { withTheme: true })(AlertDialog);
+
+export default withMobileDialog()(withStyles(componentStyles, { withTheme: true })(AlertDialog));
 

@@ -1,10 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { withStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Grid from '@material-ui/core/Grid';
+import { withStyles } from '@material-ui/core/styles';
 
 import Address from '../Address';
 import BitcoinCurrency from '../BitcoinCurrency';
@@ -22,9 +23,11 @@ const componentStyles = (theme) => {
       textAlign: 'center',
       width: '100%',
     },
+    root: {
+      marginTop: '1em',
+    },
   };
 };
-
 
 
 class AddFundsDialog extends React.Component {
@@ -344,9 +347,10 @@ class AddFundsDialog extends React.Component {
 
   render() {
     const {
+      buttons,
+      classes,
       isTab,
       qrLabel,
-      buttons,
     } = this.props;
 
     const {
@@ -393,56 +397,58 @@ class AddFundsDialog extends React.Component {
     const confirmations = issueInfo.confirmations;
 
 
-    return <div style={ this.styles.amountArea }>
-      <div className="addFundsGrid">
-        <div style={ this.styles.address }>
-          <Address
-            expiry={ expiry }
-            blockchainAddress={ blockchainAddress }
-            idQR="img-download"
-          />
-        </div>
-        <div style={ this.styles.gridQR }>
-          <div id={ qrLabel } style={ this.styles.qr } />
-          <BitcoinCurrency
-            color="rgba(0, 0, 0, 0.87)"
-            currency="XBT"
-            displayStorage={ false }
-            showValuesInCurrency={ showValuesInCurrency }
-            style={{ display: 'inline-block' }}
-            tiny={ true }
-            centered={ !isTab }
-            value={ parseFloat(targetValue) }
-          />
-        </div>
-      </div>
+    return <Grid container spacing={16} className={ classes.root }>
+      <Grid item xs={12} sm={9}>
+        <Address
+          expiry={ expiry }
+          blockchainAddress={ blockchainAddress }
+          idQR="img-download"
+        />
+      </Grid>
+      <Grid item xs={12} sm={3}>
+        <div id={ qrLabel } style={ this.styles.qr } />
+        <BitcoinCurrency
+          color="rgba(0, 0, 0, 0.87)"
+          currency="XBT"
+          displayStorage={ false }
+          showValuesInCurrency={ showValuesInCurrency }
+          style={{ display: 'inline-block' }}
+          tiny={ true }
+          centered={ !isTab }
+          value={ parseFloat(targetValue) }
+        />
+      </Grid>
 
-      <InfoBox>
-        <div>
-          Send only bitcoin (BTC) to <i>{ blockchainAddress }</i><br/>
-          Sending bitcoin cash (BCH) to this address will result in
-          the permanent loss of your deposit.
-        </div>
-      </InfoBox>
+      <Grid item xs={12}>
+        <InfoBox>
+          <React.Fragment>
+            Send only bitcoin (BTC) to <i>{ blockchainAddress }</i><br/>
+            Sending bitcoin cash (BCH) to this address will result in
+            the permanent loss of your deposit.
+          </React.Fragment>
+        </InfoBox>
+      </Grid>
 
-      <p style={{ textAlign: 'center' }}>
-        <a
-          href={ `https://blockchain.info/address/${blockchainAddress}` }
-          target="_blank"
-          style={ this.styles.blockchain }
-          title="Blockchain.info"
-        >
-          Track progress
-        </a> | <a
-          href={ uri }
-          style={ this.styles.wallet }
-          title={ uri }
-        >
-          Start Bitcoin wallet
-        </a>
-      </p>
+      <Grid item xs={12}>
+        <p style={{ textAlign: 'center' }}>
+          <a
+            href={ `https://blockchain.info/address/${blockchainAddress}` }
+            target="_blank"
+            style={ this.styles.blockchain }
+            title="Blockchain.info"
+          >
+            Track progress
+          </a> | <a
+            href={ uri }
+            style={ this.styles.wallet }
+            title={ uri }
+          >
+            Start Bitcoin wallet
+          </a>
+        </p>
       { buttons }
-    </div>;
+      </Grid>
+    </Grid>;
   }
 }
 
@@ -454,6 +460,7 @@ AddFundsDialog.defaultProps = {
 };
 
 AddFundsDialog.contextType = AppContext;
+
 
 export default withStyles(componentStyles)(AddFundsDialog);
 

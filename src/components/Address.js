@@ -1,42 +1,63 @@
 import React from 'react';
 
-import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
 import Avatar from '@material-ui/core/Avatar';
+import Button from '@material-ui/core/Button';
 import Chip from '@material-ui/core/Chip';
+import Grid from '@material-ui/core/Grid';
+import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 
+import { AppContext } from "../AppContext";
+import HelpTooltip from './HelpTooltip';
 import Time from '../helpers/Time';
 
-import HelpTooltip from './HelpTooltip';
+
+const componentStyles = (theme) => {
+  return {
+    address: {
+      textAlign: 'center',
+    },
+    button: {
+      border: '1px',
+      borderColor: '#444444',
+      borderStyle: 'solid',
+      marginLeft: '15px',
+      height: 'inherit',
+      lineHeight: 'inherit',
+      margin: '5px 2px',
+      backgroundColor: '#ffffff',
+    },
+    buttons: {
+      textAlign: 'center',
+      margin: '5px 0 15px 0',
+    },
+    chip: {
+      webkitTouchCallout: 'all', /* iOS Safari */
+      WebkitUserSelect: 'all', /* Safari */
+      KhtmlUserSelect: 'all', /* Konqueror HTML */
+      MozUserSelect: 'all', /* Firefox */
+      MsUserSelect: 'all', /* Internet Explorer/Edge */
+      userSelect: 'all', /* Chrome and Opera */
+    },
+    labelStyle: {
+      textTransform: 'inherit',
+    },
+    textarea: {
+      backgroundColor: 'transparent',
+      width: '300px',
+      border: 'none',
+      color: '#ffffff',
+      height: '15px',
+      marginTop: '5px',
+    },
+  };
+};
+
 
 class Address extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.styles = {
-      labelStyle: {
-        textTransform: 'inherit',
-      },
-      button: {
-        border: '1px',
-        borderColor: 'grey',
-        borderStyle: 'solid',
-        marginLeft: '15px',
-        height: 'inherit',
-        lineHeight: 'inherit',
-        margin: '5px 0',
-        backgroundColor: 'white',
-      },
-      textarea: {
-        backgroundColor: 'transparent',
-        width: '300px',
-        border: 'none',
-        color: 'white',
-        height: '15px',
-        marginTop: '5px',
-      },
-    };
 
     this.time = new Time();
 
@@ -48,7 +69,8 @@ class Address extends React.Component {
   }
 
   handleCopyURI() {
-    this.props.wallet.getDepositRef().then((depositRef) => {
+
+    const copyAddress = (depositRef) => {
       if (depositRef && depositRef.issueInfo) {
         const {
           issueInfo,
@@ -56,26 +78,46 @@ class Address extends React.Component {
         const ending = issueInfo.targetValue > 0 ? `?amount=${issueInfo.targetValue}`: "";
         this._copyAddress("bitcoin:", ending, "URI");
       }
-    });
+    };
+
+    this.context.wallet.getDepositRef()
+      .then(copyAddress);
   }
 
   handleCopyAddress() {
     this._copyAddress();
   }
 
+  selectText(node) {
+    if (document.body.createTextRange) {
+        const range = document.body.createTextRange();
+        range.moveToElementText(node);
+        range.select();
+    } else if (window.getSelection) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } else {
+        console.warn("Could not select text in node: Unsupported browser.");
+    }
+  } 
+
   _copyAddress(start = "", end = "", type = "Address") {
     const {
       snackbarUpdate,
-    } = this.props;
+    } = this.context;
 
-    let copyTextarea = document.querySelector('.js-copytextarea');
-    const originalValue = copyTextarea.value;
-    copyTextarea.value = start + copyTextarea.value + end;
-    copyTextarea.select();
+    //let copyTextarea = document.querySelector('.js-copytextarea');
+    let copyTextarea = document.querySelector("span[class^='MuiChip-label']");
+    const originalValue = copyTextarea.innerText;
+    copyTextarea.innerText = start + copyTextarea.innerText + end;
+    this.selectText(copyTextarea);
 
     try {
       let successful = document.execCommand('copy');
-      copyTextarea.value = originalValue;
+      copyTextarea.innerText = originalValue;
       copyTextarea.blur();
       if (!successful) {
         throw new Error('not sucess in copying');
@@ -83,7 +125,7 @@ class Address extends React.Component {
         snackbarUpdate(`${type} copied to clipboard`);
       }
     } catch (err) {
-      copyTextarea.value = originalValue;
+      copyTextarea.innerText = originalValue;
       copyTextarea.blur();
       snackbarUpdate(`Problem on copy ${type} to clipboard`, true);
     }
@@ -94,95 +136,63 @@ class Address extends React.Component {
   }
 
   render () {
+
     const {
       blockchainAddress,
+      classes,
       expiry,
       idQR,
       info,
     } = this.props;
 
-    return <div style={{ textAlign: 'center' }}>
-      <div
-        style={{
-          display: 'inline-flex',
-          width: info ? 'calc(100% - 50px)' : '100%',
-          maxWidth: '360px',
-        }}
-      >
-        <Chip
-          backgroundColor="#5d5d5d"
-          style={{
-            margin: 4,
-            textAlign: 'center',
-            width: '100%',
-            cursor: 'inherit',
-            overflow: 'hidden',
-          }}
-          labelStyle={{
-            userSelect: 'inherit',
-            color: 'white',
-          }}
-        >
-          <Avatar
-            size={32}
-            backgroundColor="#5d5d5d"
-            style={{ minWidth: '32px' }}
-          >
-            @
-          </Avatar>
-          <textarea
-            className="js-copytextarea"
-            value={ blockchainAddress }
-            onChange={ () => {} }
-            style={ this.styles.textarea }
+    const tooltipMessage = <React.Fragment>
+      <p>
+        Please use the address provided to send funds to this Wallet.
+      </p>
+      <p>
+        Depending on the amount being transferred, you will have to wait
+        between 1 and 6 confirmations before you will be able to Collect
+        your Coins. Start your existing Bitcoin Wallet and send any amount
+        you wish. You will pay the standard Bitcoin Miner fee as usual and
+        you will be issued with Bitcoin-express coins of the exact value that
+        is received.
+      </p>
+      <p>
+        You may use the 'Track progress' link to find out the confirmation
+        status.
+      </p>
+    </React.Fragment>;
+
+    return <div className={ classes.address }>
+
+      <Grid container spacing={16}>
+        <Grid item xs={ info ? 9 : 12 }>
+          <Chip
+            avatar={ <Avatar size={32}>@</Avatar> }
+            label={ blockchainAddress }
+            classes={{
+              label: classes.chip,
+            }}
           />
-        </Chip>
-      </div>
-      { info ? <div
-        style={{
-          width: '50px',
-          display: 'inline-flex',
-          textAlign: 'right',
-        }}
-      >
-        <HelpTooltip
-          tooltipStyle={{ marginLeft: '10vw', marginRight: '10vw' }}
-          note={ <div>
-            <p>
-              Please use the address provided to send funds to this Wallet.
-            </p>
-            <p>
-              Depending on the amount being transferred, you will have to wait
-              between 1 and 6 confirmations before you will be able to Collect
-              your Coins. Start your existing Bitcoin Wallet and send any amount
-              you wish. You will pay the standard Bitcoin Miner fee as usual and
-              you will be issued with Bitcoin-express coins of the exact value that
-              is received.
-            </p>
-            <p>
-              You may use the 'Track progress' link to find out the confirmation
-              status.
-            </p>
-          </div> }
-        />
-      </div> : null }
-      <div
-        style={{
-          textAlign: 'center',
-          margin: '5px 0 15px 0',
-        }}
-      >
+        </Grid>
+        { info ? <Grid item xs={3}>
+          <HelpTooltip
+            tooltipclassName={{ marginLeft: '10vw', marginRight: '10vw' }}
+            note={ tooltipMessage }
+          />
+        </Grid> : null }
+      </Grid>
+
+      <div className={ classes.buttons }>
         <Button
-          labelStyle={ this.styles.labelStyle }
-          style={ this.styles.button }
+          className={ classes.button }
           onClick={ this.handleCopyURI }
         >
           Copy URI
         </Button>
 
         <Button
-          labelStyle={ this.styles.labelStyle }
-          style={ this.styles.button }
+          className={ classes.button }
           onClick={ this.handleCopyAddress }
         >
           Copy address
@@ -191,8 +201,7 @@ class Address extends React.Component {
         { idQR ? <React.Fragment>
           <Button
             key="button"
-            labelStyle={ this.styles.labelStyle }
-            style={ this.styles.button }
+            className={ classes.button }
             onClick={ this.handleSaveImage }
           >
             Save Image...
@@ -200,7 +209,7 @@ class Address extends React.Component {
           <a id={ idQR } key="link"></a>
         </React.Fragment> : null }
       </div>
-      { expiry ? <div style={{ textAlign: 'center' }}>
+      { expiry ? <div className={ classes.address }>
         <b>Address available until</b>: { this.time.formatDate(expiry) }
       </div> : null }
     </div>;
@@ -211,4 +220,8 @@ Address.defaultProps = {
   info: true,
 };
 
-export default Address;
+Address.contextType = AppContext;
+
+
+export default withStyles(componentStyles)(Address);
+
