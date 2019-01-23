@@ -1,12 +1,35 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
+import { withStyles } from '@material-ui/core/styles';
 
-import StorageIcon from './StorageIcon'
 import { AppContext } from "../AppContext";
 import styles from '../helpers/Styles';
+import StorageIcon from './StorageIcon'
+
+
+const componentStyles = (theme) => {
+  return {
+    buttonTiny: {
+      width: '20px',
+      height: '20px',
+      minHeight: '20px',
+      fontSize: 'small',
+    },
+    buttonSmall: {
+      width: '25px',
+      height: '25px',
+      minHeight: '25px',
+    },
+    button: {
+      width: '25px',
+      height: '25px',
+      minHeight: '25px',
+    },
+  };
+};
+
 
 class BitcoinCurrency extends React.Component {
 
@@ -49,43 +72,6 @@ class BitcoinCurrency extends React.Component {
         overflow: 'visible',
         textAlign: 'left', 
         marginLeft: props.centered ? `calc(50% - ${centeredMargin - spacesMargin}px)` : '0',
-      },
-      button: {},
-      buttonSmall: {
-        border: '10px',
-        boxSizing: 'border-box',
-        display: 'inline-block',
-        WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
-        cursor: 'pointer',
-        size: '50%',
-        textDecoration: 'none',
-        margin: '0px',
-        padding: '0px',
-        outline: 'none',
-        fontSize: 'inherit',
-        fontWeight: 'inherit',
-        position: 'relative',
-        verticalAlign: 'bottom',
-        zIndex: '1',
-        backgroundColor: 'rgb(128, 129, 255)',
-        transition: 'all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms',
-        height: (props.small ? '22px' : '20px'),
-        width: (props.small ? '22px' : '20px'),
-        overflow: 'visible',
-        borderRadius: '50%',
-        margin: '0 1px',
-        textAlign: 'center',
-      },
-      buttonText: {
-        color: props.color,
-        fontSize: '22px',
-        fontWeight: 'bold',
-      },
-      buttonSmallText: {
-        color: 'white',
-        fontSize: '12px',
-        fontWeight: 'normal',
-        lineHeight: '20px',
       },
       flipContainer: {
         perspective: '420px',
@@ -143,21 +129,6 @@ class BitcoinCurrency extends React.Component {
     if (props.style) {
       this.styles.section = Object.assign(this.styles.section, props.style);
     }
-
-    if (props.labelStyle) {
-      this.styles.front = Object.assign(this.styles.front, props.labelStyle);
-      this.styles.back = Object.assign(this.styles.back, props.labelStyle);
-    }
-
-    if (props.buttonStyle) {
-      this.styles.button = Object.assign(this.styles.button, props.buttonStyle);
-      this.styles.buttonSmall = Object.assign(this.styles.buttonSmall, props.buttonStyle);
-    }
-
-    if (props.labelButtonStyle) {
-      this.styles.buttonText = Object.assign(this.styles.buttonText, props.labelButtonStyle);
-      this.styles.buttonSmallText = Object.assign(this.styles.buttonSmallText, props.labelButtonStyle);
-    }
   }
 
   componentWillUpdate(nextProps, nextState) {
@@ -188,6 +159,7 @@ class BitcoinCurrency extends React.Component {
   render() {
     const {
       centered,
+      classes,
       clickableStorage,
       displayStorage,
       onStorageIconClick,
@@ -237,88 +209,61 @@ class BitcoinCurrency extends React.Component {
       </span>;
     }
 
-    let butSmall = isFlipped ? Object.assign({ opacity: '0.0' },
-      this.styles.buttonSmall) : this.styles.buttonSmall;
-    let butBig = isFlipped ? Object.assign({ opacity: '0.0' },
-      this.styles.button) : this.styles.button;
+    const buttonClass = tiny ? classes.buttonTiny : (small ? classes.buttonSmall : classes.button); 
 
-    return (
-      <div style={ this.styles.section }>
+    return <div style={ this.styles.section }>
 
-        <div style={ this.styles.flipContainer }>
-          { displayStorage ? <StorageIcon
-            clickable={ clickableStorage }
-            hide={ isFlipped }
-            onClick={ onStorageIconClick }
-            style={ storageStyle || {} }
-            small={ small }
-            tiny={ tiny }
-            wallet={ wallet }
-          /> : null }
-          <div style={ isFlipped ? this.styles.flipped : this.styles.rotated }>
-            <div style={ this.styles.back }>
-              { Math.abs(xr.getFloat(value, 4, currency) * 100) < 0.01 && Math.abs(xr.getFloat(value, 4, currency)) > 0 ?
-                  "< 0.01" + xr.getCurrencyCentSymbol()
-                  : <span>&asymp; { xr.get(value, 2, currency) }</span>
-              }
-            </div>
-            <div style={ this.styles.front }>
+      <div style={ this.styles.flipContainer }>
+
+        { displayStorage ? <StorageIcon
+          clickable={ clickableStorage }
+          hide={ isFlipped }
+          onClick={ onStorageIconClick }
+          style={ storageStyle || {} }
+          small={ small }
+          tiny={ tiny }
+          wallet={ wallet }
+        /> : null }
+
+        <div style={ isFlipped ? this.styles.flipped : this.styles.rotated }>
+          <div style={ this.styles.back }>
+            { Math.abs(xr.getFloat(value, 4, currency) * 100) < 0.01 && Math.abs(xr.getFloat(value, 4, currency)) > 0 ?
+                "< 0.01" + xr.getCurrencyCentSymbol()
+                : <span>&asymp; { xr.get(value, 2, currency) }</span>
+            }
+          </div>
+
+          <div style={ this.styles.front }>
             { spaceBtcDisplay }
             <span style={{ fontFamily: 'Arial' }}>
               { btcDisplay }
             </span>
             { spaceDecDisplay }
             { displayValue }&nbsp;
-            { small || tiny ? 
-                <div
-                  style={ butSmall }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    this.handleButtonClick();
-                  }}
-                >
-                  <Button
-                    disabled={ isFlipped }
-                    style={{ minWidth: '20px', height: '20px' }}
-                  >
-                    <div style={ this.styles.buttonSmallText }>
-                      { symbol }
-                    </div>
-                  </Button>
-                </div>
-              :
-              <Fab
-                mini={ true }
-                style={ butBig }
-                secondary={ true }
-                disabled={ isFlipped }
-                onClick={(event) =>{
-                  event.preventDefault();
-                  this.handleButtonClick();
-                }}
-              >
-                <div style={ this.styles.buttonText }>
-                  { symbol }
-                </div>
-              </Fab>
-            }
-            </div>
+            <Fab
+              color="secondary"
+              className={ buttonClass }
+              disabled={ isFlipped }
+              onClick={(event) => {
+                event.preventDefault();
+                this.handleButtonClick();
+              }}
+            >
+              { symbol }
+            </Fab>
           </div>
         </div>
       </div>
-    );
+    </div>;
   }
 }
 
 BitcoinCurrency.propTypes = {
-  buttonStyle: PropTypes.object,
   color: PropTypes.string,
   centered: PropTypes.bool,
   clickableStorage: PropTypes.bool,
   currency: PropTypes.string,
   displayStorage: PropTypes.bool,
-  labelButtonStyle: PropTypes.object,
-  labelStyle: PropTypes.object,
   onStorageIconClick: PropTypes.func,
   reactive: PropTypes.bool,
   removeInitialSpaces: PropTypes.bool,
@@ -343,4 +288,6 @@ BitcoinCurrency.defaultProps = {
 
 BitcoinCurrency.contextType = AppContext;
 
-export default BitcoinCurrency;
+
+export default withStyles(componentStyles)(BitcoinCurrency);
+

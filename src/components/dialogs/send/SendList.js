@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 
 import SendTransaction from './SendTransaction';
 
+import { AppContext } from "../../../AppContext";
 import styles from '../../../helpers/Styles';
+
 
 class SendList extends React.Component {
   constructor(props) {
@@ -12,11 +14,14 @@ class SendList extends React.Component {
 
   render() {
     let {
-      transactions,
       selectTransaction,
     } = this.props;
 
-    transactions = transactions || [];
+    const {
+      wallet,
+    } = this.context;
+
+    const transactions = wallet.getHistoryList() || [];
     let filteredTxs = transactions.filter((tx) => {
       return tx.action && (tx.action.startsWith("send ") || tx.action == "issue");
     });
@@ -46,5 +51,7 @@ class SendList extends React.Component {
     </section>;
   }
 }
+
+SendList.contextType = AppContext;
 
 export default SendList;

@@ -378,6 +378,7 @@ class Bar extends React.Component {
     } = this.props;
 
     const {
+      isFullScreen,
       wallet,
     } = this.context;
 
@@ -386,16 +387,20 @@ class Bar extends React.Component {
       type,
     } = this.state;
 
-    let items = [{
-      text: "Settings",
-      fn: this.showSettings,
-      key: "settings",
-      isGDrive: false,
-      icon: <i
-        className="fa fa-cog"
-      />,
-      divider: false,
-    }];
+    let items = [];
+
+    if (!isFullScreen) {
+      items.push({
+        text: "Settings",
+        fn: this.showSettings,
+        key: "settings",
+        isGDrive: false,
+        icon: <i
+          className="fa fa-cog"
+        />,
+        divider: false,
+      });
+    }
    
     if (!empty) {
       items.push({

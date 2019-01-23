@@ -49,9 +49,7 @@ import FileDialog from './components/dialogs/FileDialog';
 import ImportFileDialog from './components/dialogs/ImportFileDialog';
 import ItemPurchasedDialog from './components/dialogs/ItemPurchasedDialog';
 import ItemPurchasedListDialog from './components/dialogs/ItemPurchasedListDialog';
-import MoveCoinsDialog from './components/dialogs/MoveCoinsDialog';
 import ReceiveSuccessDialog from './components/dialogs/send/ReceiveSuccessDialog';
-import SendDialog from './components/dialogs/SendDialog';
 
 // Import styles
 import styles from './helpers/Styles';
@@ -171,6 +169,7 @@ class App extends React.Component {
     this.loadAuthenticationDialog = this.loadAuthenticationDialog.bind(this);
 
     this.showMoveCoinsAlert =  this.showMoveCoinsAlert.bind(this);
+    this.moveCoins =  this.moveCoins.bind(this);
     this._moveCoins = this._moveCoins.bind(this);
     this.checkCoinsExist = this.checkCoinsExist.bind(this);
     this.onNotFilesFound = this.onNotFilesFound.bind(this);
@@ -1495,13 +1494,127 @@ class App extends React.Component {
     });
   }
 
+  moveCoins(moveCoins, resolve, reject) {
+    const {
+      storage,
+    } = this.wallet.config;
+
+    let coins = this.wallet.getAllStoredCoins();
+
+    if (!moveCoins || coins.total == 0) {
+      this.setState({
+        status: states.INITIAL,
+        navDrawerOpen: false,
+      });
+      this.clearDialog();
+      return resolve({});
+    }
+
+    this.setState({
+      status: states.INITIAL,
+    });
+    this.clearDialog();
+
+    const extractAllCoins = () => {
+      const promises = Object.keys(coins).map((key) => {
+        let newBalance = 0;
+        let response = {};
+        let actualCoins = this.wallet.getStoredCoins(true, key);
+
+        if (actualCoins.length == 0) {
+          return;
+        }
+
+        const extractCoins = (value) => {
+          newBalance = value;
+          actualCoins = this.wallet.getStoredCoins(true, key);
+          response[key] = actualCoins;
+          return this.wallet.extractCoins(actualCoins, "Move", "wallet", key);
+        };
+
+        const recordMoveOutTransaction = () => {
+          let params = [coins[key], newBalance, false, key];
+          return this.wallet.recordMoveOutCoins(...params);
+        };
+
+        const promise = this.checkCoinsExist(false, key)
+          .then(extractCoins)
+          .then(recordMoveOutTransaction)
+          .then(() => this.refreshCoinBalance(key))
+          .then(() => response);
+
+        return promise;
+      });
+
+      return Promise.all(promises);
+    };
+
+    const prepareCoins = (results) => {
+      results = results.filter((obj) => {
+        return obj[Object.keys(obj)[0]].length > 0;
+      });
+      coinList = Object.assign(...results);
+      return storage.sessionEnd();
+    };
+
+    const resolveCoins = () => {
+      this.setState({
+        navDrawerOpen: false,
+      });
+      return resolve(coinList);
+    }
+
+    const handleError = (errs) => {
+      if (debug) {
+        console.log(errs);
+      }
+
+      const msg = "Problem when extracting coins from the coin store";
+      const promises = Object.keys(coins).map((key) => {
+        const params = [COIN_STORE, coins[key], false, key];
+        return storage.addAllIfAbsent(...params)
+          .then(() => this.refreshCoinBalance(key));
+      });
+
+      const rejectErrors = () => {
+        this.handleNotificationUpdate(msg, "error");
+        this.setState({
+          navDrawerOpen: false,
+        });
+        return reject(errs);
+      };
+
+      const handleSecondError = (err) => {
+        if (debug) {
+          console.log(err);
+        }
+        storage.sessionEnd();
+        return reject(err);
+      };
+
+      return Promise.all(promises)
+        .then(() => storage.sessionEnd())
+        .then(rejectErrors)
+        .catch(handleSecondError);
+    };
+
+    delete coins.total;
+    let coinList;
+
+    return storage.sessionStart("Move extract coins")
+      .then(extractAllCoins)
+      .then(prepareCoins)
+      .then(resolveCoins)
+      .catch(handleError);
+  }
+
   showMoveCoinsAlert() {
     // promise resolve with list of coins to move
     // after switch from storage method.
     // Resolve with empty list if no coins or
     // user decides not to move.
 
-    let coins = this.wallet.getAllStoredCoins();
+    const coins = this.wallet.getAllStoredCoins();
     if (!coins) {
       this.setState({
         status: states.INITIAL,
@@ -1510,138 +1623,22 @@ class App extends React.Component {
     }
 
     const {
-      AVAILABLE_CURRENCIES,
-      COIN_RECOVERY,
-      COIN_STORE,
-      debug,
-      PERSISTENT,
-      SETTINGS,
-      storage,
-      WALLET_DRIVE_NAME,
-      WALLET_LOCAL_NAME,
-    } = this.wallet.config;
-
-    let {
       balance,
       settings,
     } = this.state;
 
-    const drive = this.wallet.isGoogleDrive();
-    const browser = this.wallet._browserIs(true);
-
-    let storageName = browser.charAt(0).toUpperCase() + browser.slice(1);
-    let futureStorageName = 'Google Drive';
-    let storageAnimal = settings[WALLET_LOCAL_NAME];
-    let futureStorageAnimal = "";
-    if (drive) {
-      let walletLocal = new LocalStorage().get(PERSISTENT, {});
-      const wSettings = walletLocal[SETTINGS];
-      walletLocal =  wSettings ? wSettings[WALLET_LOCAL_NAME] : "";
-      storageName = 'Google Drive';
-      futureStorageName = browser.charAt(0).toUpperCase() + browser.slice(1);
-      storageAnimal = settings[WALLET_DRIVE_NAME];
-      futureStorageAnimal = walletLocal ? ` to '${walletLocal}'` : "";
-    }
-
-    const title = "Change storage location" + (futureStorageAnimal ?
-      futureStorageAnimal + " in " + futureStorageName : " to " + futureStorageName);
-
-    var moveCoins = true;
+    let moveCoins = true;
 
     return new Promise((resolve, reject) => {
 
-      const onClickOk = () => {
-        this.setState({
-          status: states.INITIAL,
-        });
-        this.clearDialog();
-
-        if (!moveCoins || coins.total == 0) {
-          this.setState({
-            navDrawerOpen: false,
-          });
-          return resolve({});
-          // return resolve([]);
-        }
-
-        delete coins.total;
-        let coinList;
-
-        return storage.sessionStart("Move extract coins").then(() => {
-          let promises = [];
-
-          Object.keys(coins).forEach((key) => {
-            let listCoins = coins[key];
-            let newBalance = 0;
-            let actualCoins = this.wallet.getStoredCoins(true, key);
-
-            if (actualCoins.length == 0) {
-              return;
-            }
-
-            let promise = this.checkCoinsExist(false, key).then((value) => {
-              newBalance = value;
-              actualCoins = this.wallet.getStoredCoins(true, key);
-              return this.wallet.extractCoins(actualCoins, "Move", "wallet", key);
-            }).then(() => {
-              let params = [listCoins, newBalance, false, key];
-              return this.wallet.recordMoveOutCoins(...params);
-            }).then(() => {
-              return this.refreshCoinBalance(key);
-            }).then(() => {
-              let result = {};
-              result[key] = actualCoins;
-              return result;
-            });
-            promises.push(promise);
-          });
-
-          return Promise.all(promises);
-        }).then((results) => {
-          results = results.filter((obj) => {
-            return obj[Object.keys(obj)[0]].length > 0;
-          });
-          coinList = Object.assign(...results);
-          return storage.sessionEnd();
-        }).then(() => {
-          this.setState({
-            navDrawerOpen: false,
-          });
-          return resolve(coinList);
-        }).catch((errs) => {
-          // TO_DO Try to recover the coins?
-          if (debug) {
-            console.log(errs);
-          }
-          const msg = "Problem when extracting coins from the coin store";
-          let proms = Object.keys(coins);
-          proms.map((key) => {
-            const params = [COIN_STORE, coins[key], false, key];
-            return storage.addAllIfAbsent(...params).then(() => {
-              return this.refreshCoinBalance(key);
-            })
-          });
-
-          return Promise.all(proms).then(() => {
-            return storage.sessionEnd();
-          }).then(() => {
-            this.handleNotificationUpdate(msg, "error");
-            this.setState({
-              navDrawerOpen: false,
-            });
-            return reject(errs);
-          }).catch((err) => {
-            console.log(err);
-            storage.sessionEnd();
-            return reject(err);
-          });
-        });
-      };
-
-      this.openDialog({
-        coins: coins,
-        showCancelButton: true,
-        onClickOk,
+      this.openDialog(getDialog("MoveCoins", {
+        balance,
+        coins,
+        onCheckedMoveCoins: () => moveCoins = !moveCoins,
+        settings,
+      }, {
+        coins,
+        onClickOk: () => this.moveCoins(moveCoins, resolve, reject),
         onClickCancel: () => {
           this.clearDialog();
           this.setState({
@@ -1649,19 +1646,8 @@ class App extends React.Component {
           });
           reject(false); // no error
         },
-        title: title,
-        body: <MoveCoinsDialog
-          balance={ balance }
-          browser={ browser }
-          coins={ coins }
-          drive={ drive }
-          futureStorageName={ futureStorageName }
-          futureStorageAnimal={ futureStorageAnimal }
-          onCheckedMoveCoins={ () => moveCoins = !moveCoins }
-          storageAnimal={ storageAnimal }
-          storageName={ storageName }
-        />,
-      });
+        settings,
+      }, this.wallet));
     });
   }
 
@@ -2598,64 +2584,33 @@ class App extends React.Component {
   }
 
   handleClickSend() {
-    const {
-      isFlipped,
-    } = this.state;
-
-    const {
-      isFullScreen,
-    } = this.props;
-
     this.loading(true);
-
     this.setState({
       navDrawerOpen: false,
     });
 
-    this.refreshCoinBalance("XBT").then((balance) => {
+    const showDialog = (balance) => {
       this.loading(false);
-      this.openDialog({
-        title: <div>
-          <div style={{
-            position: 'absolute',
-            right: '30px',
-            display: 'flex',
-          }}>
-            { getImageComponent("b-e.svg") } 
-            { getImageComponent("arrowRight.svg") } 
-            { getImageComponent("b.svg") } 
-          </div>
-          <div style={{
-            textAlign: 'left',
-            fontSize: '35px',
-          }}>
-            Send
-          </div>
-        </div>,
-        showCancelButton: false,
-        style: {
-          backgroundImage: "",
-          backgroundRepeat: 'no-repeat',
-          backgroundColor: "white",
-        },
-        okLabel: "Close",
+
+      const componentProps = {
+        balance,
+        closeDialog: this._closeDialog,
+        openDialog: this.openDialog,
+        refreshCoinBalance: this.refreshCoinBalance,
+      };
+
+      const dialogProps = {
         onClickOk: () => {
           this.clearDialog();
-        },
-        body: <SendDialog
-          balance={ balance }
-          closeDialog={ this._closeDialog }
-          isFlipped={ isFlipped }
-          openDialog={ this.openDialog }
-          refreshCoinBalance={ this.refreshCoinBalance }
-          snackbarUpdate={ this.handleNotificationUpdate }
-          showValuesInCurrency={ this.showValuesInCurrency }
-          transactions={ this.wallet.getHistoryList() }
-          wallet={ this.wallet }
-          xr={ this.xr }
-        />,
-      });
-    });
+        }
+      };
+
+      const dialog = getDialog("Send", componentProps, dialogProps);
+      this.openDialog(dialog);
+    };
+
+    this.refreshCoinBalance("XBT")
+      .then(showDialog);
   }
 
   handleSyncContent() {

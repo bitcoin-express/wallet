@@ -13,7 +13,8 @@ const componentStyles = () => {
 
   return {
     root: {
-      color: colors.mainBlue,
+      color: colors.mainTextColor,
+      fontWeight: 'bold',
       marginRight: '5px',
     },
   };

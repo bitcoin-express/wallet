@@ -2,15 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
+import { withStyles } from '@material-ui/core/styles';
 
+import { AppContext } from "../AppContext";
 import styles from '../helpers/Styles';
+
 
 const componentStyles = (theme) => {
   const {
@@ -29,12 +31,12 @@ const componentStyles = (theme) => {
       gridTemplateColumns: "95px 160px 30px",
       gridTemplateAreas: '"select amount button"',
     }),
-    rootExpand: Object.assign({}, root, {
-      gridTemplateColumns: "95px calc(100% - 135px) 50px 30px",
+    rootMax: Object.assign({}, root, {
+      gridTemplateColumns: "95px calc(100% - 195px) 50px 30px",
       gridTemplateAreas: '"select amount max button"',
     }),
-    rootMax: Object.assign({}, root, {
-      gridTemplateColumns: "95px calc(100% - 195px) 30px",
+    rootExpand: Object.assign({}, root, {
+      gridTemplateColumns: "95px calc(100% - 135px) 30px",
       gridTemplateAreas: '"select amount button"',
     }),
     rootCentered: {
@@ -51,7 +53,7 @@ const componentStyles = (theme) => {
     },
     maxButtonRoot: {
       gridArea: 'max',
-      marginBottom: '13px',
+      marginBottom: '2px',
       color: styles.colors.mainTextColor,
       cursor: 'pointer',
       padding: "2px 10px",
@@ -94,17 +96,13 @@ class CoinSelector extends React.Component {
       new RegExp(/^[0-9]{0,7}(\.[0-9]{0,2})?$/), //uBTC
     ];
 
-    let displayValue = this._updateValues(props);
-    displayValue = props.initialCurrencyDisplay || displayValue;
     this.state = {
-      displayValue,
-      btcOriginal: displayValue,
-      previousDisplayValue: displayValue,
+      displayValue: 1,
+      btcOriginal: null,
+      previousDisplayValue: null,
       maxError: false,
       showAsCurrency: false,
-      value: props.initialValue ?
-        this._getOriginalValue(parseFloat(props.initialValue), displayValue, 1) :
-        "",
+      value: "",
     };
 
     this._updateStyles = this._updateStyles.bind(this);
@@ -118,6 +116,27 @@ class CoinSelector extends React.Component {
     this.getRootClass = this.getRootClass.bind(this);
     this.getTextField = this.getTextField.bind(this);
     this.getMaxButton = this.getMaxButton.bind(this);
+  }
+
+  componentDidMount() {
+    const {
+      initialCurrencyDisplay,
+      initialValue,
+    } = this.props;
+
+    const displayValue = initialCurrencyDisplay || this._updateValues(this.props);
+
+    let value = "";
+    if (initialValue) {
+      value = this._getOriginalValue(parseFloat(initialValue), displayValue, 1);
+    }
+
+    this.setState({
+      displayValue,
+      btcOriginal: displayValue,
+      previousDisplayValue: displayValue,
+      value,
+    });
   }
 
   componentWillReceiveProps(nextProps) {
@@ -212,7 +231,7 @@ class CoinSelector extends React.Component {
   }
 
   _updateValues(props) {
-    const btc =  props.xr.getBTCDisplay(props.currency.toUpperCase());
+    const btc =  this.context.xr.getBTCDisplay(props.currency.toUpperCase());
 
     let btcDisplay = btc.split("").reverse().slice(0,3).reverse().join("");
     this.btcDisplay = btcDisplay.length < 3 ? btcDisplay.slice(-1) : btcDisplay;
@@ -365,7 +384,7 @@ class CoinSelector extends React.Component {
 
     if (this.state.showAsCurrency) {
 
-      const { xr } = this.props;
+      const { xr } = this.context;
       const currency = this.props.currency.toUpperCase();
       const rates = xr.getRates(currency);
       const originalAmount = this._getOriginalValue(parseFloat(amount || 0));
@@ -415,8 +434,11 @@ class CoinSelector extends React.Component {
       classes,
       currency,
       value,
-      xr,
     } = this.props;
+
+    const {
+      xr,
+    } = this.context;
 
     const {
       displayValue,
@@ -552,6 +574,8 @@ CoinSelector.defaultProps = {
   label: "Enter coin value to export",
   max: null,
 }
+
+CoinSelector.contextType = AppContext;
 
 export default withStyles(componentStyles)(CoinSelector);
 

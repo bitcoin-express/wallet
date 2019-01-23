@@ -3,14 +3,23 @@ import PropTypes from 'prop-types';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
+import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormLabel from '@material-ui/core/FormLabel';
+import Grid from '@material-ui/core/Grid';
 import MenuItem from '@material-ui/core/MenuItem';
-import { Radio, RadioGroup } from '@material-ui/core/Radio';
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 
+import { AppContext } from "../../AppContext";
 import BitcoinCurrency from '../BitcoinCurrency';
-import Button from '../Button';
+//import Button from '../Button';
 import CoinSelector from '../CoinSelector';
 import FormArea from '../FormArea';
 import SendConfirmDialog from './send/SendConfirmDialog';
@@ -18,6 +27,88 @@ import SendSuccessDialog from './send/SendSuccessDialog';
 import SendList from './send/SendList';
 import styles from '../../helpers/Styles';
 import Title from '../Title';
+
+
+const componentStyles = theme => ({
+  root: {
+  },
+  formControl: {
+    marginBottom: theme.spacing.unit * 3,
+    marginTop: theme.spacing.unit * 3,
+  },
+  formControlLabel: {
+    width: '100%',
+  },
+  group: {
+    margin: `${theme.spacing.unit}px 0`,
+  },
+  textField: {
+    marginBottom: '10px',
+  },
+});
+
+
+class SpeedSelector extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.getItems = this.getItems.bind(this);
+  }
+
+  getItems() {
+    return this.props.items.map((item, index) => {
+      const {
+        label,
+        value,
+        fee,
+      } = item;
+
+      const labelComponent = <Grid container spacing={16}>
+        <Grid item xs={2}>
+          { label }
+        </Grid>
+        <Grid item xs={10}>
+          <BitcoinCurrency
+            color="black"
+            currency="XBT"
+            displayStorage={ false }
+            tiny={ true }
+            value={ parseFloat(fee) }
+          />
+        </Grid>
+      </Grid>;
+
+      return <FormControlLabel
+        className={ this.props.classes.formControlLabel }
+        control={ <Radio /> }
+        key={ index }
+        value={ value }
+        label={ labelComponent }
+      />;
+    });
+  }
+
+  render() {
+    return <FormControl
+      className={ this.props.classes.formControl }
+      fullWidth
+    >
+      <FormLabel>Urgency</FormLabel>
+      <RadioGroup
+        aria-label="Speed"
+        className={ this.props.classes.group }
+        name="speed"
+        onChange={ this.props.handleSpeedChange }
+        value={ this.props.speed }	
+      >
+        { this.getItems() }
+      </RadioGroup>
+      <FormHelperText>Bitcoin Miner Fee</FormHelperText>
+    </FormControl>;
+  }
+}
+
+SpeedSelector = withStyles(componentStyles)(SpeedSelector);
 
 
 class SendDialog extends React.Component {
@@ -40,19 +131,6 @@ class SendDialog extends React.Component {
       sendStatus: "loading", // initial/loading/confirm/success
     };
 
-    this.styles = {
-      note: {
-        marginLeft: '230px',
-        width: 'calc(100% - 230px)',
-      },
-      urgency: {
-        display: 'grid',
-        gridTemplateColumns: '150px calc(100% - 160px)',
-        gridTemplateAreas: '"select fee"',
-        gridGap: '10px',
-      },
-    };
-
     this.handleSendClick = this.handleSendClick.bind(this);
     this.handleAmountChange = this.handleAmountChange.bind(this);
     this.handleSpeedChange = this.handleSpeedChange.bind(this);
@@ -64,23 +142,26 @@ class SendDialog extends React.Component {
     this._confirmTransfer = this._confirmTransfer.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this._refreshFees(false, true);
   }
 
   _refreshFees(reload=false, initial=false) {
     const {
       snackbarUpdate,
-    } = this.props;
+      wallet,
+    } = this.context;
 
-    return this.props.wallet.getBitcoinFees(reload).then((resp) => {
+    const updateState = (resp) => {
       if (initial) {
         resp['sendStatus'] = "initial";
         resp['loadingMessage'] = '';
       }
       this.setState(resp);
       return true;
-    }).catch((err) => {
+    };
+
+    const handleError = (err) => {
       snackbarUpdate(err.msg || [
         "Can't connect to the issuer to get the fees",
         "Please try again later"
@@ -93,7 +174,11 @@ class SendDialog extends React.Component {
         state['loadingMessage'] = '';
       }
       this.setState(state);
-    });
+    };
+
+    return wallet.getBitcoinFees(reload)
+      .then(updateState)
+      .catch(handleError);
   }
 
   reset() {
@@ -120,9 +205,12 @@ class SendDialog extends React.Component {
   }
 
   _successTransfer(issuerResponse) {
+
     const {
       snackbarUpdate,
-    } = this.props;
+      wallet,
+      xr,
+    } = this.context;
 
     if (issuerResponse.redeemInfo) {
       const {
@@ -131,8 +219,6 @@ class SendDialog extends React.Component {
 
       const {
         refreshCoinBalance,
-        wallet,
-        xr,
       } = this.props;
 
       let {
@@ -180,16 +266,19 @@ class SendDialog extends React.Component {
         reason,
         after,
       } = issuerResponse.deferInfo;
+
       this.setState({
         sendStatus: 'initial',
       });
+
       snackbarUpdate(`Deferred, may be ready after ${after}.`);
-    } else {
-      this.setState({
-        sendStatus: 'initial',
-      });
-      snackbarUpdate("Redeem response did not return expected result", true);
+      return issuerResponse;
     }
+
+    this.setState({
+      sendStatus: 'initial',
+    });
+    snackbarUpdate("Redeem response did not return expected result", true);
     return issuerResponse;
   }
 
@@ -224,9 +313,12 @@ class SendDialog extends React.Component {
     const {
       closeDialog,
       refreshCoinBalance,
+    } = this.props;
+
+    const {
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     const {
       amount,
@@ -291,7 +383,7 @@ class SendDialog extends React.Component {
     const {
       wallet,
       xr,
-    } = this.props;
+    } = this.context;
 
     xr.refreshExchangeRates().then(
       this._startTransfer, this._startTransfer
@@ -321,6 +413,7 @@ class SendDialog extends React.Component {
 
     const {
       balance,
+      classes,
     } = this.props;
 
     const marginLeft = '50px';
@@ -432,169 +525,45 @@ class SendDialog extends React.Component {
     switch (sendStatus) {
 
       case "initial":
-        sendTabContent = <div style={{
-          padding: "10px 20px",
-          //marginTop: "-20px",
-          marginTop: "20px",
-          // background: "#ffffffa6",
-          // borderRadius: "20px",
-        }}>
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            marginBottom: '5px',
-          }}>
-            <i
-              className="fa fa-address-card fa-2x"
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 20,
-                marginRight: '15px',
-                color: styles.colors.darkBlue,
-              }}
-            />
-            <TextField
-              floatingLabelText="Bitcoin address"
-              value={ address }
-              floatingLabelFocusStyle={{
-                color: styles.colors.secondaryBlue,
-              }}
-              floatingLabelStyle={{
-                color: styles.colors.secondaryBlue,
-                top: '24px'
-              }}
-              onChange={ (ev, address) => {
-                this.setState({ address });
-              } }
-              style={ {
-                marginLeft,
-                width: `calc(100% - ${marginLeft})`,
-                height: '57px',
-              } }
-              inputStyle={{
-                color: styles.colors.darkBlue,
-                marginTop: '5px',
-              }}
-            />
-          </div>
+
+        sendTabContent = <div className={ classes.root }>
+
+          <TextField
+            className={ classes.textField }
+            fullWidth
+            InputProps={{
+              startAdornment: <i
+                className="fa fa-at fa-lg"
+                style={{
+                  color: styles.colors.darkBlue,
+                  marginRight: '5px',
+                }}
+              />,
+            }}
+            label="Bitcoin address"
+            onChange={(ev) =>  this.setState({ address: ev.target.value })}
+            value={ address }
+          />
 
           <CoinSelector
             currency="XBT"
-            floatingLabelFocusStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
-            floatingLabelStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
             initialCurrencyDisplay={ initialCurrencyDisplay }
-            inputStyle={{
-              color: styles.colors.darkBlue,
-            }}
             label="Amount"
             max={ max }
-            xr={ this.props.xr }
             onAmountChange={ this.handleAmountChange }
-            style={{
-              marginLeft,
-              marginTop: '-10px',
-            }}
             value={ amountInText }
           />
 
-          <span className="hide-device"><div
-            style={{
-              display: 'grid',
-              fontFamily: styles.fontFamily,
-              fontSize: '12px',
-              color: styles.colors.secondaryBlue,
-              marginTop: '25px',
-              marginLeft,
-              marginBottom: '10px',
-              gridTemplateColumns: '120px calc(100% - 130px)',
-              gridTemplateAreas: "'radio fee'",
-              gridGap: '10px',
-            }}
-          >
-            <div style={{ gridArea: 'radio', marginLeft: '40px' }}>
-              Urgency
-            </div>
-            <div style={{ gridArea: 'fee' }}>
-              Bitcoin Miner fee
-            </div>
-          </div></span>
-
-          <RadioGroup
-            valueSelected={ speed }	
-            name="shipSpeed"
-            style={{
-              marginLeft,
-            }}
-            onChange={ this.handleSpeedChange }
-            className="hide-device"
-          >
-            { urgencyItems.map((item, index) => {
-                const {
-                  label,
-                  value,
-                  fee,
-                } = item;
-
-                return <Radio
-                  key={ index }
-                  value={ value }
-                  iconStyle={{
-                    fill: styles.colors.darkBlue,
-                  }}
-                  label={ <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '80px calc(100% - 90px)',
-                      gridTemplateAreas: "'radio fee'",
-                      gridGap: '10px',
-                    }}
-                  >
-                    <div style={{ gridArea: 'radio' }}>
-                      { label}
-                    </div>
-                    <BitcoinCurrency
-                      { ...this.props }
-                      color={ styles.colors.darkBlue }
-                      currency="XBT"
-                      displayStorage={ false }
-                      small={ true }
-                      labelButtonStyle={{
-                        color: styles.colors.mainTextColor,
-                      }}
-                      style={{
-                        gridArea: 'fee',
-                      }}
-                      value={ parseFloat(fee) }
-                    /> 
-                  </div> }
-                  labelStyle={{
-                    color: styles.colors.darkBlue,
-                    zIndex: 3,
-                  }}
-                />;
-              }) }
-          </RadioGroup>
+          <SpeedSelector
+            items={ urgencyItems }
+            handleSpeedChange={ this.handleSpeedChange }
+            speed={ speed }
+          />
 
           <span className="show-device">
             <Select
-              floatingLabelText="Urgency"
-              floatingLabelStyle={{
-                color: styles.colors.secondaryBlue,
-              }}
-              labelStyle={{
-                color: styles.colors.darkBlue,
-              }}
-              onChange={ (ev, id, speed) => this.setState({ speed }) }
-              style={{
-                marginLeft,
-                width: `calc(100% - ${marginLeft})`,
-                color: styles.colors.darkBlue,
-              }}
+              label="Urgency"
+              onChange={ (ev) => this.setState({ speed: ev.target.value }) }
               value={ speed }
             >
               { urgencyItems.map((item, index) => {
@@ -607,72 +576,56 @@ class SendDialog extends React.Component {
                   return <MenuItem
                     key={ index }
                     value={ value }
-                    primaryText={ <span>
-                      { label } <small>(fee XBT{ fee })</small>
-                    </span> }
-                    style={{
-                      padding: '0px 10px',
-                    }}
-                  />;
+                  >
+                    <span>{ label } <small>(fee XBT{ fee })</small></span>
+                  </MenuItem>;
               }) }
             </Select>
           </span>
 
           <TextField
+            className={ classes.textField }
+            fullWidth
+            InputProps={{
+              startAdornment: <i
+                className="fa fa-pencil-square-o fa-lg"
+                style={{
+                  color: styles.colors.darkBlue,
+                  marginRight: '5px',
+                }}
+              />,
+            }}
+            label="Note"
+            onChange={ (ev, note) => this.setState({ note }) }
             value={ note }
-            onChange={ (ev, note) => {
-              this.setState({ note });
-            } }
-            floatingLabelText="Note"
-            floatingLabelFocusStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
-            floatingLabelStyle={{
-              color: styles.colors.secondaryBlue,
-            }}
-            inputStyle={{
-              color: styles.colors.darkBlue,
-            }}
-            style={{
-              marginLeft,
-              width: `calc(100% - ${marginLeft})`,
-              marginTop: '0px',
-            }}
           />
+
           <div
             style={{
               margin: '35px 0 10px 0',
             }}
           >
             <Button
-              label="Reset"
-              style={{
-                margin: '0 5px 0 0',
-                width: 'calc(50% - 5px)',
-              }}
-              icon={ <i
+              onClick={ this.reset }
+            >
+              <i
                 className="fa fa-undo"
                 style={{
                   color: styles.colors.mainTextColor,
                 }}
-              /> }
-              onClick={ this.reset }
-            />
+              /> Reset
+            </Button>
             <Button
-              label="Continue"
               disabled={ disabled }
-              style={{
-                margin: '0 0 0 5px',
-                width: 'calc(50% - 5px)',
-              }}
-              icon={ <i
+              onClick={ this.handleSendClick }
+            >
+              <i
                 className="fa fa-angle-double-right"
                 style={{
                   color: styles.colors.mainTextColor,
                 }}
-              /> }
-              onClick={ this.handleSendClick }
-            />
+              /> Continue
+            </Button>
           </div>
         </div>;
         break;
@@ -715,10 +668,11 @@ class SendDialog extends React.Component {
 }
 
 SendDialog.propTypes = {
-  wallet: PropTypes.object.isRequired,
   refreshCoinBalance: PropTypes.func,
-  snackbarUpdate: PropTypes.func,
   balance: PropTypes.number,
 };
 
-export default SendDialog;
+SendDialog.contextType = AppContext;
+
+export default withStyles(componentStyles)(SendDialog);
+

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
 import LinearProgress from '@material-ui/core/LinearProgress';
+import Fade from '@material-ui/core/Fade';
 
 import Logo from './Logo';
 import LogoText from './LogoText';
@@ -44,7 +45,9 @@ class WelcomeScreen extends React.Component {
         />
         <div>
           <h1 className="name">
-            <LogoText />
+            <Fade in={true} timeout={500}>
+              <LogoText />
+            </Fade>
           </h1>
           <span style={{ color: 'white' }}>
             v{ window.version }

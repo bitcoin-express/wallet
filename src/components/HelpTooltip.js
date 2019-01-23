@@ -3,6 +3,17 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
 import Popover from '@material-ui/core/Popover';
+import Typography from '@material-ui/core/Typography';
+import { withStyles } from '@material-ui/core/styles';
+
+
+const componentStyles = theme => ({
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    margin: theme.spacing.unit * 2,
+  },
+});
+
 
 class HelpTooltip extends React.Component {
   constructor (props) {
@@ -33,6 +44,7 @@ class HelpTooltip extends React.Component {
 
   render() {
     const {
+      classes,
       note,
       iconStyle,
       style,
@@ -45,34 +57,31 @@ class HelpTooltip extends React.Component {
     } = this.state;
 
     return <div style={ style }>
-      &nbsp;&nbsp;<i
+      <i
         className="fa fa-question-circle fa-lg"
         onClick={ this.handleTouchTap }
         style={ Object.assign({
           cursor: 'pointer',
         }, iconStyle) }
-      /><Popover
+      />
+      <Popover
         anchorEl={ anchorEl }
         anchorOrigin={{
           horizontal: 'left',
           vertical: 'bottom',
         }}
-        onRequestClose={ this.handleRequestClose }
         open={ open }
-        style={ Object.assign({
-          marginLeft: '-5px',
-          marginTop: '10px',
-          padding: '8px',
-          backgroundColor: '#bfbfbf',
-          fontSize: '12px',
-        }, tooltipStyle) }
+        onClose={ this.handleRequestClose }
+        style={ tooltipStyle }
         targetOrigin={{
           horizontal: 'left',
           vertical: 'top',
         }}
       >
-        { note }
-      </Popover>&nbsp;
+        <Typography className={ classes.typography }>
+          { note }
+        </Typography>
+      </Popover>
     </div>
   }
 }
@@ -83,4 +92,6 @@ HelpTooltip.defaultProps = {
   tooltipStyle: {},
 };
 
-export default HelpTooltip;
+
+export default withStyles(componentStyles)(HelpTooltip);
+

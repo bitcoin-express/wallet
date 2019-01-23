@@ -13,12 +13,14 @@ import { withStyles } from '@material-ui/core/styles';
 
 import AboutDialog from '../AboutDialog';
 import AddFundsDialog from '../AddFundsDialog';
-import { AppContext } from "../../../AppContext";
+import { AppContext } from '../../../AppContext';
+import MoveCoinsDialog from '../MoveCoinsDialog';
+import SendDialog from '../SendDialog';
 import Settings from '../../bar/settings/Settings';
 import styles from '../../../helpers/Styles';
 
 
-export function getDialog(key, componentProps={}, props={}) {//buttons=[]) {
+export function getDialog(key, componentProps={}, props={}, wallet) {//buttons=[]) {
   if (!key) {
     return null;
   }
@@ -28,19 +30,45 @@ export function getDialog(key, componentProps={}, props={}) {//buttons=[]) {
 
     case "AddFunds":
       return Object.assign(props, {
-        title,
-        showCancelButton: true,
-        cancelLabel: "OK",
         body: <AddFundsDialog
           { ...componentProps }
         />,
+        cancelLabel: "OK",
+        showCancelButton: true,
+        title,
       });
 
     case "AboutDialog":
       return Object.assign(props, {
-        title,
-        showCancelButton: false,
         body: <AboutDialog />,
+        showCancelButton: false,
+        title,
+      });
+
+    case "MoveCoins":
+      const futureStorageMethod = wallet.getOppositeStorageMethodName();
+      const futureWalletName = wallet.getOppositeWalletName();
+      const title = "Change storage location" + (futureWalletName ?
+        " to '" + futureWalletName + "' in " + futureStorageMethod : " to " + futureStorageMethod);
+
+      return Object.assign(props, {
+        body: <MoveCoinsDialog
+          { ...componentProps }
+        />,
+        showCancelButton: true,
+        title: <div style={{ color: 'white' }}>
+          { title }
+        </div>,
+      });
+
+    case "Send":
+      return Object.assign(props, {
+        body: <SendDialog
+          { ...componentProps }
+        />,
+        okLabel: "Close",
+        showCancelButton: false,
+        title,
       });
 
     case "Settings":
@@ -70,7 +98,7 @@ const componentStyles = (theme) => {
       backgroundRepeat: 'no-repeat',
       backgroundPositionX: '-25%',
       backgroundAttachment: 'local',
-      backgroundColor: colors.mainWhite,
+      backgroundColor: '#f5f8ff',
       overflowY: 'auto',
     },
     rootActions: {

@@ -4,11 +4,13 @@ import PropTypes from 'prop-types';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 import Address from '../../Address';
+import { AppContext } from "../../../AppContext";
 import BitcoinCurrency from '../../BitcoinCurrency';
-
 import styles from '../../../helpers/Styles';
 
+
 class SendSuccessDialog extends React.Component {
+
   constructor(props) {
     super(props);
 
@@ -38,9 +40,12 @@ class SendSuccessDialog extends React.Component {
       fee,
       initialBalance,
       displayFee,
+    } = this.props;
+
+    const {
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     return <section style={{ margin: '20px 0' }}>
 
@@ -69,11 +74,7 @@ class SendSuccessDialog extends React.Component {
                 marginRight: '15px',
               }}
             /> <BitcoinCurrency
-              { ...this.props }
               color={ styles.colors.mainGreen }
-              labelButtonStyle={{
-                color: styles.colors.mainTextColor,
-              }}
               displayStorage={ false }
               style={{
                 display: 'inline-block',
@@ -179,5 +180,7 @@ class SendSuccessDialog extends React.Component {
     </section>;
   }
 }
+
+SendSuccessDialog.contextType = AppContext;
 
 export default SendSuccessDialog;

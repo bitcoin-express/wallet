@@ -527,6 +527,49 @@ export default class WalletBF extends SwapBF {
     return null;
   }
 
+  getStorageMethodName() {
+    if (this.isGoogleDrive()) {
+      return 'Google Drive';
+    }
+    const browser = this._browserIs(true);
+    return browser.charAt(0).toUpperCase() + browser.slice(1);
+  }
+
+  getOppositeStorageMethodName() {
+    if (this.isGoogleDrive()) {
+      const browser = this._browserIs(true);
+      return browser.charAt(0).toUpperCase() + browser.slice(1);
+    }
+    return 'Google Drive';
+  }
+
+  getWalletName() {
+    const {
+      WALLET_DRIVE_NAME,
+      WALLET_LOCAL_NAME,
+    } = this.config;
+
+    if (this.isGoogleDrive()) {
+      return this.getSettingsVariable(WALLET_DRIVE_NAME) || "";
+    }
+    return this.getSettingsVariable(WALLET_LOCAL_NAME) || "";
+  }
+
+  getOppositeWalletName() {
+    const {
+      PERSISTENT,
+      SETTINGS,
+      WALLET_DRIVE_NAME,
+      WALLET_LOCAL_NAME,
+    } = this.config;
+
+    if (this.isGoogleDrive()) {
+      const walletLocal = new LocalStorage().get(PERSISTENT, {});
+      return walletLocal[SETTINGS] ? walletLocal[SETTINGS][WALLET_LOCAL_NAME] : "";
+    }
+    return this.getSettingsVariable(WALLET_DRIVE_NAME) || "";
+  }
+
   getIssuerInfo(name) {
     // if (this.config.debug) console.log("WalletBF getIssuerInfo("+name+")");
     try {

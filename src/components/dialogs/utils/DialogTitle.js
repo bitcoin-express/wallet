@@ -13,6 +13,7 @@ const componentStyles = (theme) => {
     rootTitle: {
       textAlign: 'left',
       fontSize: '35px',
+      color: 'white',
     },
     rootIcons: {
       position: 'absolute',
@@ -44,7 +45,7 @@ class DialogTitle extends React.Component {
 
     switch(type) {
       case "AddFunds":
-        title = "Add funds"
+        title = "Add funds";
         icons = {
           left: "b.svg",
           arrow: "arrowRight.svg",
@@ -57,6 +58,15 @@ class DialogTitle extends React.Component {
           About <br/>
           <LogoText />
         </div>;
+
+      case "Send":
+        title = "Send";
+        icons = {
+          left: "b-e.svg",
+          arrow: "arrowRight.svg",
+          right: "b.svg",
+        };
+        break;
 
       default:
         return null;
