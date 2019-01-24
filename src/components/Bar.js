@@ -8,8 +8,8 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 
+import DeveloperTools from './bar/DeveloperTools';
 import NavigationDrawer from './bar/NavigationDrawer';
-import AppSecNavDrawer from './bar/AppSecNavDrawer';
 import LogoText from './LogoText';
 import { getDialog } from './dialogs/utils/Dialogs';
 import Settings from './bar/settings/Settings';
@@ -498,6 +498,13 @@ class Bar extends React.Component {
         key="navigation-drawer"
         open={ opened }
         onOverlayClick={ handleMenuIconClick }
+      />
+
+      <DeveloperTools
+        { ...this.props }
+        open={ open }
+        type={ type }
+        onClickClose={ this.handleCloseSettings }
       />
 
       <AppBar

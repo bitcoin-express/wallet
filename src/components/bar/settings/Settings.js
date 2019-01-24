@@ -32,6 +32,7 @@ const componentStyles = (theme) => {
     },
     rootMenu: {
       background: "#a8baf8",
+      marginBottom: "40px",
     },
   };
 };

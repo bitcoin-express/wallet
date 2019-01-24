@@ -33,11 +33,14 @@ const componentStyles = theme => ({
   root: {
   },
   formControl: {
-    marginBottom: theme.spacing.unit * 3,
-    marginTop: theme.spacing.unit * 3,
+    marginBottom: theme.spacing.unit * 4,
+    marginTop: theme.spacing.unit * 4,
   },
   formControlLabel: {
     width: '100%',
+  },
+  formControlLabelRoot: {
+    margin: '-10px 0',
   },
   group: {
     margin: `${theme.spacing.unit}px 0`,
@@ -56,7 +59,12 @@ class SpeedSelector extends React.Component {
   }
 
   getItems() {
-    return this.props.items.map((item, index) => {
+    const {
+      classes,
+      items,
+    } = this.props;
+
+    return items.map((item, index) => {
       const {
         label,
         value,
@@ -79,7 +87,10 @@ class SpeedSelector extends React.Component {
       </Grid>;
 
       return <FormControlLabel
-        className={ this.props.classes.formControlLabel }
+        classes={{
+          label: classes.formControlLabel,
+          root: classes.formControlLabelRoot,
+        }}
         control={ <Radio /> }
         key={ index }
         value={ value }

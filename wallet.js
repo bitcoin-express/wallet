@@ -73,7 +73,7 @@ const componentStyles = (theme) => {
       boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.05), 0 0 10px 10px rgba(0, 0, 0, 0.05)',
       textAlign: 'center',
       margin: '20px',
-      backgroundColor: "#f1f3f7", // colors.mainColor,
+      backgroundColor: colors.mainColor, // "#f1f3f7", 
       border: 'solid white 4px',
       borderRadius: '50px 22px',
       overflow: 'hidden',
@@ -82,10 +82,9 @@ const componentStyles = (theme) => {
       position: 'absolute',
       width: '100%',
       height: '100%',
-      backgroundColor: "#f1f3f7", // colors.mainColor,
+      backgroundColor: colors.mainColor, // "#f1f3f7", 
     },
   };
-
 };
 
 

@@ -13,7 +13,7 @@ import { withStyles } from '@material-ui/core/styles';
 
 import AboutDialog from '../AboutDialog';
 import AddFundsDialog from '../AddFundsDialog';
-import { AppContext } from '../../../AppContext';
+import { AppContext, AppProvider } from '../../../AppContext';
 import MoveCoinsDialog from '../MoveCoinsDialog';
 import SendDialog from '../SendDialog';
 import Settings from '../../bar/settings/Settings';
@@ -127,7 +127,7 @@ class AlertDialog extends React.Component {
 
   constructor(props) {
     super(props);
-
+    this.state = props.dialogState || {};
     this.getButtons = this.getButtons.bind(this);
     this.getDefaultButtons = this.getDefaultButtons.bind(this);
     this.getTitle = this.getTitle.bind(this);
@@ -229,7 +229,11 @@ class AlertDialog extends React.Component {
       { this.getTitle() }
 
       <DialogContent className={ classes.rootContent }>
-        { body }
+        <AppProvider
+          value={ Object.assign({}, this.state, this.context) }
+        >
+          { body }
+        </AppProvider>
       </DialogContent>
 
       <DialogActions
