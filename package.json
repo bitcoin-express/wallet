@@ -1,12 +1,12 @@
 {
   "name": "bitcoin-fast-client",
-  "version": "0.2.73-a",
+  "version": "0.2.95-a",
   "description": "Bitcoin fast client",
   "main": "index.js",
   "scripts": {
-    "build:dev": "./node_modules/.bin/webpack --env.dev --progress --profile --watch --colors --env.version 0.2.33-a",
-    "build:dist": "./node_modules/.bin/webpack --env.prod --progress --profile --colors --env.version 0.2.33-a",
-    "build:prod": "./node_modules/.bin/webpack --progress --profile --colors --env.version 0.2.33-a"
+    "build:dev": "./node_modules/.bin/webpack --env.dev --progress --profile --watch --colors --env.version 0.2.95-a",
+    "build:dist": "./node_modules/.bin/webpack --env.prod --progress --profile --colors --env.version 0.2.95-a",
+    "build:prod": "./node_modules/.bin/webpack --progress --profile --colors --env.version 0.2.95-a"
   },
   "author": "Jose E. Martinez <jootse.84@gmail.com>",
   "license": "ISC",
