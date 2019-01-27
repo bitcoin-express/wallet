@@ -2,18 +2,56 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Grid from '@material-ui/core/Grid';
+import { withStyles } from '@material-ui/core/styles';
 
 import Dropzone from 'react-dropzone';
 
-import Title from '../../Title';
-import PassphraseDialog from '../../dialogs/PassphraseDialog';
-import SwapDialog from '../../dialogs/SwapDialog';
+import { AppContext } from "../../../AppContext";
 import ExchangeInfo from '../exchange/ExchangeInfo';
-import HelpTooltip from '../../HelpTooltip';
 import FormArea from '../../FormArea';
-
-import Time from '../../../helpers/Time';
+import HelpTooltip from '../../HelpTooltip';
+import PassphraseDialog from '../../dialogs/PassphraseDialog';
 import styles from '../../../helpers/Styles';
+import SwapDialog from '../../dialogs/SwapDialog';
+import Time from '../../../helpers/Time';
+import Title from '../../Title';
+
+
+const componentStyles = (theme) => {
+  return {
+    dropzone: {
+      flexGrow: 1,
+      width: '50%',
+
+      padding: '10px',
+      borderWidth: '1px',
+      borderColor: 'rgb(102, 102, 102, 0.5)',
+      borderStyle: 'dashed',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      color: styles.colors.mainTextColor,
+      fontFamily: styles.fontFamily,
+      fontSize: '12px',
+
+      display: 'grid',
+      gridTemplateAreas: "'icon text'",
+      gridTemplateColumns: '50px calc(100% - 60px)',
+      gridGap: '10px',
+      alignItems: 'center',
+    },
+    dropzoneIcon: {
+      gridArea: 'icon',
+    },
+    dropzoneInfo: {
+      textAlign: 'center',
+      wordWrap: 'break-word',
+      gridArea: 'text',
+    },
+  };
+};
+
 
 class ImportFile extends React.Component {
 
@@ -21,21 +59,14 @@ class ImportFile extends React.Component {
     super(props);
 
     this.state = {
-      passphrase: null,
-      passphraseDialogOpened: false,
       forceBackupVerify: false,
       forceExportVerify: true,
+      hasError: false,
+      passphrase: null,
+      passphraseDialogOpened: false,
     };
 
     this.styles = {
-      importfile: {
-        display: 'flex',
-        flexWrap: 'wrap',
-      },
-      toggles: {
-        flexGrow: 1,
-        margin: '0 0 20px 0',
-      },
       dropzone: {
         flexGrow: 1,
         width: '50%',
@@ -74,6 +105,24 @@ class ImportFile extends React.Component {
 
     this.getPassphrase = this.getPassphrase.bind(this);
     this._agreeExchangeRequest = this._agreeExchangeRequest.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   getPassphrase() {
@@ -291,6 +340,14 @@ class ImportFile extends React.Component {
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
+    const {
+      classes,
+    } = this.props;
+
     const {
       passphraseDialogOpened,
       forceBackupVerify,
@@ -300,96 +357,85 @@ class ImportFile extends React.Component {
     const {
       isFullScreen,
       wallet,
-    } = this.props;
+    } = this.context;
 
     const {
       DEFAULT_ISSUER,
     } = wallet.config;
 
-    return <FormArea
-      isFullScreen={ isFullScreen }
-    >
-      <div style={{ padding: '10px 20px' }}>
-        <Title
-          isFullScreen={ isFullScreen }
-          label="Import File"
-        />
-        
-        <div style={ this.styles.importfile }>
-          <div style={ this.styles.toggles }>
+    return <FormArea isFullScreen={ isFullScreen }>
 
-            <Checkbox
-              checked={ forceBackupVerify }
-              label={ <span>
-                Verify file backup coins <HelpTooltip
-                  iconStyle={{
-                    verticalAlign: 'baseline',
-                    color: styles.colors.mainTextColor,
-                  }}
-                  note="If this is your own backup file then it should be safe to import coins directly without verification. If you have any doubt, verification is advised (for a small fee)."
-                />
-              </span> }
-              labelStyle={{
-                width: 'initial',
-                color: styles.colors.mainTextColor,
-                fontSize: '13px',
-                zIndex: 3,
-              }}
-              iconStyle={{
-                fill: styles.colors.mainTextColor,
-              }}
-              onCheck={ (ev, forceBackupVerify) => this.setState({ forceBackupVerify }) }
-            />
+      <Title
+        isFullScreen={ isFullScreen }
+        label="Import File"
+      />
+      
+      <Grid container>
+        <Grid item xs={12} sm={6}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={ forceBackupVerify }
+                onChange={ (event) => this.setState({ forceBackupVerify: event.target.selected }) }
+              />
+            }
+            label={ <span>
+              Verify file backup coins <HelpTooltip
+                iconStyle={{
+                  verticalAlign: 'baseline',
+                  color: styles.colors.mainTextColor,
+                }}
+                note="If this is your own backup file then it should be safe to import coins directly without verification. If you have any doubt, verification is advised (for a small fee)."
+              />
+            </span> }
+          />
 
-            <Checkbox
-              checked={ forceExportVerify }
-              label={ <span>
-                Verify file coins <b>(recommended)</b> <HelpTooltip
-                  iconStyle={{
-                    verticalAlign: 'baseline',
-                    color: styles.colors.mainTextColor,
-                  }}
-                  note="Unless you completely trust the originator of this file, you are advised always to verify the coins."
-                />
-              </span> }
-              labelStyle={{
-                width: 'initial',
-                color: styles.colors.mainTextColor,
-                fontSize: '13px',
-                zIndex: 3,
-              }}
-              iconStyle={{
-                fill: styles.colors.mainTextColor,
-              }}
-              onCheck={ (ev, checked) => this.setState({ forceExportVerify: checked }) }
-            />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={ forceExportVerify }
+                onChange={ (event) => this.setState({ forceExportVerify: event.target.selected }) }
+              />
+            }
+            label={ <span>
+              Verify file coins <b>(recommended)</b> <HelpTooltip
+                iconStyle={{
+                  verticalAlign: 'baseline',
+                  color: styles.colors.mainTextColor,
+                }}
+                note="Unless you completely trust the originator of this file, you are advised always to verify the coins."
+              />
+            </span> }
+          />
+        </Grid>
 
-          </div>
+        <Grid item xs={12} sm={6}>
           <Dropzone
-            style={ this.styles.dropzone }
+            className={ classes.dropzone }
             onDrop={ this.handleOnDrop }
             activeStyle={{
               color: styles.colors.mainRed,
             }}
           >
-            <i
-              className="fa fa-cloud-upload fa-4x" 
-              style={ this.styles.dropzoneIcon }
-            />
-            <div style={ this.styles.dropzoneInfo }>
+            <i className={ "fa fa-cloud-upload fa-4x " + classes.dropzoneIcon } />
+            <div className={ classes.dropzoneInfo }>
               <p>Try dropping your backup file here or click to select the file to import.</p>
               <p>Only <i>JSON</i> files will be accepted</p>
             </div>
           </Dropzone>
-        </div>
-        <PassphraseDialog
-          opened={ passphraseDialogOpened }
-          handleConfirm={ this.handleConfirmPassphrase }
-          handleClose={ this.handleClosePassphrase }
-        />
-      </div>
+        </Grid>
+      </Grid>
+
+      <PassphraseDialog
+        opened={ passphraseDialogOpened }
+        handleConfirm={ this.handleConfirmPassphrase }
+        handleClose={ this.handleClosePassphrase }
+      />
     </FormArea>;
   }
 }
 
-export default ImportFile;
+ImportFile.contextType = AppContext;
+
+export default withStyles(componentStyles)(ImportFile);
+

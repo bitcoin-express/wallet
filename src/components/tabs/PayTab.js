@@ -7,12 +7,12 @@ import Avatar from '@material-ui/core/Avatar';
 
 import isURL from 'validator/lib/isURL';
 
+import { AppContext } from "../../AppContext";
 import BitcoinCurrency from '../BitcoinCurrency';
 import HelpTooltip from '../HelpTooltip';
 import RateLoader from './exchange/RateLoader';
 import SwapInfo from './pay/SwapInfo';
 import PaymentInfo from './pay/PaymentInfo';
-
 import styles from '../../helpers/Styles';
 import FSM from '../../helpers/FSM';
 
@@ -27,6 +27,7 @@ class PayTab extends React.Component {
       item: null,
       // disabled: true,
       errorMsg: "",
+      hasError: false,
       state: "LoaderInfo",
       args: {
         message: "Preparing currencies...",
@@ -41,6 +42,24 @@ class PayTab extends React.Component {
     this.renderEmailCheckbox = this.renderEmailCheckbox.bind(this);
     this.runPaymentFSM = this.runPaymentFSM.bind(this);
     this.handleOnClick = this.handleOnClick.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   handleOnClick() {
@@ -312,6 +331,10 @@ class PayTab extends React.Component {
   }
 
   render () {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       exchangeRates,
       isFlipped,
@@ -648,4 +671,7 @@ class PayTab extends React.Component {
   }
 }
 
+PayTab.contextType = AppContext;
+
 export default PayTab;
+

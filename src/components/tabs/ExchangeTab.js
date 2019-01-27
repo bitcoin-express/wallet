@@ -6,6 +6,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
+import { AppContext } from "../../AppContext";
 import BitcoinCurrency from '../BitcoinCurrency';
 import Button from '../Button';
 import CoinSelector from '../CoinSelector';
@@ -15,9 +16,7 @@ import ExchangeTypeSelector from './exchange/ExchangeTypeSelector';
 import HelpTooltip from '../HelpTooltip';
 import RateLoader from './exchange/RateLoader';
 import TimeCounter from './exchange/TimeCounter';
-
 import SwapDialog from '../dialogs/SwapDialog';
-
 import styles from '../../helpers/Styles';
 
 class WaitingCounterparty extends React.Component {
@@ -68,6 +67,7 @@ class ExchangeTab extends React.Component {
       error: false,
       maxSelected: false,
       expiryTime: 60000 * 30, // 30min
+      hasError: false,
       sourceCurrency: null,
       targetCurrency: null,
       source: 0,
@@ -147,6 +147,24 @@ class ExchangeTab extends React.Component {
     this.getDeferredTransaction = this.getDeferredTransaction.bind(this);
   }
 
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
+  }
+
   componentDidMount() {
     const tx = this.getDeferredTransaction();
     if (!tx) {
@@ -172,9 +190,16 @@ class ExchangeTab extends React.Component {
   componentWillReceiveProps(nextProps) {
     const {
       active,
+    } = nextProps;
+
+    const {
       snackbarUpdate,
       wallet,
-    } = nextProps;
+    } = this.context
+
+    if (!wallet) {
+      return;
+    }
 
     const {
       debug,
@@ -368,7 +393,7 @@ class ExchangeTab extends React.Component {
   getDeferredTransaction() {
     const {
       wallet,
-    } = this.props;
+    } = this.context;
 
     const {
       COIN_SWAP,
@@ -1454,6 +1479,10 @@ class ExchangeTab extends React.Component {
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       currencies,
       currencyBalances,
@@ -1485,12 +1514,15 @@ class ExchangeTab extends React.Component {
     const {
       active,
       exchangeRates,
+    } = this.props;
+
+    const {
       isFlipped,
       isFullScreen,
       showValuesInCurrency,
       wallet,
       xr
-    } = this.props;
+    } = this.context;
 
     if (errorRate) {
       return <div style={ this.styles.errorContainer }>
@@ -1839,4 +1871,7 @@ ExchangeTab.propTypes = {
   balance: PropTypes.number,
 };
 
+ExchangeTab.contextType = AppContext;
+
 export default ExchangeTab;
+

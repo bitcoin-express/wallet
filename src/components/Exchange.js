@@ -2,94 +2,115 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import styles from '../helpers/Styles';
+import { withStyles } from '@material-ui/core/styles';
+
+import { AppContext } from "../AppContext";
+
+
+const componentStyles = (theme) => {
+  return {
+    container: {
+      display: 'flex',
+      marginTop: '5px',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rate: {
+      fontSize: '24px',
+      width: '120px',
+      textAlign: 'center',
+      color: styles.colors.mainTextColor,
+    },
+    refreshArea: {
+      fontSize: '12px',
+      width: '130px',
+      textAlign: 'center',
+      color: styles.colors.darkBlue,
+    },
+    text: {
+      fontFamily: styles.currencyFontFamily,
+      fontSize: '18px',
+      color: styles.colors.mainTextColor,
+      textAlign: 'right',
+    },
+    textContainer: {
+      textAlign: 'center',
+      width: '100%',
+    },
+    link: {
+      cursor: 'pointer',
+      marginRight: '5px',
+    },
+    link2: {
+      cursor: 'pointer',
+      color: styles.colors.darkBlue,
+      fontSize: '12px',
+      textAlign: 'left',
+    },
+  };
+};
+
 
 class Exchange extends React.Component {
+
   constructor(props) {
     super(props);
-
-    this.styles = {
-      container: {
-        display: 'flex',
-        marginTop: '5px',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      rate: {
-        fontSize: '24px',
-        width: '120px',
-        textAlign: 'center',
-        color: styles.colors.mainTextColor,
-      },
-      refreshArea: {
-        fontSize: '12px',
-        width: '130px',
-        textAlign: 'center',
-        color: styles.colors.darkBlue,
-      },
-      text: {
-        fontFamily: styles.currencyFontFamily,
-        fontSize: '18px',
-        color: styles.colors.mainTextColor,
-        textAlign: 'right',
-      },
-      textContainer: {
-        textAlign: 'center',
-        width: '100%',
-      },
-      link: {
-        cursor: 'pointer',
-        marginRight: '5px',
-      },
-      link2: {
-        cursor: 'pointer',
-        color: styles.colors.darkBlue,
-        fontSize: '12px',
-        textAlign: 'left',
-      },
-    };
-
     this.state = {
-      exchangeRate: "loading..."
+      exchangeRate: "loading...",
+      hasError: false,
     };
-
-    this.refreshXR = this.refreshXR.bind(this);
+    this.refreshExchangeRates = this.refreshExchangeRates.bind(this);
   }
 
-  componentWillMount() {
+  componentDidCatch(error, info) {
     const {
-      type,
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate("Error on rendering bottom bar", true);
+  }
+
+  componentDidMount() {
+    const {
       wallet,
       xr,
-    } = this.props;
+    } = this.context;
 
-    let crypto = "XBT";
-    if (wallet) {
-      crypto = wallet.getPersistentVariable(wallet.config.CRYPTO) || "XBT";
+    const code = wallet.getPersistentVariable(wallet.config.CRYPTO, "XBT");
+    if (xr.getExchangeRate(code) !== "not available") {
+      return;
     }
 
-    if (xr.getExchangeRate(crypto) == "not available") {
-      xr.getExchangeRate(crypto, true).then((exchangeRate) => {
-        this.setState({
-          exchangeRate,
-        })
-      });
-    }
+    xr.getExchangeRate(crypto, true)
+      .then((res) => this.setState({ exchangeRate: res }));
   }
 
-  refreshXR() {
+  refreshExchangeRates() {
     const {
       snackbarUpdate,
       xr,
-    } = this.props;
+    } = this.context;
 
-    xr.refreshExchangeRates().then(() => {
-      snackbarUpdate("Exchange rates updated");
-    }).catch((err) => {
+    const handleError = (err) => {
       snackbarUpdate([
         err.message,
         `Exchange rates are from ${xr.getLastUpdatedDate()}`
       ], true);
-    });
+    };
+
+    xr.refreshExchangeRates()
+      .then(() => snackbarUpdate("Exchange rates updated"))
+      .catch(handleError);
   }
 
   getCryptoName(crypto) {
@@ -110,28 +131,37 @@ class Exchange extends React.Component {
 
   render() {
     const {
+      classes,
       type,
-      wallet,
-      xr,
     } = this.props;
 
-    const tooltip = `As of ${xr.updatedTime}. Source ${xr.exchangeRateSource}`;
-    let crypto = "XBT";
-    if (wallet) {
-      crypto = wallet.getPersistentVariable(wallet.config.CRYPTO) || "XBT";
+    const {
+      wallet,
+      xr,
+    } = this.context;
+
+    const {
+      exchangeRate,
+      hasError,
+    } = this.state;
+
+    if (hasError) {
+      return null;
     }
 
+    const tooltip = `As of ${xr.updatedTime}. Source ${xr.exchangeRateSource}`;
+    const crypto = wallet.getPersistentVariable(wallet.config.CRYPTO, "XBT");
+
     let xRate = xr.getExchangeRate(crypto);
-    const { exchangeRate } = this.state;
     if (xRate == "not available" && exchangeRate) {
       xRate = exchangeRate;
     }
 
     if (type == 1) {
-      return <div style={ this.styles.textContainer }>
-        <div style={ this.styles.container }>
+      return <div className={ classes.textContainer }>
+        <div className={ classes.container }>
           <div
-            style={ this.styles.text }
+            className={ classes.text }
             title={ tooltip }
           >
             { xRate }
@@ -139,8 +169,8 @@ class Exchange extends React.Component {
           </div>
           <a
             title="Update exchange rates"
-            style={ this.styles.link2 }
-            onClick={ this.refreshXR }
+            className={ classes.link2 }
+            onClick={ this.refreshExchangeRates }
           >
             <span className="fa-stack">
               <i className="fa fa-circle fa-stack-2x" />
@@ -151,25 +181,22 @@ class Exchange extends React.Component {
       </div>;
     }
 
-    return <div>
-      <div
-        style={ this.styles.rate }
-        title={ tooltip }
-      >
+    return <React.Fragment>
+      <div className={ classes.rate } title={ tooltip }>
         { xRate }
       </div>
-      <div style={ this.styles.refreshArea }>
+      <div className={ classes.refreshArea }>
         { this.getCryptoName(crypto) } PRICE 
         &nbsp;&nbsp;&nbsp;
         <a
           title="Update exchange rates"
-          style={ this.styles.link }
-          onClick={ this.refreshXR }
+          className={ classes.link }
+          onClick={ this.refreshExchangeRates }
         >
           <i className="fa fa-refresh fa-lg" />
         </a>
       </div>
-    </div>;
+    </React.Fragment>;
   }
 }
 
@@ -177,4 +204,8 @@ Exchange.defaultProps = {
   type: 0,
 };
 
-export default Exchange;
+Exchange.contextType = AppContext;
+
+
+export default withStyles(componentStyles)(Exchange);
+

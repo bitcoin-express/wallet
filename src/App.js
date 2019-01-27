@@ -1,10 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Tabs, Tab } from '@material-ui/core/Tabs';
 import Drawer from '@material-ui/core/Drawer';
 import Button from '@material-ui/core/Button';
-
 import TextField from '@material-ui/core/TextField';
 
 import WalletBF, { DEFAULT_SETTINGS } from './helpers/WalletBF';
@@ -18,28 +16,15 @@ import DateComponent from './components/DateComponent';
 import Loading from './components/Loading';
 import LogonScreen from './components/LogonScreen';
 import Notification from './components/Notification'
-import WalletBalance from './components/WalletBalance';
 import WelcomeScreen from './components/WelcomeScreen';
 
+import AppContent from './AppContent';
 import ExchangeRate from './helpers/ExchangeRate';
 import Time from './helpers/Time';
 import { getImageComponent } from './helpers/tools';
-
-// Tabs
-import AddFundsTab from './components/tabs/AddFundsTab';
-import ImportTab from './components/tabs/ImportTab';
-import ExportTab from './components/tabs/ExportTab';
-import HistoryTab from './components/tabs/HistoryTab';
-import MainTab from './components/tabs/MainTab';
-import PayTab from './components/tabs/PayTab';
-import ExchangeTab from './components/tabs/ExchangeTab';
-
-// Dialogs
 import DialogButton from './components/dialogs/utils/DialogButton';
 import { default as AlertDialog, getDialog } from './components/dialogs/utils/Dialogs';
-
 import { AppContext, AppProvider } from "./AppContext";
-
 import AuthenticateDialog from './components/dialogs/AuthenticateDialog';
 import CloseDialog from './components/dialogs/CloseDialog';
 import CoinDialog from './components/dialogs/CoinDialog';
@@ -50,10 +35,9 @@ import ImportFileDialog from './components/dialogs/ImportFileDialog';
 import ItemPurchasedDialog from './components/dialogs/ItemPurchasedDialog';
 import ItemPurchasedListDialog from './components/dialogs/ItemPurchasedListDialog';
 import ReceiveSuccessDialog from './components/dialogs/send/ReceiveSuccessDialog';
-
-// Import styles
 import styles from './helpers/Styles';
-import '../css/index.css';
+
+//import '../css/index.css';
 import 'font-awesome/css/font-awesome.css';
 import 'react-tabs/style/react-tabs.css';
 
@@ -86,7 +70,6 @@ class App extends React.Component {
       },
       exchangeRates: {},
       balance: 0,
-      initialIndex: props.paymentRequest ? 5 : 0,
       isFlipped: false,
       loading: false,
       navDrawerOpen: false,
@@ -96,7 +79,6 @@ class App extends React.Component {
       settings: Object.assign({}, DEFAULT_SETTINGS),
       signoutAlert: false,
       status: states.INITIAL,
-      tabIndex: props.paymentRequest ? 5 : 0,
       targetValue: "",
     };
 
@@ -147,7 +129,6 @@ class App extends React.Component {
     this.handleShowItemPurchasedList = this.handleShowItemPurchasedList.bind(this);
     this.handleSyncContent = this.handleSyncContent.bind(this);
     this.confirmCloseWallet = this.confirmCloseWallet.bind(this);
-    this.onModifyTabIndex = this.onModifyTabIndex.bind(this);
 
     this.refreshCoinBalance = this.refreshCoinBalance.bind(this);
     this.getCurrencyBalances = this.getCurrencyBalances.bind(this);
@@ -160,7 +141,6 @@ class App extends React.Component {
 
     this.renderApp = this.renderApp.bind(this);
     this._renderHeader = this._renderHeader.bind(this);
-    this._renderTabs = this._renderTabs.bind(this);
 
     this.openDialog = this.openDialog.bind(this);
     this._closeDialog = this._closeDialog.bind(this);
@@ -257,6 +237,7 @@ class App extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     // home tab rather small
+    /*
     let els = document.getElementsByClassName("tabsbar");
     if (els.length > 0 && els[0].children[1].children[0] && !this.props.paymentRequest) {
 
@@ -292,7 +273,7 @@ class App extends React.Component {
       } else if (tabIndex != prevState.tabIndex) {
         el.style.left = isFullScreen ? left[tabIndex] : leftMin[tabIndex];
       }
-    }
+    }*/
   }
 
   componentWillUpdate(nextProps, nextState) {
@@ -304,12 +285,14 @@ class App extends React.Component {
       this.props.onAlertHidden();
     }
 
+    /*
     if (!this.props.paymentRequest && nextProps.paymentRequest) {
       this.setState({
         tabIndex: 5,
         initialIndex: 5,
       });
     }
+    */
   }
 
 
@@ -2088,39 +2071,6 @@ class App extends React.Component {
     }, 1000);
   }
 
-  onModifyTabIndex(index) {
-    return () => {
-      const {
-        paymentRequest,
-      } = this.props;
-
-      const {
-        isFullScreen,
-      } = this.context;
-
-      let el = document.getElementsByClassName("tabsbar")[0].children[1].children[0];
-      if (paymentRequest) {
-        if (index == 0) {
-          el.style.width = isFullScreen ? "12%" : "16.6667%";
-          el.style.marginLeft = "0%";
-        } else {
-          el.style.width = isFullScreen ? "17.6%" : "16.6667%";
-          el.style.marginLeft = isFullScreen ? `${-10*(6-index) - (10-index)}px` : "0%";
-        }
-      } else {
-        if (index == 0) {
-          el.style.width = isFullScreen ? "12%" : "20%";
-          el.style.marginLeft = "0%";
-        } else {
-          el.style.width = isFullScreen ? "22%" : "20%";
-          el.style.marginLeft = isFullScreen ? `${-8+(index-1)*2}%` : "0%";
-        }
-      }
-      this.setState({
-        tabIndex: index,
-      });
-    };
-  }
 
   /*
    * @params in alertObj 
@@ -2283,6 +2233,10 @@ class App extends React.Component {
       wallet,
     } = this.props;
 
+    const {
+      i18n,
+    } =  this.context;
+
     const isTab = typeof(event) == "boolean" && event;
 
     this._closeDialog();
@@ -2292,7 +2246,7 @@ class App extends React.Component {
       this.setState({
         targetValue: "",
       });
-      this.handleNotificationUpdate("Deposit reference removed");
+      this.handleNotificationUpdate(i18n.t("deposit_removed"));
 
       if (isTab) {
         fn();
@@ -2301,7 +2255,7 @@ class App extends React.Component {
     }).catch((err) => {
       console.log(err);
       this.loading(false);
-      let message = "Unexpected error when removing deposit reference";
+      let message = i18n.t("deposit_removed_error");
       if (err && err.message) {
         message = err.message;
       }
@@ -2690,276 +2644,56 @@ class App extends React.Component {
     />;
   }
 
-  _renderTabs() {
-    let {
-      alert,
-      balance,
-      exchangeRates,
-      expiryExchangeRates,
-      initialIndex,
-      isFlipped,
-      notification,
-      settings,
-      tabIndex,
-    } = this.state;
-
-    const {
-      isFullScreen,
-    } = this.context;
-
-    const isGDrive = this.wallet.isGoogleDrive();
-    const transactions = this.wallet.getHistoryList();
-
-    const {
-      total,
-    } = this.wallet.getAllStoredCoins();
-
-    return null;
-
-    let notWaitingForSwap = true;
-    if (this.wallet.config.storage) {
-      const {
-        storage,
-        COIN_SWAP,
-        SESSION,
-      } = this.wallet.config;
-
-      let coinSwap = storage.get(COIN_SWAP, null);
-      let sessions = storage.get(SESSION, null);
-
-      if (sessions && coinSwap) {
-        Object.keys(sessions).forEach((key) => {
-          if (Object.keys(coinSwap).indexOf(key) > -1) {
-            notWaitingForSwap = false;
-          }
-        });
-      }
-    }
-
-    let exchangeTab;
-    if (total == 0 && notWaitingForSwap) {
-
-      exchangeTab = <Tab
-        icon={ isFullScreen ? null : <i
-          className="fa fa-plus"
-        /> }
-        label={ isFullScreen ? "add funds" : null }
-        onActive={ this.onModifyTabIndex(3) }
-        style={ this.styles.tabLabel }
-        title={ isFullScreen ? null : "Add funds" }
-        className="tabLabel"
-      >
-        <div
-          className="tab"
-          style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-        >
-          <AddFundsTab
-            handleClickDeposit={ this.handleClickDeposit }
-            handleRemoveDepositRef={ this.handleRemoveDepositRef }
-            issueCollect={ this.issueCollect }
-            loading={ this.loading }
-            updateTargetValue={(value) => {
-              this.setState({
-                targetValue: value,
-              });
-            }}
-          />
-        </div>
-      </Tab>;
-
-    } else {
-
-      exchangeTab = <Tab
-        icon={ isFullScreen ? null : <i
-          className="fa fa-exchange"
-        /> }
-        label={ isFullScreen ? "exchange" : null }
-        onActive={ this.onModifyTabIndex(3) }
-        style={ this.styles.tabLabel }
-        title={ isFullScreen ? null : "Exchange" }
-        className="tabLabel"
-      >
-        <div
-          className="tab"
-          style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-        >
-          <ExchangeTab
-            active={ tabIndex == 3 }
-            closeDialog={ this._closeDialog }
-            exchangeRates={ exchangeRates }
-            loading={ this.loading }
-            openDialog={ this.openDialog }
-            refreshCoinBalance={ this.refreshCoinBalance }
-            refreshIssuerRates={ this.refreshIssuerRates }
-          />
-        </div>
-      </Tab>;
-    }
-
-    return (
-      <Tabs
-        className="tabsbar"
-        style={{
-          position: "static",
-        }}
-        initialSelectedIndex={ initialIndex }
-        tabItemContainerStyle={{
-          borderBottom: '1px solid white',
-        }}
-      >
-        <Tab
-          icon={ <img
-            src={ `css/img/tabs/home${tabIndex == 0 ? '_sel' : ''}.svg` }
-            width="25"
-          /> }
-          onActive={ this.onModifyTabIndex(0) }
-          style={{
-            width: isFullScreen ? '12%' : '20%',
-          }}
-          title="Home"
-        >
-          <div
-            className="tab"
-            style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-          >
-            <WalletBalance
-              balance={ balance }
-              drive={ isGDrive }
-              loading={ this.loading }
-              onStorageIconClick={ this.handleSyncContent }
-              refreshCoinBalance={ this.refreshCoinBalance }
-            />
-            <MainTab
-              { ...this.props }
-              closeDialog={ this._closeDialog }
-              handleShowItemPurchased={ this.handleShowItemPurchased }
-              handleShowItemPurchasedList={ this.handleShowItemPurchasedList }
-              loading={ this.loading }
-              openDialog={ this.openDialog }
-              refreshCoinBalance={ this.refreshCoinBalance }
-            />
-          </div>
-        </Tab>
-        <Tab
-          icon={ isFullScreen ? null : <img
-            src={ `css/img/tabs/import${tabIndex == 1 ? '_sel' : ''}.svg` }
-            width="25"
-          /> }
-          label={ isFullScreen ? "import" : null }
-          onActive={ this.onModifyTabIndex(1) }
-          style={ this.styles.tabLabel }
-          title={ isFullScreen ? null : "Import" }
-          className="tabLabel"
-        >
-          <div
-            className="tab"
-            style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-          >
-            <ImportTab
-              handleShowCoin={ this.handleShowCoin }
-              closeDialog={ this._closeDialog }
-              loading={ this.loading }
-              refreshCoinBalance={ this.refreshCoinBalance }
-              importFile={ this.importFile }
-              openDialog={ this.openDialog }
-              refreshSettings={ this.refreshSettings }
-            />
-          </div>
-        </Tab>
-        <Tab
-          className="tabLabel"
-          disabled={ total == 0 }
-          icon={ isFullScreen ? null : <img
-            src={ `css/img/tabs/export${tabIndex == 2 ? '_sel' : ''}.svg` }
-            width="25"
-          /> }
-          label={ isFullScreen ? "export" : null }
-          onActive={ this.onModifyTabIndex(2) }
-          style={ total == 0 ? this.styles.tabLabelDisabled : this.styles.tabLabel }
-          title={ isFullScreen ? (total == 0 ? "Export disabled until funds added" : null) : "Export" }
-        >
-          <div
-            className="tab"
-            style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-          >
-            <ExportTab
-              balance={ balance }
-              closeDialog={ this._closeDialog }
-              loading={ this.loading }
-              openDialog={ this.openDialog }
-              refreshCoinBalance={ this.refreshCoinBalance }
-            />
-          </div>
-        </Tab>
-        { exchangeTab }
-        <Tab
-          className="tabLabel"
-          disabled={ transactions.length == 0 }
-          icon={ isFullScreen ? null : <img
-            src={ `css/img/tabs/history${tabIndex == 4 ? '_sel' : ''}.svg` }
-            width="25"
-          /> }
-          label={ isFullScreen ? "history" : null }
-          onActive={ this.onModifyTabIndex(4) }
-          style={ transactions.length == 0 ? this.styles.tabLabelDisabled : this.styles.tabLabel }
-          title={ isFullScreen ? (transactions.length == 0 ? "Empty history list" : null) : "History" }
-        >
-          <div
-            className="tab wide"
-            style={ isFullScreen ? this.styles.tabFullScreenStyle : this.styles.tab }
-          >
-            <HistoryTab
-              openDialog={ this.openDialog }
-              refreshCoinBalance={ this.refreshCoinBalance }
-              transactions={ transactions }
-            />
-          </div>
-        </Tab>
-        { this.props.paymentRequest ? <Tab
-          className="tabLabel"
-          icon={ isFullScreen ? null : <i
-            className="fa fa-shopping-cart"
-          /> }
-          label={ isFullScreen ? "payment" : null }
-          onActive={ this.onModifyTabIndex(5) }
-          style={ this.styles.tabLabel }
-          title={ isFullScreen ? null : "Payment" }
-        >
-          <PayTab
-            active={ tabIndex == 5 }
-            balance={ balance }
-            exchangeRates={ exchangeRates }
-            expiryExchangeRates={ expiryExchangeRates }
-            loading={ this.loading }
-            paymentDetails={ this.props.paymentRequest.PaymentDetails }
-            refreshCoinBalance={ this.refreshCoinBalance }
-            refreshIssuerRates={ this.refreshIssuerRates }
-            removePayment={ this.props.removePayment }
-          />
-        </Tab> : null }
-      </Tabs>
-    )
-  }
-
   renderApp() {
     let {
       balance,
+      exchangeRates,
+      expiryExchangeRates,
+      notification,
+      settings,
     } = this.state;
 
-    return <div>
+    return <React.Fragment>
       { this._renderHeader() }
-      { this._renderTabs() }
+
+      <AppContent
+        exchangeRates={ exchangeRates }
+        expiryExchangeRates={ expiryExchangeRates }
+        handleClickDeposit={ this.handleClickDeposit }
+        handleRemoveDepositRef={ this.handleRemoveDepositRef }
+        handleShowCoin={ this.handleShowCoin }
+        handleShowItemPurchased={ this.handleShowItemPurchased }
+        handleShowItemPurchasedList={ this.handleShowItemPurchasedList }
+        handleSyncContent={ this.handleSyncContent }
+        importFile={ this.importFile }
+        issueCollect={ this.issueCollect }
+        notification={ notification }
+        updateTargetValue={(value) => {
+          this.setState({
+            targetValue: value,
+          });
+        }}
+        refreshIssuerRates={ this.refreshIssuerRates }
+        refreshSettings={ this.refreshSettings }
+        removePayment={ this.props.removePayment }
+        settings={ settings }
+        paymentRequest={ this.props.paymentRequest }
+      />
+
       <BottomBar
         { ...this.props }
         balance={ balance }
         handleResizeClick={ this.handleResizeClick }
       />
-    </div>;
+
+    </React.Fragment>;
   }
 
   render() {
     const {
       alert,
+      balance,
+      isFlipped,
       notification,
       notificationIndex,
       loading,
@@ -2979,23 +2713,21 @@ class App extends React.Component {
         break;
 
       case states.WELCOME:
-        content = (
-          <LogonScreen
-            { ...this.props }
-            onAuthGDrive={ () => this.handleAuthorizeGDrive(true) }
-            onAuthLocalStorage={ (changeStatus = false) => {
-              return this.startLocalStorageWallet(changeStatus);
-            }}
-            onFinishLoadingFile={ () => {
-              this.setState({
-                status: states.APP,
-              });
-            }}
-            onLoadFile={ this.handleOnDrop }
-            snackbarUpdate={ this.handleNotificationUpdate }
-            wallet={ this.wallet }
-          />
-        );
+        content = <LogonScreen
+          { ...this.props }
+          onAuthGDrive={ () => this.handleAuthorizeGDrive(true) }
+          onAuthLocalStorage={ (changeStatus = false) => {
+            return this.startLocalStorageWallet(changeStatus);
+          }}
+          onFinishLoadingFile={ () => {
+            this.setState({
+              status: states.APP,
+            });
+          }}
+          onLoadFile={ this.handleOnDrop }
+          snackbarUpdate={ this.handleNotificationUpdate }
+          wallet={ this.wallet }
+        />;
         break;
 
       default:
@@ -3005,8 +2737,12 @@ class App extends React.Component {
     }
 
     const context = {
-      isFlipped: this.state.isFlipped,
+      balance: balance,
+      closeDialog: this._closeDialog,
+      isFlipped: isFlipped,
+      loading: this.loading,
       openDialog: this.openDialog,
+      refreshCoinBalance: this.refreshCoinBalance,
       showValuesInCurrency: this.showValuesInCurrency,
       snackbarUpdate: this.handleNotificationUpdate,
       wallet: this.wallet,

@@ -4,14 +4,17 @@ import PropTypes from 'prop-types';
 import Button from '@material-ui/core/Button';
 
 import AddFundsDialog from '../dialogs/AddFundsDialog';
+import { AppContext } from "../../AppContext";
 
-export default class AddFundsTab extends React.Component {
+
+class AddFundsTab extends React.Component {
 
   constructor (props) {
     super(props);
 
     this.state = {
       depositRef: null,
+      hasError: false,
     };
 
     this._initializeStyles = this._initializeStyles.bind(this);
@@ -19,6 +22,24 @@ export default class AddFundsTab extends React.Component {
 
     this.renderButtons = this.renderButtons.bind(this);
     this.updateDepositRef = this.updateDepositRef.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   componentWillMount() {
@@ -90,6 +111,10 @@ export default class AddFundsTab extends React.Component {
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       isFlipped,
     } = this.props;
@@ -110,5 +135,9 @@ export default class AddFundsTab extends React.Component {
       />
     </div>;
   }
-}
+};
+
+AddFundsTab.contextType = AppContext;
+
+export default AddFundsTab;
 

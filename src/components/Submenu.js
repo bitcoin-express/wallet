@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Paper from '@material-ui/core/Paper';
-import { BottomNavigation, BottomNavigationItem } from '@material-ui/core/BottomNavigation';
+import BottomNavigation from '@material-ui/core/BottomNavigation';
+import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 
 import styles from '../helpers/Styles';
 
@@ -96,21 +97,19 @@ class Submenu extends React.Component {
     const { selected } = this.state;
     const { items } = this.props;
 
-    return <span style={{ marginBottom: '10px' }}>
-      <Paper
-        zDepth={1}
-      >
-        <BottomNavigation
-          selectedIndex={ selected }
-          style={{
-            backgroundColor: styles.colors.mainColor,
-            height: '42px',
-          }}
-        >
+    /*          style={{
+    backgroundColor: styles.colors.mainColor,
+    height: '42px',
+  }}
+
+     * */
+
+    return <Paper>
+      <BottomNavigation value={ selected }>
         { items.map(({ label, icon }, index) => {
           if (index == selected) {
             return (
-              <BottomNavigationItem
+              <BottomNavigationAction
                 className="submenu-item-selected"
                 icon={ <i
                   className={ `fa fa-${icon}` }
@@ -128,7 +127,7 @@ class Submenu extends React.Component {
             );
           } else {
             return (
-              <BottomNavigationItem
+              <BottomNavigationAction
                 className="submenu-item"
                 icon={ <i
                   className={ `fa fa-${icon}` }
@@ -147,9 +146,8 @@ class Submenu extends React.Component {
             );
           }
         })}
-        </BottomNavigation>
-      </Paper>
-    </span>;
+      </BottomNavigation>
+    </Paper>;
   }
 }
 

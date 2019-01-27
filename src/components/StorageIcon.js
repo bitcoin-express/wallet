@@ -1,106 +1,188 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
+
+import { withStyles } from '@material-ui/core/styles';
+
+import { AppContext } from "../AppContext";
+
+
+const componentStyles = (theme) => {
+  // Icons
+  const icon = {
+    position: 'fixed',
+    margin: '2px',
+    fontSize: 'xx-large',
+    opacity: '1.0',
+  };
+  const iconTiny = Object.assign({}, icon, { fontSize: '13px' });
+  const iconSmall = Object.assign({}, icon, { fontSize: 'large' });
+
+  const iconClickable = Object.assign({}, icon, { cursor: 'pointer' });
+  const iconClickableTiny = Object.assign({}, iconClickable, { fontSize: '13px' });
+  const iconClickableSmall = Object.assign({}, iconClickable, { fontSize: 'large' });
+
+  const iconHidden = {
+    position: 'fixed',
+    margin: '2px',
+    fontSize: 'xx-large',
+    opacity: '0.0',
+  };
+  const iconHiddenTiny = Object.assign({}, iconHidden, { fontSize: '13px' });
+  const iconHiddenSmall = Object.assign({}, iconHidden, { fontSize: 'large' });
+
+  // Image
+  const image = {
+    position: 'absolute',
+    width: '40px',
+    height: '40px',
+    opacity: '1.0',
+  };
+  const imageTiny = Object.assign({}, image, { width: '18px', height: '18px' });
+  const imageSmall = Object.assign({}, image, { width: '23px', height: '23px' });
+
+  const imageClickable = Object.assign({}, image, { cursor: 'pointer' });
+  const imageClickableTiny = Object.assign({}, imageClickable, { width: '18px', height: '18px' });
+  const imageClickableSmall = Object.assign({}, imageClickable, { width: '23px', height: '23px' });
+
+  const imageHidden = {
+    position: 'absolute',
+    width: '40px',
+    height: '40px',
+    opacity: '0.0',
+  };
+  const imageHiddenTiny = Object.assign({}, imageHidden, { width: '18px', height: '18px' });
+  const imageHiddenSmall = Object.assign({}, imageHidden, { width: '23px', height: '23px' });
+
+  return {
+    icon,
+    iconTiny,
+    iconSmall,
+    iconClickable,
+    iconClickableTiny,
+    iconClickableSmall,
+    iconHidden,
+    iconHiddenTiny,
+    iconHiddenSmall,
+    image,
+    imageTiny,
+    imageSmall,
+    imageClickable,
+    imageClickableTiny,
+    imageClickableSmall,
+    imageHidden,
+    imageHiddenTiny,
+    imageHiddenSmall,
+  };
+};
+
 
 class StorageIcon extends React.Component {
+
   constructor(props) {
     super(props);
-
-    this._initializeStyles = this._initializeStyles.bind(this);
-    this._initializeStyles(props);
-  }
-
-  componentWillUpdate(nextProps, nextState) {
-    this._initializeStyles(nextProps);
-  }
-
-  _initializeStyles(props) {
-    this.styles = {
-      icon: Object.assign({
-        position: 'fixed',
-        margin: '2px',
-        color: props.color,
-        cursor: props.clickable ? 'pointer' : 'inherit',
-        fontSize: props.tiny ? '13px' : (props.small ? 'large' : 'xx-large'),
-        opacity: '1.0',
-      }, props.style),
-      img: Object.assign({
-        cursor: props.clickable ? 'pointer' : 'inherit',
-        position: 'absolute',
-        width: props.tiny ? '18px' : (props.small ? '23px' : '40px'),
-        height: props.tiny ? '18px' : (props.small ? '23px' : '40px'),
-        opacity: '1.0',
-      }, props.style),
-      iconHide: Object.assign({
-        position: 'fixed',
-        margin: '2px',
-        color: props.color,
-        fontSize: props.tiny ? '13px' : (props.small ? 'large' : 'xx-large'),
-        opacity: '0.0',
-      }, props.style),
-      imgHide: Object.assign({
-        position: 'absolute',
-        width: props.tiny ? '18px' : (props.small ? '23px' : '40px'),
-        height: props.tiny ? '18px' : (props.small ? '23px' : '40px'),
-        opacity: '0.0',
-      }, props.style),
+    this.state = {
+      hasError: false,
     };
   }
 
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate("Error on rendering component", true);
+  }
+
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       browser,
-      clickable,
+      classes,
       drive,
       fa,
       label,
       hide,
       onClick,
       small,
-      wallet,
+      style,
+      tiny,
     } = this.props;
+
+    const {
+      wallet,
+    } = this.context;
 
     const {
       storage,
     } = wallet.config;
 
-    const browserIs = wallet._browserIs().split(" ")[0];
+    const browserName = wallet._browserIs().split(" ")[0];
 
     let props = {};
-    if (clickable) {
+    if (onClick) {
       props['onClick'] = onClick;
     }
 
+    let title = "Coins in Goggle Drive";
+    let extraClassName = hide ? "Hidden" : "";
+    extraClassName += small ? "Small" : "";
+    extraClassName += tiny ? "Tiny" : "";
+    let className;
+
     if (drive || (!browser && wallet.isGoogleDrive())) {
-      return fa ? <i
-        { ...props }
-        className={ `fa fa-google${ small ? '' : ' fa-2x' }` }
-        title={ label || "Coins in Goggle Drive" }
-        style={ hide ? this.styles.iconHide : this.styles.icon }
-      /> : <img
-        { ...props }
+      className = `fa fa-google${ small ? '' : ' fa-2x' }`;
+      if (fa) {
+        return <i
+          className={ classnames(classes["icon" + extraClassName], className) }
+          title={ title }
+          style={ style }
+        />;
+      }
+
+      return <img
         src="css/img/storage/google.png"
-        title={ label || "Coins in Goggle Drive" }
-        style={ hide ? this.styles.imgHide : this.styles.img }
-      />;
-    } else {
-      return fa ? <i
-        { ...props }
-        className={ `fa fa-${browserIs.toLowerCase()} fa-3x` }
-        title={ label || `Coins in ${browserIs}` }
-        style={ hide ? this.styles.iconHide : this.styles.icon }
-      /> : <img
-        { ...props }
-        src={ `css/img/storage/${browserIs.toLowerCase()}.png` }
-        title={ label || `Coins in ${browserIs}` }
-        style={ hide ? this.styles.imgHide : this.styles.img }
+        title={ title }
+        className={ classes["image" + extraClassName] }
+        style={ style }
       />;
     }
+
+    title = label || `Coins in ${browserName}`;
+    if (fa) {
+      className = `fa fa-${browserName.toLowerCase()} fa-3x`;
+      return <i
+        className={ classnames(classes["icon" + extraClassName], className) }
+        title={ title }
+        style={ style }
+      />;
+    }
+
+    const src = `css/img/storage/${browserName.toLowerCase()}.png`;
+    return <img
+      src={ src }
+      title={ title }
+      className={ classes["image" + extraClassName] }
+      style={ style }
+    />;
   }
 }
 
 StorageIcon.propTypes = {
   browser: PropTypes.bool,
-  clickable: PropTypes.bool,
   drive: PropTypes.bool,
   fa: PropTypes.bool,
   hide: PropTypes.bool,
@@ -109,17 +191,21 @@ StorageIcon.propTypes = {
   small: PropTypes.bool,
   style: PropTypes.object,
   tiny: PropTypes.bool,
-  wallet: PropTypes.object.isRequired,
 };
 
 StorageIcon.defaultProps = {
-  browser: false, // force to show browser icon
-  clickable: false, // must include onClick!
-  drive: false, // force to show gdrive icon
+  browser: false,
+  drive: false,
   fa: false,
   hide: false,
+  onClick: null,
   small: false,
+  style: {},
   tiny: false,
 };
 
-export default StorageIcon;
+StorageIcon.contextType = AppContext;
+
+
+export default withStyles(componentStyles)(StorageIcon);
+

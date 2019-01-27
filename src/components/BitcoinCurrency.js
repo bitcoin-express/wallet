@@ -6,7 +6,7 @@ import { withStyles } from '@material-ui/core/styles';
 
 import { AppContext } from "../AppContext";
 import styles from '../helpers/Styles';
-import StorageIcon from './StorageIcon'
+import StorageIcon from './StorageIcon';
 
 
 const componentStyles = (theme) => {
@@ -45,6 +45,24 @@ class BitcoinCurrency extends React.Component {
     this.handleButtonClick = this.handleButtonClick.bind(this);
 
     this._initializeStyles(props);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate("Error on rendering bottom bar", true);
   }
 
   componentWillUnmount() {
@@ -157,6 +175,10 @@ class BitcoinCurrency extends React.Component {
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       centered,
       classes,
@@ -179,7 +201,6 @@ class BitcoinCurrency extends React.Component {
     } = this.props;
 
     let {
-      isFlipped,
       value,
     } = this.props;
 
@@ -190,7 +211,7 @@ class BitcoinCurrency extends React.Component {
       currency = "BTC";
     }
     currency = currency.toUpperCase();
-    isFlipped = this.state.isFlipped || isFlipped;
+    const isHidden = this.state.isFlipped || this.context.isFlipped;
 
     const symbol = xr.getRates(currency)[xr.currency].symbol;
     const btcDisplay = xr.getBTCDisplay(currency);  
@@ -215,17 +236,16 @@ class BitcoinCurrency extends React.Component {
 
       <div style={ this.styles.flipContainer }>
 
-        { displayStorage ? <StorageIcon
-          clickable={ clickableStorage }
-          hide={ isFlipped }
+        <StorageIcon
+          hide={ isHidden }
           onClick={ onStorageIconClick }
           style={ storageStyle || {} }
           small={ small }
           tiny={ tiny }
           wallet={ wallet }
-        /> : null }
+        />
 
-        <div style={ isFlipped ? this.styles.flipped : this.styles.rotated }>
+        <div style={ isHidden ? this.styles.flipped : this.styles.rotated }>
           <div style={ this.styles.back }>
             { Math.abs(xr.getFloat(value, 4, currency) * 100) < 0.01 && Math.abs(xr.getFloat(value, 4, currency)) > 0 ?
                 "< 0.01" + xr.getCurrencyCentSymbol()
@@ -243,7 +263,7 @@ class BitcoinCurrency extends React.Component {
             <Fab
               color="secondary"
               className={ buttonClass }
-              disabled={ isFlipped }
+              disabled={ isHidden }
               onClick={(event) => {
                 event.preventDefault();
                 this.handleButtonClick();

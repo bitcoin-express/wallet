@@ -1,17 +1,51 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
 
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
+import green from '@material-ui/core/colors/green';
+import amber from '@material-ui/core/colors/amber';
+import { withStyles } from '@material-ui/core/styles';
 
 import styles from '../helpers/Styles';
 
 
-/*
- * Variant of notifications can be:
- *   "success", "info", "warning", "error"
- */
+const iconStyle = {
+  fontSize: 20,
+  opacity: 0.9,
+  marginRight: "20px",
+};
+
+
+const variantIcon = {
+  success: <i className="fa fa-check-circle" style={ iconStyle } />,
+  warning: <i className="fa fa-exclamation-triangle" style={ iconStyle } />,
+  error: <i className="fa fa-exclamation-circle" style={ iconStyle } />,
+  info: <i className="fa fa-info-circle" style={ iconStyle } />,
+};
+
+
+const componentStyles = theme => ({
+  success: {
+    backgroundColor: green[600],
+  },
+  error: {
+    backgroundColor: theme.palette.error.dark,
+  },
+  info: {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  warning: {
+    backgroundColor: amber[700],
+  },
+  message: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+});
+
 
 class Notification extends React.Component {
 
@@ -106,6 +140,7 @@ class Notification extends React.Component {
 
   render() {
     const {
+      classes,
       onClose,
     } = this.props;
 
@@ -118,6 +153,8 @@ class Notification extends React.Component {
       message,
       variant,
     } = notification;
+
+    const icon = variantIcon[variant || "info"];
 
     return <Snackbar
       anchorOrigin={{
@@ -146,8 +183,13 @@ class Notification extends React.Component {
             x
           </IconButton>,
         ]}
-        message={ message || "" }
-        variant={ variant || "info" }
+        message={
+          <span id="client-snackbar" className={classes.message}>
+            { icon }
+            { message || "" }
+          </span>
+        }
+        className={classNames(classes[variant || "info"])}
       />
     </Snackbar>;
   }
@@ -157,4 +199,5 @@ Notification.propTypes = {
   onClose: PropTypes.func,
 };
 
-export default Notification;
+export default withStyles(componentStyles)(Notification);
+

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { AppContext } from "../../AppContext";
 import FormArea from '../FormArea';
 import HistoryDialog from '../dialogs/HistoryDialog';
 import HistoryDialogTitle from './history/HistoryDialogTitle';
@@ -9,16 +10,18 @@ import HistoryTable from './history/HistoryTable';
 
 import ReactPaginate from 'react-paginate';
 
+
 class HistoryTab extends React.Component {
 
   constructor(props) {
     super(props);
 
     this.state = {
+      filter: "",
+      hasError: false,
+      page: 0,
       selected: -1,
       txDialog: false,
-      page: 0,
-      filter: "",
     };
 
     this.rowsPerPage = 9;
@@ -33,6 +36,24 @@ class HistoryTab extends React.Component {
 
     this._getTransactionList = this._getTransactionList.bind(this);
     this._totalPages = this._totalPages.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet.config && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   componentWillReceiveProps(nextProps) {
@@ -184,6 +205,10 @@ class HistoryTab extends React.Component {
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       selected,
       txDialog,
@@ -223,5 +248,7 @@ class HistoryTab extends React.Component {
     );
   }
 }
+
+HistoryTab.contextType = AppContext;
 
 export default HistoryTab;

@@ -1,20 +1,70 @@
 import React, {Component} from 'react';
 
-import FormArea from '../FormArea';
-import CoinsTable from './main/CoinsTable';
-import ItemsTable from './main/ItemsTable';
+import Grid from '@material-ui/core/Grid';
+import { withStyles } from '@material-ui/core/styles';
 
+import { AppContext } from "../../AppContext";
+import CoinsTable from './main/CoinsTable';
+import FormArea from '../FormArea';
+import ItemsTable from './main/ItemsTable';
 import styles from '../../helpers/Styles';
+
+
+const componentStyles = (theme) => {
+  return {
+    root: {
+      color: styles.colors.mainTextColor,
+      backgroundColor: styles.colors.secondaryColor,
+      boxShadow: styles.styles.boxShadow,
+    },
+    rootMin: {
+      color: styles.colors.mainTextColor,
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+    },
+  };
+};
+
 
 class MainTab extends Component {
   constructor(props) {
     super(props);
+
+    this.state = {
+      hasError: false,
+    };
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       isFullScreen,
       wallet,
+    } = this.context;
+
+    const {
+      classes,
     } = this.props;
 
     const {
@@ -35,27 +85,23 @@ class MainTab extends Component {
       itemList = store[crypto];
     }
 
-    return (
-      <div>
-        <FormArea
-          isFullScreen={ isFullScreen }
-        >
-          <ItemsTable
-            { ...this.props }
-            itemList={ itemList }
-          />
-        </FormArea>
-        <FormArea
-          type="2"
-          isFullScreen={ isFullScreen }
-        >
-          <CoinsTable
-            { ...this.props }
-          />
-        </FormArea>
-      </div>
-    );
+    return <Grid container>
+      <Grid item xs={12} sm={6} className={ classes.root }>
+        <ItemsTable
+          { ...this.props }
+          itemList={ itemList }
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} className={ classes.root }>
+        <CoinsTable
+          { ...this.props }
+        />
+      </Grid>
+    </Grid>;
   }
 };
 
-export default MainTab;
+MainTab.contextType = AppContext;
+
+export default withStyles(componentStyles)(MainTab);
+

@@ -4,6 +4,8 @@ const translations = {
     resources: {
       "auto": "Auto",
       "closed": "Closed",
+      "deposit_removed": "Deposit reference removed",
+      "deposit_removed_error": "Unexpected error when removing deposit reference",
 
       "enable_info_p1": `Transaction recovery emails contain new coins that your Wallet
         has failed to confirm have been well received. This is most

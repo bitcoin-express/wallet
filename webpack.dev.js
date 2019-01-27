@@ -34,7 +34,7 @@ module.exports = function (version, destPath) {
       }),
       //simplifies creation of HTML files to serve your webpack bundles
       new HtmlWebpackPlugin({
-        title: 'Bitcoin-e',
+        title: 'Bitcoin-e V3',
         template: 'wallet.ejs',
         version: version,
         filename: '../wallet.html'

@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { withStyles } from '@material-ui/core/styles';
-import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
+import Toolbar from '@material-ui/core/Toolbar';
+import { withStyles } from '@material-ui/core/styles';
 
 import { AppContext } from "../AppContext";
 import BitcoinCurrency from './BitcoinCurrency'
@@ -109,7 +109,7 @@ class BottomBar extends React.Component {
       hasError: true,
     });
 
-    snackbarUpdate("Error on rendering bottom bar", true);
+    snackbarUpdate("Error on rendering component", true);
   }
 
   componentDidMount() {

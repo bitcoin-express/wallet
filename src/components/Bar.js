@@ -53,6 +53,7 @@ const componentStyles = (theme) => {
       right: '0',
     },
     root: {
+      position: 'relative',
       background: colors.mainColor,
       borderRadius: 'inherit',
       fontFamily: "'Anton', impact",
@@ -510,6 +511,7 @@ class Bar extends React.Component {
       <AppBar
         id="app-bar"
         key="app-bar"
+        position="fixed"
         className={ isFullScreen ? classes.root : classes.rootMin }
       >
         <Toolbar style={{ minHeight: '40px' }}>

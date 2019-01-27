@@ -2,10 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import Submenu from '../Submenu';
+import { AppContext } from "../../AppContext";
 import BackupWallet from './export/BackupWallet';
-import ExportCoin from './export/ExportCoin';
 import CoinsToFile from './export/CoinsToFile';
+import ExportCoin from './export/ExportCoin';
+import Submenu from '../Submenu';
 
 const states = {
   BACKUP_WALLET: 0,
@@ -13,12 +14,14 @@ const states = {
   EXPORT_COIN: 2,
 };
 
+
 class ExportTab extends React.Component {
 
   constructor(props) {
     super(props);
 
     this.state = {
+      hasError: false,
       section: states.BACKUP_WALLET,
     };
 
@@ -31,11 +34,33 @@ class ExportTab extends React.Component {
     this.handleChipChanged = this.handleChipChanged.bind(this);
   }
 
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
+  }
+
   handleChipChanged(index) {
     this.setState({ section: index });
   }
 
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       section,
     } = this.state;
@@ -43,7 +68,7 @@ class ExportTab extends React.Component {
     const {
       balance,
       isFullScreen,
-    } = this.props;
+    } = this.context;
 
     let balanceAside, content;
     if (balance) {
@@ -53,13 +78,8 @@ class ExportTab extends React.Component {
     if (isFullScreen) {
 
       content = <div style={ this.styles.body }>
-        <BackupWallet
-          {...this.props}
-        /> 
-        <CoinsToFile
-          {...this.props}
-          type="2"
-        />
+        <BackupWallet /> 
+        <CoinsToFile type="2" />
       </div>;
 
     } else {
@@ -98,12 +118,7 @@ class ExportTab extends React.Component {
   }
 }
 
-ExportTab.propTypes = {
-  balance: PropTypes.number,
-  loading: PropTypes.func.isRequired,
-  refreshCoinBalance: PropTypes.func.isRequired,
-  snackbarUpdate: PropTypes.func.isRequired,
-  wallet: PropTypes.object.isRequired,
-};
+ExportTab.contextType = AppContext;
 
 export default ExportTab;
+

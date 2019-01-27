@@ -1,16 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Submenu from '../Submenu';
+import { AppContext } from "../../AppContext";
 import ImportCoin from './import/ImportCoin';
 import ImportFile from './import/ImportFile';
-
 import styles from '../../helpers/Styles';
+import Submenu from '../Submenu';
 
 const states = {
   IMPORT_FILE: 0,
   IMPORT_COIN: 1,
 };
+
 
 class ImportTab extends React.Component {
 
@@ -19,6 +20,7 @@ class ImportTab extends React.Component {
 
     this.state = {
       section: states.IMPORT_FILE,
+      hasError: false,
     };
 
     this.styles = {
@@ -28,6 +30,24 @@ class ImportTab extends React.Component {
     };
 
     this.handleChipChanged = this.handleChipChanged.bind(this);
+  }
+
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet && wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate(info.componentStack, "error");
   }
 
   handleChipChanged(index) {
@@ -89,12 +109,10 @@ class ImportTab extends React.Component {
 }
 
 ImportTab.propTypes = {
-  loading: PropTypes.func.isRequired,
-  wallet: PropTypes.object.isRequired,
   handleShowCoin: PropTypes.func.isRequired,
-  refreshCoinBalance: PropTypes.func.isRequired,
-  snackbarUpdate: PropTypes.func.isRequired,
-  // balance: PropTypes.number,
 };
 
+ImportTab.contextType = AppContext;
+
 export default ImportTab;
+

@@ -1,22 +1,24 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-} from '@material-ui/core/Table';
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
+import TableBody from '@material-ui/core/TableBody';
+import TableRow from '@material-ui/core/TableRow';
 
 import CoinsTableHeader from './CoinsTableHeader';
 import CoinRow from './CoinRow';
 import DomainRow from './DomainRow';
-
 import styles from '../../../helpers/Styles';
+
 
 class CoinsTable extends Component {
   constructor(props) {
     super(props);
+
+    this.state = {
+      hasError: true,
+    };
 
     this.styles = {
       section: {
@@ -27,11 +29,33 @@ class CoinsTable extends Component {
     };
   }
 
+  componentDidCatch(error, info) {
+    const {
+      snackbarUpdate,
+      wallet,
+    } = this.context;
+
+    if (wallet.config.debug) {
+      console.log(error);
+      console.log(info);
+    }
+
+    this.setState({
+      hasError: true,
+    });
+
+    snackbarUpdate("Error on rendering bottom bar", true);
+  }
+
   render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
     const {
       isFullScreen,
       wallet,
-    } = this.props;
+    } = this.context;
 
     let coinList = [];
     if (wallet.config.storage) {
@@ -77,36 +101,35 @@ class CoinsTable extends Component {
     });
 
 
-    return (
-      <Table
-        selectable={ false }
+    return <Table
+      selectable={ false }
+      style={{
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
+      <TableHead
+        adjustForCheckbox={ false }
+        displaySelectAll={ false }
+        enableSelectAll={ false }
         style={{
-          backgroundColor: 'transparent',
-          overflow: 'hidden',
+          borderBottom: border,
         }}
       >
-        <TableHeader
-          adjustForCheckbox={ false }
-          displaySelectAll={ false }
-          enableSelectAll={ false }
-          style={{
-            borderBottom: border,
-          }}
-        >
-          <CoinsTableHeader
-            { ...this.props }
-            wallet={ wallet }
-            totalCoins={ coinList.length }
-          />
-        </TableHeader>
-        <TableBody
-          displayRowCheckbox={ false }
-        >
-          { elems }
-        </TableBody>
-      </Table>
-    );
+        <CoinsTableHeader
+          { ...this.props }
+          wallet={ wallet }
+          totalCoins={ coinList.length }
+        />
+      </TableHead>
+      <TableBody
+        displayRowCheckbox={ false }
+      >
+        { elems }
+      </TableBody>
+    </Table>;
   }
 };
 
 export default CoinsTable;
+

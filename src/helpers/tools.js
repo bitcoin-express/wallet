@@ -20,6 +20,17 @@ export function isURLImage(str) {
 };
 
 
+export function getISODate(isoDate) {
+  const date = new Date(isoDate);
+  const year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let dt = date.getDate();
+  dt = dt < 10 ? '0' + dt : dt;
+  month = month < 10 ? '0' + month : month;
+  return year + '-' + month + '-' + dt;
+};
+
+
 export function getDomainFromURL(str, local=false) {
   let domain = str.replace('http://', '')
     .replace('https://', '')
