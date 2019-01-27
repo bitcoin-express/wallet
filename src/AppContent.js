@@ -74,8 +74,20 @@ const componentStyles = (theme) => {
 };
 
 
+const tabContainerComponentStyle = (theme) => {
+  return {
+    root: {
+      paddingBottom: 8 * 3,
+      [theme.breakpoints.up('md')]: {
+        paddingLeft: '0 calc(15vw + 24px)',
+        paddingRight: '0 calc(15vw + 24px)',
+      },
+    }
+  };
+};
+
 function TabContainer(props) {
-  return <Typography component="div" style={{ padding: 8 * 3 }}>
+  return <Typography component="div" className={ props.classes.root }>
     {props.children}
   </Typography>;
 }
@@ -83,6 +95,8 @@ function TabContainer(props) {
 TabContainer.propTypes = {
   children: PropTypes.node.isRequired,
 };
+
+TabContainer = withStyles(tabContainerComponentStyle)(TabContainer);
 
 
 class MainContent extends React.Component {

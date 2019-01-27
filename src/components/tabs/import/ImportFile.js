@@ -23,8 +23,6 @@ const componentStyles = (theme) => {
   return {
     dropzone: {
       flexGrow: 1,
-      width: '50%',
-
       padding: '10px',
       borderWidth: '1px',
       borderColor: 'rgb(102, 102, 102, 0.5)',
@@ -34,7 +32,6 @@ const componentStyles = (theme) => {
       color: styles.colors.mainTextColor,
       fontFamily: styles.fontFamily,
       fontSize: '12px',
-
       display: 'grid',
       gridTemplateAreas: "'icon text'",
       gridTemplateColumns: '50px calc(100% - 60px)',
@@ -48,6 +45,9 @@ const componentStyles = (theme) => {
       textAlign: 'center',
       wordWrap: 'break-word',
       gridArea: 'text',
+    },
+    label: {
+      display: 'contents',
     },
   };
 };
@@ -363,7 +363,7 @@ class ImportFile extends React.Component {
       DEFAULT_ISSUER,
     } = wallet.config;
 
-    return <FormArea isFullScreen={ isFullScreen }>
+    return <React.Fragment>
 
       <Title
         isFullScreen={ isFullScreen }
@@ -371,7 +371,7 @@ class ImportFile extends React.Component {
       />
       
       <Grid container>
-        <Grid item xs={12} sm={6}>
+        <Grid item md={6} sm={12}>
           <FormControlLabel
             control={
               <Checkbox
@@ -391,6 +391,9 @@ class ImportFile extends React.Component {
           />
 
           <FormControlLabel
+            classes={{
+              label: classes.label,
+            }}
             control={
               <Checkbox
                 checked={ forceExportVerify }
@@ -409,7 +412,7 @@ class ImportFile extends React.Component {
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item md={6} sm={12}>
           <Dropzone
             className={ classes.dropzone }
             onDrop={ this.handleOnDrop }
@@ -431,7 +434,7 @@ class ImportFile extends React.Component {
         handleConfirm={ this.handleConfirmPassphrase }
         handleClose={ this.handleClosePassphrase }
       />
-    </FormArea>;
+    </React.Fragment>;
   }
 }
 

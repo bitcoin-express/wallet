@@ -1,14 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import TextField from '@material-ui/core/TextField';
 
-import Title from '../../Title';
+import { AppContext } from "../../../AppContext";
 import FormArea from '../../FormArea';
-import Button from '../../Button';
-
 import styles from '../../../helpers/Styles';
+import Title from '../../Title';
+
 
 class ImportCoin extends React.Component {
 
@@ -47,7 +49,7 @@ class ImportCoin extends React.Component {
     const {
       wallet,
       snackbarUpdate,
-    } = this.props;
+    } = this.context;
 
     this.setState({
       results: {
@@ -62,7 +64,7 @@ class ImportCoin extends React.Component {
   }
 
   cleanDialog() {
-    this.props.refreshCoinBalance();
+    this.context.refreshCoinBalance();
     this.setState({
       results: {
         open: false,
@@ -84,11 +86,14 @@ class ImportCoin extends React.Component {
 
     const {
       handleShowCoin,
+    } = this.props;
+
+    const {
       loading,
       refreshCoinBalance,
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     const {
       debug,
@@ -170,11 +175,14 @@ class ImportCoin extends React.Component {
 
     const {
       handleShowCoin,
+    } = this.props;
+
+    const {
       loading,
       refreshCoinBalance,
       snackbarUpdate,
       wallet,
-    } = this.props;
+    } = this.context;
 
     const handleResponse = (response) => {
       loading(false);
@@ -204,63 +212,51 @@ class ImportCoin extends React.Component {
     } = this.state;
 
     const {
-      isFullScreen,
       type,
-      xr,
     } = this.props;
 
-    return (
-      <FormArea
-        type={ type }
+    const {
+      isFullScreen,
+      xr,
+    } = this.context;
+
+    return <section>
+      <Title
         isFullScreen={ isFullScreen }
-      >
-        <div style={{ padding: '10px 20px' }}>
-          <Title
-            isFullScreen={ isFullScreen }
-            label="Import Coin"
-          />
+        label="Import Coin"
+      />
 
+      <FormControlLabel
+        control={
           <Checkbox
-            label="Verify coin (to ensure you have sole possession of this coin)"
-            labelStyle={{
-              width: 'initial',
-              color: styles.colors.mainTextColor,
-              fontSize: '13px',
-            }}
-            iconStyle={{
-              fill: styles.colors.mainTextColor,
-            }}
-            onCheck={ (ev, verified) => this.setState({ verified }) }
+            checked={ this.state.verified }
+            onChange={ (event) => this.setState({ verified: event.target.selected }) }
           />
+        }
+        label="Verify coin (to ensure you have sole possession of this coin)"
+      />
 
-          <TextField
-            multiLine={ true }
-            fullWidth={ true }
-            id="base64Coin"
-            className="textArea"
-            rows={ 2 }
-            floatingLabelText="Paste Coin String here"
-            floatingLabelFocusStyle={{
-              color: styles.colors.secondaryTextColor,
-            }}
-            floatingLabelStyle={{
-              color: styles.colors.secondaryBlue,
-              top: '40px',
-            }}
-            onChange={ (ev, coin) => this.setState({ coin }) }
-            style={{
-              marginTop: '-5px',
-            }}
-          /> 
+      <TextField
+        id="base64Coin"
+        fullWidth
+        helperText="around 230 characters"
+        label="Paste Coin String here"
+        margin="normal"
+        multiline
+        onChange={ (event) => this.setState({ coin: event.target.values }) }
+        rowsMax="4"
+        variant="filled"
+      />
 
-          <Button
-            label="Start import"
-            onClick={ this.handleClickButton }
-          />
-        </div>
-      </FormArea>
-    );
+      <Button onClick={ this.handleClickButton }>
+        Start import
+      </Button>
+
+    </section>;
   }
 }
 
+ImportCoin.contextType = AppContext;
+
 export default ImportCoin;
+

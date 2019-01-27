@@ -20,7 +20,6 @@ const componentStyles = (theme) => {
       rgba(0, 0, 0, 0.12) 0px 1px 4px`,
     backgroundPositionX: '-5%',
     backgroundPositionY: '70%',
-    marginTop: '25px',
     padding: '5px 20px 5px 17%',
     color: styles.colors.mainTextColor,
     backgroundRepeat: 'no-repeat',

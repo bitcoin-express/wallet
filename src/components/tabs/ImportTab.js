@@ -1,6 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import Grid from '@material-ui/core/Grid';
+import { withStyles } from '@material-ui/core/styles';
+
 import { AppContext } from "../../AppContext";
 import ImportCoin from './import/ImportCoin';
 import ImportFile from './import/ImportFile';
@@ -13,22 +16,23 @@ const states = {
 };
 
 
+const componentStyles = (theme) => {
+  return {
+    root: {
+      padding: '15px',
+    }
+  }
+};
+
+
 class ImportTab extends React.Component {
 
   constructor(props) {
     super(props);
-
     this.state = {
       section: states.IMPORT_FILE,
       hasError: false,
     };
-
-    this.styles = {
-      body: {
-        //minWidth: '150px',
-      },
-    };
-
     this.handleChipChanged = this.handleChipChanged.bind(this);
   }
 
@@ -56,55 +60,57 @@ class ImportTab extends React.Component {
 
   render() {
     const {
+      hasError,
       section,
     } = this.state;
+
+    if (hasError) {
+      return null;
+    }
+
+    const {
+      classes,
+    } = this.props;
     
     const {
       isFullScreen,
-    } = this.props;
+    } = this.context;
 
-    let content;
     if (isFullScreen) {
-      content = <div style={ this.styles.body }>
-        <ImportFile
-          {...this.props}
-        /> 
-        <ImportCoin
-          {...this.props}
-          type="2"
-        />
-      </div>;
-    } else {
-      switch (section) {
-        case states.IMPORT_FILE:
-          content = <ImportFile
-            {...this.props}
-          />;
-          break;
-        case states.IMPORT_COIN:
-          content = <ImportCoin
-            {...this.props}
-            type="1"
-          />;
-          break;
-      }
-      content = <div style={ this.styles.body }>
-        <Submenu
-          initialSelectedIndex={ section }
-          onTapChanged={ this.handleChipChanged }
-          items={ [{
-            label: "import file",
-            icon: "file-text",
-          }, {
-            label: "import coin",
-            icon: "btc",
-          }] }
-        />
-        { content } 
-      </div>;
+      return <Grid container>
+        <Grid item sm={6} xs={12} className={ classes.root }>
+          <ImportFile {...this.props} /> 
+        </Grid>
+        <Grid item sm={6} xs={12} className={ classes.root }>
+          <ImportCoin {...this.props} type="2" />
+        </Grid>
+      </Grid>;
     }
 
-    return content;
+    let content = null;
+    switch (section) {
+      case states.IMPORT_FILE:
+        content = <ImportFile {...this.props} />;
+        break;
+      case states.IMPORT_COIN:
+        content = <ImportCoin {...this.props} type="1" />;
+        break;
+    }
+
+    return <React.Fragment>
+      <Submenu
+        initialSelectedIndex={ section }
+        onTapChanged={ this.handleChipChanged }
+        items={ [{
+          label: "import file",
+          icon: "file-text",
+        }, {
+          label: "import coin",
+          icon: "btc",
+        }] }
+      />
+      { content } 
+    </React.Fragment>;
   }
 }
 
@@ -114,5 +120,5 @@ ImportTab.propTypes = {
 
 ImportTab.contextType = AppContext;
 
-export default ImportTab;
+export default withStyles(componentStyles)(ImportTab);
 
