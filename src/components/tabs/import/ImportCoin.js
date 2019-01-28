@@ -5,11 +5,25 @@ import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 
 import { AppContext } from "../../../AppContext";
 import FormArea from '../../FormArea';
 import styles from '../../../helpers/Styles';
 import Title from '../../Title';
+
+
+const componentStyles = (theme) => {
+  return {
+    button: {
+      width: '100%',
+      margin: '20px 0 10px 0',
+    },
+    checkbox: {
+      width: '100%,'
+    },
+  };
+}
 
 
 class ImportCoin extends React.Component {
@@ -28,13 +42,6 @@ class ImportCoin extends React.Component {
         face: 0,
         verified: 0,
         fee: 0,
-      },
-    };
-
-    this.styles = {
-      button: {
-        width: '100%',
-        margin: '35px 0 10px 0',
       },
     };
 
@@ -212,6 +219,7 @@ class ImportCoin extends React.Component {
     } = this.state;
 
     const {
+      classes,
       type,
     } = this.props;
 
@@ -227,10 +235,13 @@ class ImportCoin extends React.Component {
       />
 
       <FormControlLabel
+        classes={{
+          root: classes.checkbox,
+        }}
         control={
           <Checkbox
             checked={ this.state.verified }
-            onChange={ (event) => this.setState({ verified: event.target.selected }) }
+            onChange={ (event) => this.setState({ verified: event.target.checked }) }
           />
         }
         label="Verify coin (to ensure you have sole possession of this coin)"
@@ -248,7 +259,12 @@ class ImportCoin extends React.Component {
         variant="filled"
       />
 
-      <Button onClick={ this.handleClickButton }>
+      <Button
+        className={ classes.button }
+        color="secondary"
+        onClick={ this.handleClickButton }
+        variant="contained"
+      >
         Start import
       </Button>
 
@@ -258,5 +274,5 @@ class ImportCoin extends React.Component {
 
 ImportCoin.contextType = AppContext;
 
-export default ImportCoin;
+export default withStyles(componentStyles)(ImportCoin);
 

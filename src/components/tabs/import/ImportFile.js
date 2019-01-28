@@ -21,6 +21,9 @@ import Title from '../../Title';
 
 const componentStyles = (theme) => {
   return {
+    checkbox: {
+      width: '100%,'
+    },
     dropzone: {
       flexGrow: 1,
       padding: '10px',
@@ -64,37 +67,6 @@ class ImportFile extends React.Component {
       hasError: false,
       passphrase: null,
       passphraseDialogOpened: false,
-    };
-
-    this.styles = {
-      dropzone: {
-        flexGrow: 1,
-        width: '50%',
-
-        padding: '10px',
-        borderWidth: '1px',
-        borderColor: 'rgb(102, 102, 102, 0.5)',
-        borderStyle: 'dashed',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        color: styles.colors.mainTextColor,
-        fontFamily: styles.fontFamily,
-        fontSize: '12px',
-
-        display: 'grid',
-        gridTemplateAreas: "'icon text'",
-        gridTemplateColumns: '50px calc(100% - 60px)',
-        gridGap: '10px',
-        alignItems: 'center',
-      },
-      dropzoneIcon: {
-        gridArea: 'icon',
-      },
-      dropzoneInfo: {
-        textAlign: 'center',
-        wordWrap: 'break-word',
-        gridArea: 'text',
-      },
     };
 
     this.time = new Time();
@@ -369,50 +341,43 @@ class ImportFile extends React.Component {
         isFullScreen={ isFullScreen }
         label="Import File"
       />
-      
+
       <Grid container>
-        <Grid item md={6} sm={12}>
+        <Grid item lg={6} md={12}>
           <FormControlLabel
             control={
               <Checkbox
                 checked={ forceBackupVerify }
-                onChange={ (event) => this.setState({ forceBackupVerify: event.target.selected }) }
+                onChange={ (event) => this.setState({ forceBackupVerify: event.target.checked }) }
               />
             }
-            label={ <span>
+            label={ <React.Fragment>
               Verify file backup coins <HelpTooltip
-                iconStyle={{
-                  verticalAlign: 'baseline',
-                  color: styles.colors.mainTextColor,
-                }}
                 note="If this is your own backup file then it should be safe to import coins directly without verification. If you have any doubt, verification is advised (for a small fee)."
               />
-            </span> }
+            </React.Fragment> }
           />
 
           <FormControlLabel
             classes={{
+              root: classes.checkbox,
               label: classes.label,
             }}
             control={
               <Checkbox
                 checked={ forceExportVerify }
-                onChange={ (event) => this.setState({ forceExportVerify: event.target.selected }) }
+                onChange={ (event) => this.setState({ forceExportVerify: event.target.checked }) }
               />
             }
-            label={ <span>
+            label={ <React.Fragment>
               Verify file coins <b>(recommended)</b> <HelpTooltip
-                iconStyle={{
-                  verticalAlign: 'baseline',
-                  color: styles.colors.mainTextColor,
-                }}
                 note="Unless you completely trust the originator of this file, you are advised always to verify the coins."
               />
-            </span> }
+            </React.Fragment> }
           />
         </Grid>
 
-        <Grid item md={6} sm={12}>
+        <Grid item lg={6} md={12}>
           <Dropzone
             className={ classes.dropzone }
             onDrop={ this.handleOnDrop }

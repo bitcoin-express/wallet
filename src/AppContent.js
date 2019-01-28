@@ -77,10 +77,23 @@ const componentStyles = (theme) => {
 const tabContainerComponentStyle = (theme) => {
   return {
     root: {
+      backgroundColor: '#99a9e2',
+      height: '100vh',
       paddingBottom: 8 * 3,
-      [theme.breakpoints.up('md')]: {
-        paddingLeft: '0 calc(15vw + 24px)',
-        paddingRight: '0 calc(15vw + 24px)',
+      [theme.breakpoints.down('xs')]: {
+        padding: '0 0 3px',
+      },
+      [theme.breakpoints.up('xs')]: {
+        padding: '0 0 20px',
+      },
+      /*[theme.breakpoints.up('md')]: {
+        padding: '0 calc(5vw + 24px) 20px calc(5vw + 24px)',
+      },*/
+      [theme.breakpoints.up('lg')]: {
+        padding: '30px 5vw',
+      },
+      [theme.breakpoints.up('xl')]: {
+        padding: '30px 20vw',
       },
     }
   };

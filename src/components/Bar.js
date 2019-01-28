@@ -61,19 +61,19 @@ const componentStyles = (theme) => {
       height: `${appbarHeight}px`,
       zIndex: '1',
       [theme.breakpoints.down('xs')]: {
-        padding: '0 24px 0 24px',
+        padding: '0 3px',
       },
       [theme.breakpoints.up('xs')]: {
         padding: '0 24px',
       },
-      [theme.breakpoints.up('md')]: {
+      /*[theme.breakpoints.up('md')]: {
         padding: '0 calc(5vw + 24px)',
-      },
+      },*/
       [theme.breakpoints.up('lg')]: {
-        padding: '0 calc(15vw + 24px)',
+        padding: '0 5vw',
       },
       [theme.breakpoints.up('xl')]: {
-        padding: '0 calc(20vw + 24px)',
+        padding: '0 20vw',
       },
     },
     rootMin: {
@@ -82,11 +82,14 @@ const componentStyles = (theme) => {
       fontFamily: "'Anton', impact",
       fontWeight: 100,
       height: `${appbarHeight}px`,
-      //margin: '25px 16px 0 25px',
       padding: '0',
       position: 'relative',
       width: '310px',
       zIndex: '1',
+    },
+    toolbar: {
+      minHeight: '40px',
+      padding: '0 5px',
     },
     title: {
       lineHeight: '10px',
@@ -514,7 +517,7 @@ class Bar extends React.Component {
         position="fixed"
         className={ isFullScreen ? classes.root : classes.rootMin }
       >
-        <Toolbar style={{ minHeight: '40px' }}>
+        <Toolbar className={ classes.toolbar }>
           <IconButton
             aria-label="Open drawer"
             classes={{

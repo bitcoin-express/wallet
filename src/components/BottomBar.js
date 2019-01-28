@@ -48,19 +48,19 @@ const componentStyles = (theme) => {
       justifyContent: 'space-between',
       minHeight: `${styles.bottombarHeight}px`,
       [theme.breakpoints.down('xs')]: {
-        padding: '0 24px 0 24px',
+        padding: '0 3px',
       },
       [theme.breakpoints.up('xs')]: {
         padding: '0 24px',
       },
-      [theme.breakpoints.up('md')]: {
+      /*[theme.breakpoints.up('md')]: {
         padding: '0 calc(5vw + 24px)',
-      },
+      },*/
       [theme.breakpoints.up('lg')]: {
-        padding: '0 calc(15vw + 24px)',
+        padding: '0 5vw',
       },
       [theme.breakpoints.up('xl')]: {
-        padding: '0 calc(20vw + 24px)',
+        padding: '0 20vw',
       },
     },
     toolbarMin: {
