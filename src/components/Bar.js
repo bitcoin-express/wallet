@@ -46,10 +46,6 @@ const componentStyles = (theme) => {
     }),
     iconSignInOut: {
       position: 'absolute',
-      right: `${appbarHeight}px`,
-    },
-    iconSignInOutMin: {
-      position: 'absolute',
       right: '0',
     },
     root: {
@@ -60,15 +56,12 @@ const componentStyles = (theme) => {
       fontWeight: 100,
       height: `${appbarHeight}px`,
       zIndex: '1',
-      [theme.breakpoints.down('xs')]: {
-        padding: '0 3px',
+      [theme.breakpoints.down('md')]: {
+        padding: '0',
       },
-      [theme.breakpoints.up('xs')]: {
+      [theme.breakpoints.up('md')]: {
         padding: '0 24px',
       },
-      /*[theme.breakpoints.up('md')]: {
-        padding: '0 calc(5vw + 24px)',
-      },*/
       [theme.breakpoints.up('lg')]: {
         padding: '0 5vw',
       },
@@ -535,7 +528,7 @@ class Bar extends React.Component {
           >
             <LogoText />
           </div>
-          <div className={ isFullScreen ? classes.iconSignInOut : classes.iconSignInOutMin }>
+          <div className={ classes.iconSignInOut }>
             <SignInOut
               onCloseTouchTap={ handleClickClose }
               onSignOutTouchTap={ handleClickSignout }

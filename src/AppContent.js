@@ -86,9 +86,6 @@ const tabContainerComponentStyle = (theme) => {
       [theme.breakpoints.up('xs')]: {
         padding: '0 0 20px',
       },
-      /*[theme.breakpoints.up('md')]: {
-        padding: '0 calc(5vw + 24px) 20px calc(5vw + 24px)',
-      },*/
       [theme.breakpoints.up('lg')]: {
         padding: '30px 5vw',
       },

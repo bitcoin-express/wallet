@@ -47,15 +47,12 @@ const componentStyles = (theme) => {
       alignItems: 'center',
       justifyContent: 'space-between',
       minHeight: `${styles.bottombarHeight}px`,
-      [theme.breakpoints.down('xs')]: {
-        padding: '0 3px',
+      [theme.breakpoints.down('md')]: {
+        padding: '0',
       },
-      [theme.breakpoints.up('xs')]: {
+      [theme.breakpoints.up('md')]: {
         padding: '0 24px',
       },
-      /*[theme.breakpoints.up('md')]: {
-        padding: '0 calc(5vw + 24px)',
-      },*/
       [theme.breakpoints.up('lg')]: {
         padding: '0 5vw',
       },
