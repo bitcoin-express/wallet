@@ -8,7 +8,7 @@ import { withStyles } from '@material-ui/core/styles';
 
 import Dropzone from 'react-dropzone';
 
-import { AppContext } from "../../../AppContext";
+import { AppContext } from '../../../AppContext';
 import ExchangeInfo from '../exchange/ExchangeInfo';
 import FormArea from '../../FormArea';
 import HelpTooltip from '../../HelpTooltip';
@@ -21,14 +21,21 @@ import Title from '../../Title';
 
 const componentStyles = (theme) => {
   return {
+    container: {
+      marginBottom: '20px',
+    },
     checkbox: {
-      width: '100%,'
+      color: 'white',
+    },
+    checkboxChecked: {
+      fill: 'white',
     },
     dropzone: {
       flexGrow: 1,
       padding: '10px',
+      backgroundColor: '#8198e4',
       borderWidth: '1px',
-      borderColor: 'rgb(102, 102, 102, 0.5)',
+      borderColor: 'white',
       borderStyle: 'dashed',
       borderRadius: '5px',
       cursor: 'pointer',
@@ -50,7 +57,11 @@ const componentStyles = (theme) => {
       gridArea: 'text',
     },
     label: {
+      color: 'white',
       display: 'contents',
+    },
+    rootControlLabel: {
+      width: '100%',
     },
   };
 };
@@ -339,15 +350,23 @@ class ImportFile extends React.Component {
 
       <Title
         isFullScreen={ isFullScreen }
-        label="Import File"
+        label="File Upload"
       />
 
       <Grid container>
-        <Grid item lg={6} md={12}>
+        <Grid item lg={6} md={12} className={ classes.container }>
           <FormControlLabel
+            classes={{
+              root: classes.rootControlLabel,
+              label: classes.label,
+            }}
             control={
               <Checkbox
                 checked={ forceBackupVerify }
+                classes={{
+                  checked: classes.checkboxChecked,
+                  root: classes.checkbox,
+                }}
                 onChange={ (event) => this.setState({ forceBackupVerify: event.target.checked }) }
               />
             }
@@ -360,12 +379,16 @@ class ImportFile extends React.Component {
 
           <FormControlLabel
             classes={{
-              root: classes.checkbox,
+              root: classes.rootControlLabel,
               label: classes.label,
             }}
             control={
               <Checkbox
                 checked={ forceExportVerify }
+                classes={{
+                  checked: classes.checkboxChecked,
+                  root: classes.checkbox,
+                }}
                 onChange={ (event) => this.setState({ forceExportVerify: event.target.checked }) }
               />
             }

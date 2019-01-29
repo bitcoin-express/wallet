@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
 import { withStyles } from '@material-ui/core/styles';
 
 import { AppContext } from "../../AppContext";
@@ -20,7 +21,17 @@ const componentStyles = (theme) => {
   return {
     root: {
       padding: '15px',
-    }
+    },
+    paper: {
+      background: '#8ea7fb',
+      [theme.breakpoints.down('xs')]: {
+        boxShadow: 'none',
+        padding: '5px',
+      },
+      [theme.breakpoints.up('xs')]: {
+        padding: '2vw',
+      },
+    },
   }
 };
 
@@ -79,10 +90,14 @@ class ImportTab extends React.Component {
     if (isFullScreen) {
       return <Grid container>
         <Grid item sm={6} xs={12} className={ classes.root }>
-          <ImportFile {...this.props} /> 
+          <Paper elevation={1} className={ classes.paper }>
+            <ImportFile {...this.props} /> 
+          </Paper>
         </Grid>
         <Grid item sm={6} xs={12} className={ classes.root }>
-          <ImportCoin {...this.props} type="2" />
+          <Paper elevation={1} className={ classes.paper }>
+            <ImportCoin {...this.props} type="2" />
+          </Paper>
         </Grid>
       </Grid>;
     }

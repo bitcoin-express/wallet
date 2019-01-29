@@ -20,7 +20,17 @@ const componentStyles = (theme) => {
       margin: '20px 0 10px 0',
     },
     checkbox: {
-      width: '100%,'
+      color: 'white',
+    },
+    checkboxChecked: {
+      fill: 'white',
+    },
+    label: {
+      color: 'white',
+      display: 'contents',
+    },
+    rootControlLabel: {
+      width: '100%',
     },
   };
 }
@@ -231,16 +241,21 @@ class ImportCoin extends React.Component {
     return <section>
       <Title
         isFullScreen={ isFullScreen }
-        label="Import Coin"
+        label="Coin String"
       />
 
       <FormControlLabel
         classes={{
-          root: classes.checkbox,
+          root: classes.rootControlLabel,
+          label: classes.label,
         }}
         control={
           <Checkbox
             checked={ this.state.verified }
+            classes={{
+              checked: classes.checkboxChecked,
+              root: classes.checkbox,
+            }}
             onChange={ (event) => this.setState({ verified: event.target.checked }) }
           />
         }

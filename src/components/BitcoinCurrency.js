@@ -23,9 +23,9 @@ const componentStyles = (theme) => {
       minHeight: '25px',
     },
     button: {
-      width: '25px',
-      height: '25px',
-      minHeight: '25px',
+      width: '35px',
+      height: '35px',
+      minHeight: '35px',
     },
   };
 };

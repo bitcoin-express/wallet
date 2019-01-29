@@ -25,12 +25,6 @@ class ExportTab extends React.Component {
       section: states.BACKUP_WALLET,
     };
 
-    this.styles = {
-      body: {
-        //minWidth: '150px',
-      },
-    };
-
     this.handleChipChanged = this.handleChipChanged.bind(this);
   }
 

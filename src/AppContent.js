@@ -45,9 +45,10 @@ const componentStyles = (theme) => {
   return {
     root: {
       borderRadius: "0",
+      backgroundColor: '#8ea7fb',// '#e8e8e8',
     },
     label: {
-      color: "#7b95dc",
+      color: "white", // "#7b95dc",
     },
     tab: {
       height: `${styles.minimizedHeight - styles.bottombarHeight - styles.appbarHeight - styles.tabsHeight }px`,
@@ -77,7 +78,7 @@ const componentStyles = (theme) => {
 const tabContainerComponentStyle = (theme) => {
   return {
     root: {
-      backgroundColor: '#99a9e2',
+      backgroundColor: 'white', //'#99a9e2',
       height: '100vh',
       paddingBottom: 8 * 3,
       [theme.breakpoints.down('xs')]: {
