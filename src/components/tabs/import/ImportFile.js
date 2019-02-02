@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import green from '@material-ui/core/colors/green';
 import Grid from '@material-ui/core/Grid';
 import { withStyles } from '@material-ui/core/styles';
 
@@ -21,14 +22,11 @@ import Title from '../../Title';
 
 const componentStyles = (theme) => {
   return {
-    container: {
-      marginBottom: '20px',
-    },
     checkbox: {
       color: 'white',
     },
     checkboxChecked: {
-      fill: 'white',
+      color: 'white !important',
     },
     dropzone: {
       flexGrow: 1,
@@ -42,19 +40,14 @@ const componentStyles = (theme) => {
       color: styles.colors.mainTextColor,
       fontFamily: styles.fontFamily,
       fontSize: '12px',
-      display: 'grid',
-      gridTemplateAreas: "'icon text'",
-      gridTemplateColumns: '50px calc(100% - 60px)',
-      gridGap: '10px',
-      alignItems: 'center',
+      textAlign: 'center',
+      marginBottom: '20px',
     },
     dropzoneIcon: {
-      gridArea: 'icon',
     },
     dropzoneInfo: {
       textAlign: 'center',
       wordWrap: 'break-word',
-      gridArea: 'text',
     },
     label: {
       color: 'white',
@@ -353,8 +346,25 @@ class ImportFile extends React.Component {
         label="File Upload"
       />
 
-      <Grid container>
-        <Grid item lg={6} md={12} className={ classes.container }>
+      <Grid container spacing={8}>
+        <Grid item xl={6} lg={12}>
+          <Dropzone
+            className={ classes.dropzone }
+            onDrop={ this.handleOnDrop }
+            activeStyle={{
+              color: styles.colors.mainRed,
+            }}
+          >
+            <i className={ "fa fa-cloud-upload fa-5x " + classes.dropzoneIcon } />
+            <br />
+            <div className={ classes.dropzoneInfo }>
+              <p>Try dropping your backup file here or click to select the file to import.</p>
+              <p>Only <i>JSON</i> files will be accepted</p>
+            </div>
+          </Dropzone>
+        </Grid>
+
+        <Grid item xl={6} lg={12}>
           <FormControlLabel
             classes={{
               root: classes.rootControlLabel,
@@ -398,22 +408,6 @@ class ImportFile extends React.Component {
               />
             </React.Fragment> }
           />
-        </Grid>
-
-        <Grid item lg={6} md={12}>
-          <Dropzone
-            className={ classes.dropzone }
-            onDrop={ this.handleOnDrop }
-            activeStyle={{
-              color: styles.colors.mainRed,
-            }}
-          >
-            <i className={ "fa fa-cloud-upload fa-4x " + classes.dropzoneIcon } />
-            <div className={ classes.dropzoneInfo }>
-              <p>Try dropping your backup file here or click to select the file to import.</p>
-              <p>Only <i>JSON</i> files will be accepted</p>
-            </div>
-          </Dropzone>
         </Grid>
       </Grid>
 

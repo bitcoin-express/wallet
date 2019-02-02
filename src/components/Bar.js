@@ -82,7 +82,6 @@ const componentStyles = (theme) => {
     },
     toolbar: {
       minHeight: '40px',
-      padding: '0 5px',
     },
     title: {
       lineHeight: '10px',

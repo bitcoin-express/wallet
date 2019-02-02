@@ -236,14 +236,14 @@ class BitcoinCurrency extends React.Component {
 
       <div style={ this.styles.flipContainer }>
 
-        <StorageIcon
+        { displayStorage ? <StorageIcon
           hide={ isHidden }
           onClick={ onStorageIconClick }
           style={ storageStyle || {} }
           small={ small }
           tiny={ tiny }
           wallet={ wallet }
-        />
+        /> : null }
 
         <div style={ isHidden ? this.styles.flipped : this.styles.rotated }>
           <div style={ this.styles.back }>

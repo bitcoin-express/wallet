@@ -2,9 +2,51 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Button from '@material-ui/core/Button';
+import Grid from '@material-ui/core/Grid';
+import { withStyles } from '@material-ui/core/styles';
 
 import AddFundsDialog from '../dialogs/AddFundsDialog';
 import { AppContext } from "../../AppContext";
+
+
+const componentStyles = (theme) => {
+  return {
+    buttonLeft: {
+      [theme.breakpoints.down('xs')]: {
+        textAlign: 'center',
+      },
+      [theme.breakpoints.up('sm')]: {
+        textAlign: 'right',
+      },
+    },
+    buttonRight: {
+      [theme.breakpoints.down('xs')]: {
+        textAlign: 'center',
+      },
+      [theme.breakpoints.up('sm')]: {
+        textAlign: 'left',
+      },
+    },
+    buttons: {
+      marginBottom: '5px',
+    },
+    buttonsMin: {
+      marginBottom: '45px',
+    },
+    button: {
+      margin: '25px 0',
+      textAlign: 'center',
+    },
+    buttonMin: {
+      margin: '25px 0 45px',
+      textAlign: 'center',
+    },
+    root: {
+      color: "white",
+      fontFamily: "Roboto, sans-serif",
+    },
+  }
+};
 
 
 class AddFundsTab extends React.Component {
@@ -17,12 +59,10 @@ class AddFundsTab extends React.Component {
       hasError: false,
     };
 
-    this._initializeStyles = this._initializeStyles.bind(this);
-    this._initializeStyles(props);
-
     this.renderButtons = this.renderButtons.bind(this);
     this.updateDepositRef = this.updateDepositRef.bind(this);
   }
+
 
   componentDidCatch(error, info) {
     const {
@@ -42,34 +82,14 @@ class AddFundsTab extends React.Component {
     snackbarUpdate(info.componentStack, "error");
   }
 
+
   componentWillMount() {
     this.updateDepositRef();
   }
 
-  componentWillReceiveProps(nextProps) {
-    this._initializeStyles(nextProps);
-  }
-
-  _initializeStyles(props) {
-    this.styles = {
-      container: {
-        color: "white",
-        fontFamily: "Roboto, sans-serif",
-        margin: props.isFullScreen ? "40px 10px 20px 10px" : "10px",
-        /*backgroundImage: "url('css/img/Bitcoin-express-bg.png')",
-        backgroundPositionX: '-5%',
-        backgroundPositionY: '70%',
-        backgroundRepeat: 'no-repeat',*/
-      },
-      buttons: {
-        marginTop: "40px",
-        textAlign: "center",
-      },
-    };
-  }
 
   updateDepositRef() {
-    this.props.wallet.getDepositRef().then((depositRef) => {
+    this.context.wallet.getDepositRef().then((depositRef) => {
       this.setState({
         depositRef,
       });
@@ -78,37 +98,56 @@ class AddFundsTab extends React.Component {
 
   renderButtons() {
     let {
+      classes,
       handleClickDeposit,
       handleRemoveDepositRef,
       issueCollect,
     } = this.props;
 
-    if (this.state.depositRef) {
-      return [
+    const {
+      isFullScreen,
+    } = this.context;
+
+    if (!this.state.depositRef) {
+      return <div className={ isFullScreen ? classes.button : classes.buttonMin }>
         <Button
-          label="FORGET ADDRESS"
-          key="forget-address"
-          onClick={ handleRemoveDepositRef.bind(this, true, this.updateDepositRef) }
-          style={{ margin: '0 0 10px 15px' }}
+          key="get-address"
+          onClick={ handleClickDeposit.bind(this, true, this.updateDepositRef) }
           variant="contained"
-        />,
-        <Button
-          label="COLLECT COINS"
-          key="collect-coins"
-          onClick={ issueCollect.bind(this, true, this.updateDepositRef) }
-          style={{ marginLeft: '15px' }}
-          variant="contained"
-        />
-      ];
+        >
+          GET ADDRESS
+        </Button>
+      </div>;
     }
 
-    return <Button
-      label="GET ADDRESS"
-      key="get-address"
-      onClick={ handleClickDeposit.bind(this, true, this.updateDepositRef) }
-      variant="contained"
-    />;
+    return <Grid
+      alignItems="center"
+      className={ isFullScreen ? classes.buttons : classes.buttonsMin }
+      container
+      justify="center"
+      spacing={8}
+    >
+      <Grid item xs={12} sm={6} className={ classes.buttonLeft }>
+        <Button
+          key="forget-address"
+          onClick={ handleRemoveDepositRef.bind(this, true, this.updateDepositRef) }
+          variant="contained"
+        >
+          FORGET ADDRESS
+        </Button>
+      </Grid>
+      <Grid item xs={12} sm={6} className={ classes.buttonRight }>
+        <Button
+          key="collect-coins"
+          onClick={ issueCollect.bind(this, true, this.updateDepositRef) }
+          variant="contained"
+        >
+          COLLECT COINS
+        </Button>
+      </Grid>
+    </Grid>;
   }
+
 
   render() {
     if (this.state.hasError) {
@@ -116,6 +155,7 @@ class AddFundsTab extends React.Component {
     }
 
     const {
+      classes,
       isFlipped,
     } = this.props;
 
@@ -123,15 +163,13 @@ class AddFundsTab extends React.Component {
       depositRef,
     } = this.state;
 
-    return <div style={ this.styles.container }> 
+    return <div className={ classes.root }> 
       <AddFundsDialog
         {...this.props }
         depositRef={ depositRef }
         isTab={ true }
         qrLabel="QR2"
-        buttons={ <div style={ this.styles.buttons }>
-          { this.renderButtons() }
-        </div> }
+        buttons={ this.renderButtons() }
       />
     </div>;
   }
@@ -139,5 +177,6 @@ class AddFundsTab extends React.Component {
 
 AddFundsTab.contextType = AppContext;
 
-export default AddFundsTab;
+
+export default withStyles(componentStyles)(AddFundsTab);
 

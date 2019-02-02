@@ -46,9 +46,9 @@ class HelpTooltip extends React.Component {
     const {
       classes,
       note,
-      iconStyle,
       style,
       tooltipStyle,
+      variant,
     } = this.props;
 
     const {
@@ -58,12 +58,12 @@ class HelpTooltip extends React.Component {
 
     return <React.Fragment>
       <i
-        className="fa fa-question-circle fa-lg"
+        className={ "fa fa-question-circle " + variant }
         onClick={ this.handleTouchTap }
         style={ Object.assign({
           cursor: 'pointer',
           marginLeft: '10px',
-        }, iconStyle) }
+        }, style) }
       />
       <Popover
         anchorEl={ anchorEl }
@@ -88,8 +88,9 @@ class HelpTooltip extends React.Component {
 }
 
 HelpTooltip.defaultProps = {
-  iconStyle: {},
+  style: {},
   tooltipStyle: {},
+  variant: "fa-lg",
 };
 
 

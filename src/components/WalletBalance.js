@@ -27,7 +27,7 @@ const componentStyles = (theme) => {
   };
 
   const rootMin = {
-    background: "transparent",
+    background: styles.colors.mainColor,
     boxShadow: `rgba(0, 0, 0, 0.12) 0px 1px 6px,
       rgba(0, 0, 0, 0.12) 0px 1px 4px`,
     margin: '0',
@@ -196,12 +196,12 @@ class CryptoList extends React.Component {
     }
 
     const {
-      isFullScreen,
       wallet,
     } = this.context;
 
     const {
       classes,
+      width,
     } = this.props;
 
     const {
@@ -213,6 +213,7 @@ class CryptoList extends React.Component {
     if (!storage) {
       return null;
     }
+
 
     const selected = wallet.getPersistentVariable(CRYPTO, "XBT");
     const cryptoList = walletCurrencies.map((c, index) => {
@@ -230,7 +231,7 @@ class CryptoList extends React.Component {
       </li>;
     });
 
-    return <div className={ isFullScreen ? classes.root : classes.rootMin }>
+    return <div className={ isWidthUp('sm', width) ? classes.root : classes.rootMin }>
       <ul className={ classes.ul }>
         { cryptoList }
       </ul>
@@ -239,7 +240,7 @@ class CryptoList extends React.Component {
 }
 
 CryptoList.contextType = AppContext;
-CryptoList = withStyles(cryptoListComponent)(CryptoList);
+CryptoList =  withWidth()(withStyles(cryptoListComponent)(CryptoList));
 
 
 class WalletBalance extends React.Component {
@@ -285,12 +286,11 @@ class WalletBalance extends React.Component {
     } = this.props;
 
     const {
-      isFullScreen,
       wallet,
     } = this.context;
 
     const currency = wallet.getPersistentVariable(wallet.config.CRYPTO, "XBT");
-    const className = (isFullScreen ? "root" : "rootMin") + currency.toUpperCase();
+    const className = "rootMin" + currency.toUpperCase();
 
     if (isNaN(this.context.balance)) {
       return <div className={ classes[className] }>
@@ -300,9 +300,7 @@ class WalletBalance extends React.Component {
 
     return <div className={ classes[className] }>
       <div style={{ textAlign: 'center' }}>
-        <CryptoList
-          isFullScreen={ false }
-        />
+        <CryptoList isFullScreen={ false } />
         <BitcoinCurrency
           buttonStyle={{
             background: styles.colors.darkBlue,
@@ -326,12 +324,11 @@ class WalletBalance extends React.Component {
     } = this.props;
 
     const {
-      isFullScreen,
       wallet,
     } = this.context;
 
     const currency = wallet.getPersistentVariable(wallet.config.CRYPTO, "XBT");
-    const className = (isFullScreen ? "root" : "rootMin") + currency.toUpperCase();
+    const className = "root" + currency.toUpperCase();
 
     if (isNaN(this.context.balance)) {
       return <div className={ classes.text }>

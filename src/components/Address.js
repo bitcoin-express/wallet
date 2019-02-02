@@ -41,6 +41,19 @@ const componentStyles = (theme) => {
       MozUserSelect: 'all', /* Firefox */
       MsUserSelect: 'all', /* Internet Explorer/Edge */
       userSelect: 'all', /* Chrome and Opera */
+      maxWidth: '260px',
+      width: 'calc(100vw - 160px)',
+      overflow: 'hidden',
+    },
+    chipLabelMin: {
+      webkitTouchCallout: 'all', /* iOS Safari */
+      WebkitUserSelect: 'all', /* Safari */
+      KhtmlUserSelect: 'all', /* Konqueror HTML */
+      MozUserSelect: 'all', /* Firefox */
+      MsUserSelect: 'all', /* Internet Explorer/Edge */
+      userSelect: 'all', /* Chrome and Opera */
+      width: '130px',
+      overflow: 'hidden',
     },
     labelStyle: {
       textTransform: 'inherit',
@@ -66,7 +79,6 @@ class Address extends React.Component {
 
     this.handleCopyURI = this.handleCopyURI.bind(this);
     this.handleCopyAddress = this.handleCopyAddress.bind(this);
-    this.handleSaveImage = this.handleSaveImage.bind(this);
 
     this._copyAddress = this._copyAddress.bind(this);
   }
@@ -93,17 +105,17 @@ class Address extends React.Component {
 
   selectText(node) {
     if (document.body.createTextRange) {
-        const range = document.body.createTextRange();
-        range.moveToElementText(node);
-        range.select();
+      const range = document.body.createTextRange();
+      range.moveToElementText(node);
+      range.select();
     } else if (window.getSelection) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      selection.removeAllRanges();
+      selection.addRange(range);
     } else {
-        console.warn("Could not select text in node: Unsupported browser.");
+      console.warn("Could not select text in node: Unsupported browser.");
     }
   } 
 
@@ -134,19 +146,18 @@ class Address extends React.Component {
     }
   }
 
-  handleSaveImage() {
-    $(`#${this.props.idQR}`)[0].click();
-  }
-
   render () {
 
     const {
       blockchainAddress,
       classes,
       expiry,
-      idQR,
       info,
     } = this.props;
+
+    const {
+      isFullScreen,
+    } = this.context;
 
     const tooltipMessage = <React.Fragment>
       <p>
@@ -170,45 +181,31 @@ class Address extends React.Component {
 
       <Chip
         avatar={ <Avatar size={32}>@</Avatar> }
-        label={ blockchainAddress }
-        color="secondary"
         classes={{
           root: classes.chip,
-          label: classes.chipLabel,
+          label: isFullScreen ? classes.chipLabel : classes.chipLabelMin,
         }}
-        deleteIcon={ info ? <HelpTooltip
-          note={ tooltipMessage }
-          style={{ marginRight: '5px' }}
-        /> : null }
+        color="secondary"
+        deleteIcon={ info ? <React.Fragment>
+          <HelpTooltip
+            note={ tooltipMessage }
+            style={{ marginRight: '5px' }}
+            variant="fa-2x"
+          />
+          <span
+            className="fa-stack fa-lg"
+            onClick={ this.handleCopyAddress }
+            style={{ cursor: "pointer" }}
+            title="Copy Address"
+          >
+            <i className="fa fa-circle fa-stack-2x"></i>
+            <i className="fa fa-clipboard fa-stack-1x" style={{ color: "#7b95dc" }}></i>
+          </span>
+        </React.Fragment> : null }
+        label={ blockchainAddress }
         onDelete={() => {}}
       />
 
-      <div className={ classes.buttons }>
-        <Button
-          className={ classes.button }
-          onClick={ this.handleCopyURI }
-        >
-          Copy URI
-        </Button>
-
-        <Button
-          className={ classes.button }
-          onClick={ this.handleCopyAddress }
-        >
-          Copy address
-        </Button>
-
-        { idQR ? <React.Fragment>
-          <Button
-            key="button"
-            className={ classes.button }
-            onClick={ this.handleSaveImage }
-          >
-            Save Image...
-          </Button>
-          <a id={ idQR } key="link"></a>
-        </React.Fragment> : null }
-      </div>
       { expiry ? <div className={ classes.address }>
         <b>Address available until</b>: { this.time.formatDate(expiry) }
       </div> : null }

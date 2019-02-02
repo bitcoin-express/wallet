@@ -23,7 +23,7 @@ const componentStyles = (theme) => {
       color: 'white',
     },
     checkboxChecked: {
-      fill: 'white',
+      color: 'white !important',
     },
     label: {
       color: 'white',

@@ -42,14 +42,38 @@ import styles from './helpers/Styles';
 
 
 const componentStyles = (theme) => {
+
+  const tabs = {
+    [theme.breakpoints.down('xs')]: {
+      padding: '0',
+    },
+    [theme.breakpoints.up('md')]: {
+      padding: '0 24px',
+    },
+    [theme.breakpoints.up('lg')]: {
+      padding: '0 5vw',
+    },
+    [theme.breakpoints.up('xl')]: {
+      padding: '0 20vw',
+    },
+  };
+
   return {
     root: {
       borderRadius: "0",
       backgroundColor: '#8ea7fb',// '#e8e8e8',
     },
+    indicator: {
+      backgroundColor: "red",
+    },
     label: {
       color: "white", // "#7b95dc",
     },
+    labelIcon: {
+      minHeight: "auto",
+    },
+    tabs,
+    tabsMin: Object.assign({ width: '310px' }, tabs),
     tab: {
       height: `${styles.minimizedHeight - styles.bottombarHeight - styles.appbarHeight - styles.tabsHeight }px`,
       overflowY: 'auto',
@@ -76,36 +100,66 @@ const componentStyles = (theme) => {
 
 
 const tabContainerComponentStyle = (theme) => {
+
+  const root = {
+    backgroundColor: 'white', //'#99a9e2',
+    overflowX: 'hidden',
+    overflowY: 'scroll',
+    [theme.breakpoints.down('lg')]: {
+      padding: '0',
+    },
+    [theme.breakpoints.up('lg')]: {
+      padding: '0 5vw',
+    },
+    [theme.breakpoints.up('xl')]: {
+      padding: '0 20vw',
+    },
+  };
+
   return {
-    root: {
-      backgroundColor: 'white', //'#99a9e2',
-      height: '100vh',
-      paddingBottom: 8 * 3,
-      [theme.breakpoints.down('xs')]: {
-        padding: '0 0 3px',
-      },
-      [theme.breakpoints.up('xs')]: {
-        padding: '0 0 20px',
-      },
-      [theme.breakpoints.up('lg')]: {
-        padding: '30px 5vw',
-      },
-      [theme.breakpoints.up('xl')]: {
-        padding: '30px 20vw',
-      },
-    }
+    root: Object.assign({ display: 'flow-root', height: 'calc(100vh - 124px)' }, root),
+    rootMin: Object.assign({ height: '320px' }, root),
+    container: {
+      margin: '5vh 0',
+    },
+    containerMin: {
+      marginBottom: '10px 0 60px',
+    },
   };
 };
 
-function TabContainer(props) {
-  return <Typography component="div" className={ props.classes.root }>
-    {props.children}
-  </Typography>;
-}
+
+class TabContainer extends React.Component {
+
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const {
+      isFullScreen,
+    } = this.context;
+
+    const {
+      container,
+      containerMin,
+      root,
+      rootMin,
+    } = this.props.classes;
+
+    return <Typography component="div" className={ isFullScreen ? root : rootMin }>
+      <section className={ isFullScreen ? container : containerMin }>
+      { this.props.children }
+      </section>
+    </Typography>;
+  }
+};
 
 TabContainer.propTypes = {
   children: PropTypes.node.isRequired,
 };
+
+TabContainer.contextType = AppContext;
 
 TabContainer = withStyles(tabContainerComponentStyle)(TabContainer);
 
@@ -169,12 +223,10 @@ class AppContent extends React.Component {
 
   constructor(props) {
     super(props);
-
     this.state = {
       hasError: false,
       tabIndex: props.paymentRequest ? 5 : 0,
     };
-
     this.onModifyTabIndex = this.onModifyTabIndex.bind(this);
   }
 
@@ -270,6 +322,7 @@ class AppContent extends React.Component {
         label={ isFullScreen ? "add funds" : null }
         title={ isFullScreen ? null : "Add funds" }
         classes={{
+          labelIcon: classes.labelIcon,
           wrapper: classes.label,
         }}
       />;
@@ -279,6 +332,7 @@ class AppContent extends React.Component {
         label={ isFullScreen ? "exchange" : null }
         title={ isFullScreen ? null : "Exchange" }
         classes={{
+          labelIcon: classes.labelIcon,
           wrapper: classes.label,
         }}
       />;
@@ -317,21 +371,21 @@ class AppContent extends React.Component {
       case 3:
         if (total == 0 && notWaitingForSwap) {
           content = <TabContainer>
-            <ExchangeTab
-              active={ tabIndex == 3 }
-              exchangeRates={ exchangeRates }
-              refreshIssuerRates={ this.props.refreshIssuerRates }
+            <AddFundsTab
+              handleClickDeposit={ this.props.handleClickDeposit }
+              handleRemoveDepositRef={ this.props.handleRemoveDepositRef }
+              issueCollect={ this.props.issueCollect }
+              updateTargetValue={ this.props.updateTargetValue }
             />
           </TabContainer>;
           break;
         }
 
         content = <TabContainer>
-          <AddFundsTab
-            handleClickDeposit={ this.props.handleClickDeposit }
-            handleRemoveDepositRef={ this.props.handleRemoveDepositRef }
-            issueCollect={ this.props.issueCollect }
-            updateTargetValue={ this.props.updateTargetValue }
+          <ExchangeTab
+            active={ tabIndex == 3 }
+            exchangeRates={ exchangeRates }
+            refreshIssuerRates={ this.props.refreshIssuerRates }
           />
         </TabContainer>;
         break;
@@ -364,22 +418,26 @@ class AppContent extends React.Component {
     return <React.Fragment>
       <Paper className={ classes.root }>
         <Tabs
-          onChange={ this.onModifyTabIndex }
-          value={ tabIndex || 0 }
+          classes={{
+            root: isFullScreen ? classes.tabs : classes.tabsMin,
+            indicator: classes.indicator,
+          }}
           indicatorColor="secondary"
+          onChange={ this.onModifyTabIndex }
+          scrollButtons={ isFullScreen ? "off" : "auto" }
           textColor="secondary"
+          value={ tabIndex || 0 }
           variant={ isFullScreen ? 'fullWidth' : 'scrollable' }
-          scrollButtons={ isFullScreen ? "off" : "on" }
-          centered
         >
           <Tab
+            classes={{
+              labelIcon: classes.labelIcon,
+              wrapper: classes.label,
+            }}
             icon={ <img
               src={ `css/img/tabs/home${tabIndex == 0 ? '_sel' : ''}.svg` }
               width="25"
             /> }
-            classes={{
-              wrapper: classes.label,
-            }}
             title="Home"
           />
 
@@ -389,6 +447,7 @@ class AppContent extends React.Component {
               width="25"
             /> : null }
             classes={{
+              labelIcon: classes.labelIcon,
               wrapper: classes.label,
             }}
             label={ isFullScreen ? "import" : null }
@@ -402,6 +461,7 @@ class AppContent extends React.Component {
               width="25"
             /> : null }
             classes={{
+              labelIcon: classes.labelIcon,
               wrapper: classes.label,
             }}
             label={ isFullScreen ? "export" : null }
@@ -417,6 +477,7 @@ class AppContent extends React.Component {
               width="25"
             /> : null }
             classes={{
+              labelIcon: classes.labelIcon,
               wrapper: classes.label,
             }}
             label={ isFullScreen ? "history" : null  }
@@ -428,6 +489,7 @@ class AppContent extends React.Component {
             label={ isFullScreen ? "payment" : null }
             title={ !isFullScreen ? "Payment" : null }
             classes={{
+              labelIcon: classes.labelIcon,
               wrapper: classes.label,
             }}
           /> }

@@ -3,28 +3,97 @@ import PropTypes from 'prop-types';
 
 import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Button from '@material-ui/core/Button';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Grid from '@material-ui/core/Grid';
 import { withStyles } from '@material-ui/core/styles';
 
 import Address from '../Address';
+import { AppContext } from "../../AppContext";
 import BitcoinCurrency from '../BitcoinCurrency';
 import CoinSelector from '../CoinSelector';
 import CurrencyRadioGroup from '../CurrencyRadioGroup';
-import InfoBox from '../InfoBox';
 import DepositReferenceTable from './addFunds/DepositReferenceTable';
-import { AppContext } from "../../AppContext";
+import InfoBox from '../InfoBox';
+import QRCode from '../QRCode';
 import styles from '../../helpers/Styles';
 
 
 const componentStyles = (theme) => {
+  const rootInitial = {
+    backgroundColor: '#ffffff99',
+    borderRadius: '20px',
+    color: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    [theme.breakpoints.down('xs')]: {
+      backgroundImage: 'none',
+      boxShadow: 'none',
+      margin: '20px 0 0',
+    },
+    [theme.breakpoints.up('sm')]: {
+      backgroundImage: "url('css/img/Bitcoin-express-bg2.png')",
+      backgroundRepeat: 'no-repeat',
+      backgroundPositionX: '-15%',
+      backgroundAttachment: 'local',
+      boxShadow: `rgba(0, 0, 0, 0.12) 0px 1px 6px,
+        rgba(0, 0, 0, 0.12) 0px 1px 4px`,
+      margin: '20px 2vw 0',
+    },
+    padding: '20px',
+  };
+
   return {
+    address: {
+      wordBreak: 'break-word',
+    },
+    alertRoot: {
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      overflow: 'hidden',
+      position: 'absolute',
+      zIndex: '100',
+      overflowY: 'hidden',
+      height: '-webkit-fill-available',
+    },
+    blockchain: {
+      textDecoration: 'inherit',
+      color: '#966600',
+      fontWeight: 'bold',
+    },
+    circularProgress: {
+      textAlign: 'center',
+      margin: '10px',
+    },
     checkboxRoot: {
       textAlign: 'center',
       width: '100%',
     },
+    initialText: {
+      textAlign: 'center',
+      fontSize: '16px',
+      color: 'rgba(0, 0, 0, 0.6)',
+    },
+    note: {
+      color: '#b96f13',
+      textAlign: 'center',
+      fontWeight: 'bold',
+    },
     root: {
       marginTop: '1em',
+    },
+    rootInitial,
+    rootInitialTab: Object.assign({
+      [theme.breakpoints.down('xs')]: {
+      },
+      [theme.breakpoints.up('sm')]: {
+      },
+    }, rootInitial),
+    rootInitialTabMin: Object.assign({}, rootInitial, {
+      borderRadius: '0',
+      margin: '0',
+    }),
+    wallet: {
+      textDecoration: 'inherit',
+      color: '#966600',
     },
   };
 };
@@ -39,84 +108,14 @@ class AddFundsDialog extends React.Component {
       ready: false,
       depositef: null,
       depositRefStore: null,
-      qr: false,
+      showAlert: true,
       showHistory: false,
     };
 
-    this.styles = {
-      address: {
-        gridArea: 'info',
-        margin: '20px 0 20px 0',
-      },
-      amountArea: {
-        padding: '20px',
-        backgroundColor: '#ffffff99',
-        marginTop: '20px',
-        borderRadius: '20px',
-        justifyContent: 'center',
-        boxShadow: 'rgba(0, 0, 0, 0.12) 0px 1px 6px, rgba(0, 0, 0, 0.12) 0px 1px 4px',
-      },
-      blockchain: {
-        textDecoration: 'inherit',
-        color: '#966600',
-        fontWeight: 'bold',
-      },
-      checkbox: {
-        width: 'initial',
-        margin: '20px auto auto auto',
-        textAlign: 'center',
-      },
-      checkboxIcon: {
-        fill: "rgba(0, 0, 0, 0.6)",
-      },
-      checkboxLabel: {
-        width: 'initial',
-        color: "rgba(0, 0, 0, 0.6)",
-      },
-      circularProgress: {
-        textAlign: 'center',
-        margin: '10px',
-      },
-      note: {
-        color: '#b96f13',
-        textAlign: 'center',
-        fontWeight: 'bold',
-      },
-      gridQR: {
-        gridArea: 'qr',
-        margin: '20px 0 20px 0',
-      },
-      qr: {},
-      text: {
-        textAlign: 'center',
-        fontSize: '16px',
-        color: 'rgba(0, 0, 0, 0.6)',
-      },
-      wallet: {
-        textDecoration: 'inherit',
-        color: '#966600',
-      },
-    };
-
-    if (props.isTab) {
-      this.styles.gridQR.textAlign = 'center';
-      this.styles.amountArea["backgroundImage"] = "url('css/img/Bitcoin-express-bg2.png')";
-      this.styles.amountArea["backgroundRepeat"] = 'no-repeat';
-      this.styles.amountArea["backgroundPositionX"] = '-15%';
-      this.styles.amountArea["backgroundAttachment"] = 'local';
-      this.styles.amountArea["color"] = 'rgba(0, 0, 0, 0.6)';
-      return;
-    }
-
-    this.styles.qr = {
-      gridArea: 'qr',
-      marginLeft: 'calc(50% - 50px)',
-    };
-
-    this._updateQR = this._updateQR.bind(this);
     this.renderCreateAddress = this.renderCreateAddress.bind(this);
     this.removeFromDepositStore = this.removeFromDepositStore.bind(this);
   }
+
 
   componentWillMount() {
     const updateStateWithDeposit = (depositRef) => {
@@ -127,9 +126,10 @@ class AddFundsDialog extends React.Component {
       });
     };
 
-    this.props.wallet.getDepositRef()
+    this.context.wallet.getDepositRef()
       .then(updateStateWithDeposit);
   }
+
 
   componentWillReceiveProps(nextProps) {
     const {
@@ -143,70 +143,8 @@ class AddFundsDialog extends React.Component {
     this.setState({
       depositRef,
     });
-    this._updateQR();
-
-    if (!depositRef) {
-      this.setState({
-        qr: false,
-      });
-    }
   }
 
-  componentDidMount() {
-    this._updateQR();
-  }
-
-  _updateQR() {
-
-    const {
-      qrLabel,
-    } = this.props;
-
-    const updateQR = (depositRef) => {
-      if (!depositRef || !depositRef.issueInfo || !depositRef.isDefaultIssuer) {
-        return;
-      }
-
-      const {
-        blockchainAddress,
-        targetValue,
-      } = depositRef.issueInfo;
-
-      const optionsQR = {
-        text: `bitcoin:${blockchainAddress}${targetValue > 0 ?
-          `?amount=${targetValue}`: ""}`,
-        ecLevel: 'M',
-        size: 100,
-        background: '#000',
-        fill: '#fff',
-      };
-
-      window.$(`#${qrLabel}`).empty();
-      window.$(`#${qrLabel}`).qrcode(optionsQR);
-
-      setTimeout(() => {
-        if (this.state.qr) {
-          return;
-        }
-
-        let canvas = $(`#${qrLabel} canvas`)[0];
-        let ctx = canvas.getContext('2d');
-
-        $('#img-download').attr({
-          href: canvas.toDataURL(),
-          download: 'qrCode',
-          target: '_blank'
-        });
-
-        this.setState({
-          qr: true,
-        });
-      }, 2000);
-    };
-
-    this.context.wallet.getDepositRef()
-      .then(updateQR);
-  }
 
   removeFromDepositStore(transactionId) {
     const {
@@ -279,20 +217,21 @@ class AddFundsDialog extends React.Component {
     </p> }
      */
 
-    const createAddressComponent = <div style={ this.styles.amountArea }>
-      <div style={ this.styles.text }>
+    const createAddressComponent = <div className={ isTab ? classes.rootInitialTab : classes.rootInitial }>
+
+      <div className={ classes.initialText }>
         Please indicate how much you intend to transfer to this Wallet.
         { isTab ? <br /> : <span /> } Or just get an address and decide later.
-        <div style={{ padding: "10px 80px" }}>
-          <CurrencyRadioGroup
-            active={ ["XBT"] }
-            currency="XBT"
-            onChange={(ev, crypto) => {
-              return;
-            }}
-          />
-        </div>
+
+        <CurrencyRadioGroup
+          active={ ["XBT"] }
+          currency="XBT"
+          onChange={(ev, crypto) => {
+            return;
+          }}
+        />
       </div>
+
       <CoinSelector
         centered={ true }
         fullSize={ false }
@@ -301,6 +240,7 @@ class AddFundsDialog extends React.Component {
           updateTargetValue(targetValue);
         }}
       />
+
       { buttons }
     </div>;
 
@@ -350,16 +290,16 @@ class AddFundsDialog extends React.Component {
       buttons,
       classes,
       isTab,
-      qrLabel,
     } = this.props;
 
     const {
+      showAlert,
       depositRef,
       ready,
     } = this.state;
 
     if (!ready) {
-      return <div style={ this.styles.circularProgress }>
+      return <div className={ classes.circularProgress }>
         <CircularProgress
           size={ 150 }
           thickness={ 5 }
@@ -397,64 +337,82 @@ class AddFundsDialog extends React.Component {
     const confirmations = issueInfo.confirmations;
 
 
-    return <Grid container spacing={16} className={ classes.root }>
-      <Grid item xs={12} sm={9}>
-        <Address
-          expiry={ expiry }
-          blockchainAddress={ blockchainAddress }
-          idQR="img-download"
-        />
-      </Grid>
-      <Grid item xs={12} sm={3}>
-        <div id={ qrLabel } style={ this.styles.qr } />
-        <BitcoinCurrency
-          color="rgba(0, 0, 0, 0.87)"
-          currency="XBT"
-          displayStorage={ false }
-          showValuesInCurrency={ showValuesInCurrency }
-          style={{ display: 'inline-block' }}
-          tiny={ true }
-          centered={ !isTab }
-          value={ parseFloat(targetValue) }
-        />
-      </Grid>
+    return <React.Fragment>
 
-      <Grid item xs={12}>
+      { showAlert ? <div className={ classes.alertRoot }>
         <InfoBox>
           <React.Fragment>
-            Send only bitcoin (BTC) to <i>{ blockchainAddress }</i><br/>
+            Send only bitcoin (BTC) to <i className={ classes.address }>
+              { blockchainAddress }
+            </i><br/>
             Sending bitcoin cash (BCH) to this address will result in
             the permanent loss of your deposit.
           </React.Fragment>
         </InfoBox>
-      </Grid>
 
-      <Grid item xs={12}>
-        <p style={{ textAlign: 'center' }}>
-          <a
-            href={ `https://blockchain.info/address/${blockchainAddress}` }
-            target="_blank"
-            style={ this.styles.blockchain }
-            title="Blockchain.info"
+        <div style={{ textAlign: 'center', width: '100%' }}>
+          <Button
+            color="secondary"
+            component="span"
+            onClick={ () => this.setState({ showAlert: false }) }
+            variant="contained"
           >
-            Track progress
-          </a> | <a
-            href={ uri }
-            style={ this.styles.wallet }
-            title={ uri }
-          >
-            Start Bitcoin wallet
-          </a>
-        </p>
-      { buttons }
+            Close
+          </Button>
+        </div>
+      </div> : null }
+
+      <Grid container spacing={16} className={ classes.root }>
+        <Grid item xs={12} style={{ textAlign: 'center' }}>
+
+          <QRCode depositRef={ depositRef } />
+
+          <BitcoinCurrency
+            color="rgba(0, 0, 0, 0.87)"
+            currency="XBT"
+            displayStorage={ false }
+            showValuesInCurrency={ showValuesInCurrency }
+            style={{ display: 'inline-block' }}
+            small={ true }
+            centered={ !isTab }
+            value={ parseFloat(targetValue) }
+          />
+
+          <p style={{ textAlign: 'center' }}>
+            <a
+              href={ `https://blockchain.info/address/${blockchainAddress}` }
+              target="_blank"
+              className={ classes.blockchain }
+              title="Blockchain.info"
+            >
+              Track progress
+            </a> | <a
+              href={ uri }
+              className={ classes.wallet }
+              title={ uri }
+            >
+              Start Bitcoin wallet
+            </a>
+          </p>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Address
+            expiry={ expiry }
+            blockchainAddress={ blockchainAddress }
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          { buttons }
+        </Grid>
       </Grid>
-    </Grid>;
+    </React.Fragment>;
   }
 }
 
 AddFundsDialog.defaultProps = {
   isTab: false,
-  qrLabel: "QR",
   centered: false,
   buttons: null,
 };

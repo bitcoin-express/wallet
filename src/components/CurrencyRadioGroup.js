@@ -16,6 +16,8 @@ const componentStyles = () => {
   return {
     root: {
       justifyContent: 'space-between',
+      width: '300px',
+      marginLeft: 'calc(50% - 150px)',
     },
   };
 };
