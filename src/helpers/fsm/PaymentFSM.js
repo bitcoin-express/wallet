@@ -1,6 +1,16 @@
-/*
- * PaymentRequest Finite State Machine
- */
+// PaymentRequest Finite State Machine
+import {
+  extractHostname,
+  getSecondsFromISODate,
+  getSecondsToISODate,
+} from './tools';
+
+import {
+  getEarliestExpiryTime,
+  getPaymentOptions,
+  getSwapPromisesList,
+} from './payment/tools';
+
 
 var PaymentRequestFSM = new StateMachine.factory({
   init: 'PrepareCurrency',
@@ -179,9 +189,60 @@ var PaymentRequestFSM = new StateMachine.factory({
 });
 
 
+var runPaymentFSM =  function() {
+  let {
+    exchangeRates,
+    expiryExchangeRates,
+    loading,
+    paymentDetails,
+    refreshCoinBalance,
+    snackbarUpdate,
+    wallet,
+  } = this.props;
+
+  const {
+    storage,
+  } = wallet.config;
+
+  let machine = new FSM("paymentRequest", Object.assign({
+    // Only for payment request
+    //use by PaymentInterrupted
+    coinsExist: false,
+    //Simulates that Payment has failed
+    failPayment: false,
+
+    // These are needed by the state machine
+    // if > 0 causes SplitCoin to be executed
+    splitFee: 0,
+    // when true simulates restart after power failure
+    interrupted: false,
+
+    // ALWAYS include when creating an FSM
+    wallet: wallet,
+    notification: this.notificationFSM,
+    other: {
+      rates: exchangeRates,
+      expiryExchangeRates,
+    },
+  }, paymentDetails));
+
+  const handleError = (err) => {
+    console.log(err);
+    if (this.state.paymentSessionStarted) {
+      return storage.sessionEnd();
+    }
+  };
+
+  machine.run()
+    .then(() => refreshCoinBalance())
+    .then(() => storage.sessionEnd())
+    .catch(handleError);
+}
+
+
 var now = function() {
   // in seconds
-  return new Date().getTime() / 1000;
+  return ;
 }
 
 
@@ -195,30 +256,6 @@ var persistFSM = function(wallet, args) {
   }
   return wallet.setPersistentVariable(wallet.config.FSM, argsCloned);
 };
-
-
-var extractHostname = function(url) {
-  var hostname;
-  //find & remove protocol (http, ftp, etc.) and get hostname
-
-  if (url.indexOf("://") > -1) {
-    hostname = url.split('/')[2];
-  }
-  else {
-    hostname = url.split('/')[0];
-  }
-
-  //find & remove port number
-  hostname = hostname.split(':')[0];
-  //find & remove "?"
-  hostname = hostname.split('?')[0];
-
-  if (!hostname || hostname == "") {
-    return window.location.hostname;
-  }
-
-  return hostname;
-}
 
 
 var _getRecoveryCoins = function(args) {
@@ -236,15 +273,6 @@ var _getRecoveryCoins = function(args) {
   }
 
   return result;
-}
-
-
-var _prepareExpiryDate = function (expires) {
-  if (!expires) {
-    // Set expire for one day after. Should be less?
-    return new Date(new Date().getTime() + 24 * 60 * 60 * 1000).getTime() / 1000;
-  }
-  return new Date(expires).getTime() / 1000;
 }
 
 
@@ -275,7 +303,7 @@ var doPrepareCurrency = function(fsm) {
     walletCurrencies,
   } = wallet.config;
 
-  const expires = _prepareExpiryDate(fsm.args.expires);
+  const expires = getSecondsFromISODate(fsm.args.expires);
 
   if (ack) {
     if (ack.status === "ok") {
@@ -336,153 +364,126 @@ var doPrepareCurrency = function(fsm) {
   } = other;
 
   const totalCurrency = wallet.getBalanceAs(currency, issuerList, rates);
+
   if (wallet.config.debug) {
     console.log("TOTAL CURRENCY - " + totalCurrency);
   }
+
   if (amount > totalCurrency) {
     fsm.args.error = "Insufficient funds to proceed with this payment";
     fsm.args.errorType = "insufficientFunds"
     return Promise.resolve(fsm.insufficientFunds());
   }
-  let balance, service, emailRecovery;
 
-  return wallet.Balance(currency).then((response) => {
+  let balance, service, emailRecovery;
+  const getSwapRequired = (response) => {
     balance = parseFloat(response.toFixed(8));
     fsm.args.balance = balance;
 
-    let swapList = {};
-    if (amount > balance) {
-      // Get swaps needed to reach the amount
-      let toSwap = amount - balance;
-      return wallet.getSwapCoins(currency, toSwap, rates).then((res) => {
-        const {
-          swapList,
-          issuerService,
-          emailVerify,
-        } = res;
-
-        emailRecovery = emailVerify;
-        service = issuerService;
-
-        return swapList;
-      });
+    if (amount <= balance) {
+      // Enough balance to achieve payment.
+      return {};
     }
-    return {};
-  }).then((swapList) => {
-    if (Object.keys(swapList).length > 0) {
-      // Prepare Swap Coins
-      fsm.args.other.swapList = swapList;
+
+    const retrieveSwapList = (response) => {
       const {
-        expiryExchangeRates,
-      } = fsm.args.other;
+        swapList,
+        issuerService,
+        emailVerify,
+      } = response;
 
-      let expiry = expiryExchangeRates;
-      if (typeof expiry != "string") {
+      emailRecovery = emailVerify;
+      service = issuerService;
+      return swapList;
+    };
 
-        // Get the earliest expiry time
-        let key = "";
-        Object.keys(swapList).forEach((k) => {
-          const actualKey = `${k.toUpperCase()}_${currency.toUpperCase()}`;
-          const actualExp = new Date(expiryExchangeRates[actualExp]).getTime();
-          if (key == "") {
-            key = actualKey;
-            expiry = expiryExchangeRates[key];
-            return;
-          }
-          if (actualExp < new Date(expiryExchangeRates[expiry]).getTime()) {
-            key = actualKey;
-            expiry = expiryExchangeRates[key];
-            return;
-          }
-        });
+    // Get swaps needed to reach the amount
+    const amountToTarget = amount - balance;
+    return wallet.getSwapCoins(currency, amountToTarget, rates)
+      .then(retrieveSwapList);
+  };
+
+  const handleError = (err) => {
+    fsm.args.error = err.message || err;
+    return Promise.resolve(fsm.error()); 
+  }
+
+  const swapCoinsIfRequired = (swapList) => {
+
+    if (Object.keys(swapList).length == 0) {
+      return "currencyReady";
+    }
+
+    // Prepare Swap Coins
+    fsm.args.other.swapList = swapList;
+    const {
+      expiryExchangeRates,
+    } = fsm.args.other;
+
+
+    const swapAllRequired = (result) => {
+      if (result == "expired") {
+        return "paymentTimeout";
       }
 
-      const expiryRates = new Date(expiry).getTime() / 1000;
-      const secsToExpireRates = Math.ceil(expiryRates - now());
-      const secsToExpire = parseInt(expires - now());
+      if (result == "rateExpired") {
+        // TO_DO
+        const notifyRatesTimeout = (response) => {
+          const {
+            exchangeRates,
+            expiry,
+          } = response;
 
-      const p1 = new Promise((resolve, reject) => { 
-        let secs = Math.min(2147483647, 1000 * secsToExpire);
-        console.log(`Payment expires in ${secs} sec`);
-        setTimeout(resolve, secs, "expired"); 
-      });
-      const p2 = fsm.args.notification("displaySwap", {
-        swapList,
-        secsToExpire: Math.min(secsToExpireRates, secsToExpire),
-      });
-      const p3 = new Promise((resolve, reject) => { 
-        let secs = Math.min(2147483647, 1000 * secsToExpireRates);
-        console.log(`Rates expires in ${secs} sec`)
-        setTimeout(() => {
-          fsm.args.notification("disableSwap");
-        }, secs);
-        setTimeout(resolve, secs + 5000, "rateExpired"); 
-      });
-
-      return Promise.race([p1, p2, p3]).then((result) => {
-        if (result == "expired") {
-          return "paymentTimeout";
+          fsm.args.other.rates = exchangeRates;
+          fsm.args.other.expiryExchangeRates = expiry;
+          return "ratesTimeout";
         }
 
-        if (result == "rateExpired") {
-          // TO_DO
-          return fsm.args.notification("displayLoader", {
-            message: "Fetching exchange rates..."
-          }).then(() => {
-            return wallet.getIssuerExchangeRates();
-          }).then((resp) => {
-            const {
-              exchangeRates,
-              expiry,
-            } = resp;
+        const message = "Fetching exchange rates...";
+        return fsm.args.notificationList("displayLoader", { message })
+          .then(() => wallet.getIssuerExchangeRates())
+          .then(notifyRatesTimeout)
+          .catch(handleError);
+      }
 
-            fsm.args.other.rates = exchangeRates;
-            fsm.args.other.expiryExchangeRates = expiry;
-            return "ratesTimeout";
-          }).catch((err) => {
-            fsm.args.error = err.message || err;
-            return Promise.resolve(fsm.error()); 
-          });
-        }
+      // Suceed - Swap coins
+      const swapPromises = getSwapPromisesList(swapList);
+      const message = "Fetching exchange rates...";
+      return fsm.args.notification("displayLoader", { message })
+        .then(() => Promise.all(swapPromises));
+    };
 
-        // Swap coins
-        let promises = [];
-        swapList.forEach((swap) => {
-          let c = Object.keys(swap)[0];
-          let {
-            exchange,
-            from,
-            fee
-          } = swap[c];
+    const swapExpiryISODate = getEarliestExpiryTime(currency, expiryExchangeRates, swapList);
 
-          let args = {
-            source: {
-              sourceValue: parseFloat(from.toFixed(8)),
-              sourceCurrency: c,
-            },
-            target: {
-              targetValue: parseFloat(exchange.toFixed(8)),
-              targetCurrency: currency,
-            },
-            lastModified: null,
-            emailRecovery,
-            fee,
-            maxSelected: false,
-          };
-          promises.push(wallet.atomicSwap(args, service, true));
-        });
-        return fsm.args.notification("displayLoader", {
-          message: "Swapping coins..."
-        }).then(() => {
-          return Promise.all(promises);
-        });
-      }).catch((err) => {
-        fsm.args.error = err.message || err;
-        return Promise.resolve(fsm.error()); 
-      });
-    }
-    return "currencyReady";
-  }).then((response) => {
+    const secondsToSwapExpire = getSecondsToISODate(swapExpiryISODate);
+    const secondsToExpire = getSecondsToISODate(fsm.args.expires);
+
+    const promiseExpiryTimeout = new Promise((resolve, reject) => { 
+      const millisecondsToExpire = 1000 * secondsToExpire;
+      const expiryTimeout = Math.min(2147483647, millisecondsToExpire);
+      console.log(`Payment expires in ${expiryTimeout} sec`);
+      setTimeout(resolve, expiryTimeout, "expired"); 
+    });
+
+    const promiseUserConfirms = fsm.args.notification("displaySwap", {
+      swapList,
+      secsToExpire: Math.min(secondsToSwapExpire, secondsToExpire),
+    });
+
+    const promiseSwapTimeout = new Promise((resolve, reject) => { 
+      const millisecondsToExpire = 1000 * secondsToSwapExpire;
+      const expiryTimeout = Math.min(2147483647, millisecondsToExpire);
+      console.log(`Swap expires in ${expiryTimeout} sec`)
+      setTimeout(() => fsm.args.notification("disableSwap"), expiryTimeout);
+      setTimeout(resolve, expiryTimeout + 5000, "rateExpired"); 
+    });
+
+    return Promise.race([promiseExpiryTimeout, promiseUserConfirms, promiseSwapTimeout])
+      .then(swapAllRequired)
+      .catch(handleError);
+  };
+
+  const handleResponse = (response) => {
     switch(response) {
       case "ratesTimeout":
         return fsm.ratesTimeout();
@@ -492,13 +493,19 @@ var doPrepareCurrency = function(fsm) {
       default:
         return fsm.currencyReady();
     }
-  }).catch((err) => {
-    fsm.args.error = err.message || err;
-    return Promise.resolve(fsm.error()); 
-  });
+  };
+
+  return wallet.Balance(currency)
+    .then(getSwapRequired)
+    .then(swapCoinsIfRequired)
+    .then(handleResponse)
+    .catch(handleError);
 };
 
 
+//select coins to determine the split fee
+//display confirmation page
+//wait for confirm click
 var doConfirmPayment = function(fsm) {
   console.log("do"+fsm.state);
 
@@ -509,33 +516,31 @@ var doConfirmPayment = function(fsm) {
     wallet,
   } = fsm.args;
 
-  const expires = _prepareExpiryDate(fsm.args.expires);
-  
-  //select coins to determine the split fee
-  //display confirmation page
-  //wait for confirm click
+  const expires = getSecondsFromISODate(fsm.args.expires);
   if (expires < now()) {
     fsm.args.error = "Payment request expired";
     return Promise.resolve(fsm.paymentTimeout());
   }
 
   let splitFee = 0;
-  return wallet.getBitcoinExpressFee(amount, currency).then((fee) => {
+  const waitForUserConfirmation = (fee) => {
     splitFee = fee;
     let timeToExpire = expires - now();
 
-    const p1 = new Promise((resolve, reject) => { 
+    const promiseTimeExpired = new Promise((resolve, reject) => { 
       let secs = Math.min(2147483647, 1000 * timeToExpire);
       setTimeout(resolve, secs, "expired"); 
     });
-    const p2 = fsm.args.notification("displayPayment", {
+    const promiseUserConfirms = fsm.args.notification("displayPayment", {
       splitFee,
       timeToExpire,
     });
 
     console.log(other);
-    return Promise.race([p1, p2]);
-  }).then((resp) => {
+    return Promise.race([promiseTimeExpired, promiseUserConfirms]);
+  };
+
+  const handleUserConfirmation = (resp) => {
     if (resp == "expired") {
       fsm.args.error = "Payment request expired";
       return fsm.paymentTimeout();
@@ -545,16 +550,26 @@ var doConfirmPayment = function(fsm) {
     return fsm.args.notification("displayLoader", {
       message: "Sending coins..."
     });
-  }).then((resp) => {
+  };
+
+  const callSplitCoinsState = (resp) => {
     if (resp == "expired") {
       fsm.args.error = "Payment request expired";
       return fsm.paymentTimeout();
     }
     return fsm.splitCoins();
-  }).catch((err) => {
+  };
+
+  const handleError = (err) => {
     fsm.args.error = err.message || err;
     return Promise.resolve(fsm.error()); 
-  });
+  };
+
+  return wallet.getBitcoinExpressFee(amount, currency)
+    .then(waitForUserConfirmation)
+    .then(handleUserConfirmation)
+    .then(callSplitCoinsState)
+    .catch(handleError);
 };
 
 
@@ -564,49 +579,52 @@ var doSplitCoins = function(fsm) {
   const {
     amount,
     currency,
+    policies,
     wallet,
   } = fsm.args;
 
   const {
-    EMAIL,
     storage,
   } = wallet.config;
 
-  const expires = _prepareExpiryDate(fsm.args.expires);
+  const expires = getSecondsFromISODate(fsm.args.expires);
 
   if (expires < now()) {
     fsm.args.error = "Payment request expired";
     return Promise.resolve(fsm.paymentTimeout());
   }
 
-  return wallet._getCoinsExactValue(amount, {}, false, currency).then((coins) => {
+  const buildPaymentResponse = (coins) => {
     // Construct a Payment object and add to the fsm  
-    coins = coins.map((c) => typeof c == "string" ? c : c.base64);
-    let payment = {
+    // TO_DO: Include notification message from the user + password/reference for encryption.
+    const options = getPaymentOptions(fsm.args.useEmail, wallet, policies);
+
+    const payment = {
       id: Math.random().toString(36).replace(/[^a-z]+/g, ''),
       payment_id: fsm.args.payment_id,
-      coins,
+      coins: coins.map((c) => typeof c == "string" ? c : c.base64),
       merchant_data: fsm.args.merchant_data,
       client: "web",
       language_preference: "en_GB",
+      options,
     };
-
-    if (fsm.args.useEmail) {
-      let email = wallet.getSettingsVariable(EMAIL);
-      payment.receipt_to = { email };
-      payment.refund_to = { email };
-    }
-
     fsm.args.payment = payment;
+
     return fsm.coinsReady();
-  }).catch((err) => {
-    // The error transition goes to the Exit state which does not attempt 
-    // to recover Coins. Therefore there is no need to get the recover coins
-    // ready (which are still in the coin store) or to delete payment
-    // (which hasn't actually been persisted at this point).
+  };
+
+  // The error transition goes to the Exit state which does not attempt 
+  // to recover Coins. Therefore there is no need to get the recover coins
+  // ready (which are still in the coin store) or to delete payment
+  // (which hasn't actually been persisted at this point).
+  const handleError = (err) => {
     fsm.args.error = err.message || err;
     return fsm.error(); 
-  });
+  };
+
+  return wallet._getCoinsExactValue(amount, {}, false, currency)
+    .then(buildPaymentResponse)
+    .catch(handleError);
 };
 
 
