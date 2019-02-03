@@ -18,8 +18,8 @@ import {
 
 import FSM from './FSM';
 
- // "be.ap.rmp.net";
-const defaultIssuer = "eu.carrotpay.com";
+const defaultIssuer = "be.ap.rmp.net";
+//const defaultIssuer = "eu.carrotpay.com";
 
 export const DEFAULT_SETTINGS = {
   acceptableIssuers: [

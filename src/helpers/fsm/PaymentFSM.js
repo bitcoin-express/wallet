@@ -1,6 +1,7 @@
 /*
  * PaymentRequest Finite State Machine
  */
+
 var PaymentRequestFSM = new StateMachine.factory({
   init: 'PrepareCurrency',
   transitions: [
@@ -121,7 +122,7 @@ var PaymentRequestFSM = new StateMachine.factory({
       name: 'error',
       from: 'StartPayment',
       to: function() {
-        return this.args.paymentAttempts <= 0 ? 'PaymentInterrupted' : 'VerifyPaymentCoins';
+        return this.args.paymentAttempts <= 3 ? 'PaymentInterrupted' : 'VerifyPaymentCoins';
       }
     },
     //AckReceived
@@ -177,10 +178,12 @@ var PaymentRequestFSM = new StateMachine.factory({
   }
 });
 
+
 var now = function() {
   // in seconds
   return new Date().getTime() / 1000;
 }
+
 
 var persistFSM = function(wallet, args) {
   let argsCloned = null;
@@ -193,7 +196,8 @@ var persistFSM = function(wallet, args) {
   return wallet.setPersistentVariable(wallet.config.FSM, argsCloned);
 };
 
-function extractHostname(url) {
+
+var extractHostname = function(url) {
   var hostname;
   //find & remove protocol (http, ftp, etc.) and get hostname
 
@@ -216,6 +220,7 @@ function extractHostname(url) {
   return hostname;
 }
 
+
 var _getRecoveryCoins = function(args) {
   const {
     payment,
@@ -233,6 +238,7 @@ var _getRecoveryCoins = function(args) {
   return result;
 }
 
+
 var _prepareExpiryDate = function (expires) {
   if (!expires) {
     // Set expire for one day after. Should be less?
@@ -240,6 +246,7 @@ var _prepareExpiryDate = function (expires) {
   }
   return new Date(expires).getTime() / 1000;
 }
+
 
 /*
  * It also means there would be no need unpersist payment
@@ -491,6 +498,7 @@ var doPrepareCurrency = function(fsm) {
   });
 };
 
+
 var doConfirmPayment = function(fsm) {
   console.log("do"+fsm.state);
 
@@ -549,6 +557,7 @@ var doConfirmPayment = function(fsm) {
   });
 };
 
+
 var doSplitCoins = function(fsm) {
   console.log("do"+fsm.state);
 
@@ -600,6 +609,8 @@ var doSplitCoins = function(fsm) {
   });
 };
 
+
+// [wallet] --- extract coins for payment --> [wallet]
 var doPaymentReady = function(fsm) {
   const {
     amount,
@@ -616,27 +627,31 @@ var doPaymentReady = function(fsm) {
     console.log("do"+fsm.state);
   }
 
-  // Extract coins from store
-  const params = [coins, `buy item for ${currency} ${amount}`,
-    "wallet", currency, false];
-
-  return wallet.extractCoins(...params).then((resp) => {
+  const persistState = (resp) => {
     if (wallet.config.debug) {
       console.log("Coins extracted: " + resp);
     }
     // Persist the Payment record
     return persistFSM(wallet, fsm.args);
-  }).then(() => {
-    return wallet.config.storage.flush();
-  }).then(() => {
-    return fsm.startPayment();
-  }).catch((err) => {
+  };
+
+  const handleError = (err) => {
     fsm.args.error = err.message || err;
     delete fsm.args.payment;
     return fsm.error(); 
-  });
+  };
+
+  // Extract coins from store
+  const msg = `buy item for ${currency} ${amount}`;
+  return wallet.extractCoins(coins, msg, "wallet", currency, false)
+    .then(persistState)
+    .then(() => wallet.config.storage.flush())
+    .then(() => fsm.startPayment())
+    .catch(handleError);
 };
 
+
+// [wallet] --- payment_url ---> [merchant]
 var doStartPayment = function(fsm) {
   const {
     amount,
@@ -648,16 +663,24 @@ var doStartPayment = function(fsm) {
     console.log("do"+fsm.state);
   }
 
-  fsm.args.paymentAttempts += 1;
-  return BitcoinExpress.Host.Payment(payment, amount).then((response) => {
+  const storePaymentAck = (response) => {
     fsm.args.ack = response.PaymentAck;
     return fsm.paymentAckArrived();          
-  }).catch((err) => {
+  };
+
+  const handleError = (err) => {
     fsm.args.error = err.message || err;
     return fsm.error();         
-  });
+  };
+
+  fsm.args.paymentAttempts += 1;
+  return BitcoinExpress.Host.Payment(payment, amount)
+    .then(storePaymentAck)
+    .catch(handleError);
 };
 
+
+// [wallet] <--- PaymentAck --- [merchant]
 var doAckReceived = function(fsm) {
   const {
     ack,
@@ -680,12 +703,7 @@ var doAckReceived = function(fsm) {
         payment_url,
       } = fsm.args;
 
-      // The present version does not lock the coin store for the duration of
-      // the payment. Therefore if another device were to cause the balance to
-      // reduce, the history item may be incorrect.
-      return persistFSM(wallet, fsm.args).then(() => {
-        return wallet.Balance(currency);
-      }).then((newBalance) => {
+      const recordTransaction = (newBalance) => {
         // recordTransaction calls flush, at this point atomically
         // persists the tx in history and the FSM payment args.
         return wallet.recordTransaction({
@@ -706,42 +724,83 @@ var doAckReceived = function(fsm) {
           },
           currency,
         });
-      }).then(() => {
+      };
+
+      const storeItemInWallet = () => {
         // Save in item store
         const domain = extractHostname(document.referrer);
         console.log("item referrer ", domain);
         const item = {
           paymentDetails: {
-            payment_url,
+            amount,
             currency,
             domain,
             memo,
-            amount,
+            payment_url,
           },
           paymentAck: ack,
         };
         fsm.args.item = item;
         return wallet.saveItem(item, currency);
-      }).then(() => {
-        return fsm.ackOk();
-      }).catch((err) => {
+      };
+
+      const handleError = (err) => {
         fsm.args.error = err.message || err;
         return fsm.error();
-      });
+      };
+
+      // The present version does not lock the coin store for the duration of
+      // the payment. Therefore if another device were to cause the balance to
+      // reduce, the history item may be incorrect.
+      return persistFSM(wallet, fsm.args)
+        .then(() => wallet.Balance(currency))
+        .then(recordTransaction)
+        .then(storeItemInWallet)
+        .then(() => fsm.ackOk())
+        .catch(handleError);
 
     //Note sure if there is any special action we can take
     //upon these error
-    case "bad_merchant_data":
-    case "after_expires":
-    case "insufficient_amount":
-    case "bad_coins":
-    case "retry_expired":
+    case "issuer-error":
+      return Promise.resolve(fsm.paymentRecovery());
+
+    case "payment-unknown":
+      fsm.args.error = "Seller could not identify the sale item";
+      break;
+
+    case "after-expires":
+      fsm.args.error = "The offer to sell has expired";
+      break;
+
+    case "insufficient-amount":
+      fsm.args.error = "The payment failed because we didn't send enough funds";
+      break;
+
+    case "bad-coins":
+      fsm.args.error = "One or more Coins were unexpectidly invalid";
+      break;
+
+    case "retry-expired":
+      fsm.args.error = "Seller no longer permitting access to the product url";
+      break;
+
+    case "rejected":
+      fsm.args.error = "Seller rejected this payment";
+      break;
+
+    case "failed":
+      fsm.args.error = "The payment failed for an unspecified reason";
+      break;
+
     default:
-      fsm.args.error = "Returned bad PaymentAck";
-      return Promise.resolve(fsm.error());                  
+      fsm.args.error = "Received a bad PaymentAck";
+      break;
   }
+  return Promise.resolve(fsm.error());                  
 };
 
+
+// [wallet] ---- PaymentAck ---> [Bitcoin-express.js]
 var doSendAckAck = function(fsm) {
   const {
     wallet,
@@ -756,17 +815,21 @@ var doSendAckAck = function(fsm) {
     console.log("do"+fsm.state);
   }
 
-  return persistFSM(wallet, null).then(() => {
-    return storage.flush();
-  }).then(() => {
+  const sendAckToBitcoinExpress = () => {
     delete fsm.args.ack.coins;
     return BitcoinExpress.Host.PaymentAckAck(fsm.args.ack);
-  }).then(() => {
-    return fsm.paymentComplete();
-  }).catch(function(err) {
+  };
+
+  const handleError = (err) => {
     fsm.args.error = err.message || err;
     return fsm.paymentComplete();
-  });
+  };
+
+  return persistFSM(wallet, null)
+    .then(() => storage.flush())
+    .then(sendAckToBitcoinExpress)
+    .then(() => fsm.paymentComplete())
+    .catch(handleError);
 };
 
 var doComplete = function(fsm) {
@@ -911,15 +974,16 @@ var doExit = function(fsm) {
   });
 };
 
+
 var doPaymentInterrupted = function(fsm) {
-  console.log("do"+fsm.state);
+  console.log("do" + fsm.state);
+
   let coins = _getRecoveryCoins(fsm.args);
   if (coins.length == 0) {
     return Promise.resolve(fsm.coinsNotExist());
   }
-  // check if coins exists
-  const params = [true, coins, fsm.args.currency];
-  return fsm.args.wallet.existCoins(...params).then((resp) => {
+
+  const checkCoinsExistence = (resp) => {
     if (resp.deferInfo) {
       return fsm.coinsNotExist();
     }
@@ -928,8 +992,13 @@ var doPaymentInterrupted = function(fsm) {
       return fsm.coinsNotExist();
     }
     return fsm.coinsExist();
-  });
+  };
+
+  // check if coins exists
+  return fsm.args.wallet.existCoins(true, coins, fsm.args.currency)
+    .then(checkCoinsExistence);
 };
+
 
 var doVerifyPaymentCoins = function(fsm) {
   console.log("do"+fsm.state);
@@ -961,50 +1030,56 @@ var doVerifyPaymentCoins = function(fsm) {
     domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
     expiryPeriod_ms: wallet.getExpiryPeriod(VERIFY_EXPIRE),
   };
+
   let issuerService, fee;
   let payment = fsm.args.payment;
-  // fsm.args.payment.coins = coinsToRecover;
 
-  // Unpersist Payment
-  return persistFSM(wallet, null).then(() => {
-    // TO_DO: get domain from coin
-    return wallet.issuer("info", {}, null, "GET");
-  }).then((resp) => {
+  const getVerificationFee = (resp) => {
     issuerService = resp.issuer[0];
     return wallet.getVerificationFee(amount, issuerService);
-  }).then((resp) => {
+  };
+
+  const notifyFeesToWallet = (resp) => {
+    // Display fees to the wallet, and wait for user confimation.
     fee = resp;
     return fsm.args.notification("displayRecovery", {
       recoveryFee: fee,
     });
-  }).then((resp) => {
-    if (!resp) {
-      // want to retry payment
+  };
+
+  const getUserResponse = (wantsToRecover) => {
+    // Response from the wallet, depending if the user wants to recover
+    // the coins or retry the payment.
+    if (!wantsToRecover) {
       return fsm.args.notification("displayLoader", {
         message: "Retrying your payment..."
       }).then(() => {
         throw new Error("payment");
       });
     }
+
     return fsm.args.notification("displayLoader", {
       message: "Recoverying your coins..."
     });
-  }).then(() => {
-    const params = [coinsToRecover, args, false, currency];
-    return wallet.verifyCoins(...params);
-  }).then((resp) => {
+  };
+
+  const addCoinsToRecoverInStore = (resp) => {
     let coins = resp.coin;
     if (resp.status == "coin value too small") {
-      // Recover coins
+      // Recover original coins, coins value too small to verify
       coins = coinsToRecover;
     }
-    const params = [COIN_STORE, coins, false, currency];
-    return storage.addAllIfAbsent(...params).then(() => coins.length);
-  }).then((resp) => {
-    fsm.args.error = "Payment failed but coins were recovered";
+    return storage.addAllIfAbsent(COIN_STORE, coins, false, currency);
+  };
+
+  const completeRecovery = (resp) => {
+    fsm.args.error = fsm.args.error ? fsm.args.error + ". " : "";
+    fsm.args.error += "Payment failed but coins were recovered";
     fsm.args.recoveredAmount = wallet.getSumCoins(coinsToRecover) - fee;
     return fsm.coinRecoveryComplete();
-  }).catch(function (err) {
+  };
+
+  const handleError = (err) => {
     //Not sure what can be done about an error so just signal complete
     if (err.message && err.message == "payment") {
       fsm.args.payment = payment;
@@ -1012,8 +1087,20 @@ var doVerifyPaymentCoins = function(fsm) {
     }
     fsm.args.error = err.message || err;
     return fsm.coinRecoveryComplete();       
-  });
+  };
+
+  // Unpersist Payment
+  return persistFSM(wallet, null)
+    .then(() => wallet.issuer("info", {}, null, "GET"))
+    .then(getVerificationFee)
+    .then(notifyFeesToWallet)
+    .then(getUserResponse)
+    .then(() => wallet.verifyCoins(coinsToRecover, args, false, currency))
+    .then(addCoinsToRecoverInStore)
+    .then(completeRecovery)
+    .catch(handleError);
 };
+
 
 export default {
   stateMachine: PaymentRequestFSM,
@@ -1032,3 +1119,4 @@ export default {
     doVerifyPaymentCoins,
   }
 }
+

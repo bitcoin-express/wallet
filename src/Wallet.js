@@ -11,11 +11,9 @@ import ActionHome from 'material-ui/svg-icons/action/home';
 import WalletBF, { DEFAULT_SETTINGS } from './helpers/WalletBF';
 import Persistence from './helpers/Persistence';
 import LocalStorage from './helpers/persistence/LocalStorage';
-
 import ExchangeRate from './helpers/ExchangeRate';
 import Time from './helpers/Time';
 import Tools from './helpers/Tools';
-
 import Bar from './components/Bar';
 import BitcoinCurrency from './components/BitcoinCurrency';
 import BottomBar from './components/BottomBar';
@@ -26,8 +24,6 @@ import LogoText from './components/LogoText';
 import Notification from './components/Notification'
 import WalletBalance from './components/WalletBalance';
 import WelcomeScreen from './components/WelcomeScreen';
-
-// Tabs
 import AddFundsTab from './components/tabs/AddFundsTab';
 import ImportTab from './components/tabs/ImportTab';
 import ExportTab from './components/tabs/ExportTab';
@@ -35,8 +31,6 @@ import HistoryTab from './components/tabs/HistoryTab';
 import MainTab from './components/tabs/MainTab';
 import PayTab from './components/tabs/PayTab';
 import ExchangeTab from './components/tabs/ExchangeTab';
-
-// Dialogs
 import AboutDialog from './components/dialogs/AboutDialog';
 import AddFundsDialog from './components/dialogs/AddFundsDialog';
 import AuthenticateDialog from './components/dialogs/AuthenticateDialog';
@@ -3038,7 +3032,7 @@ class Wallet extends React.Component {
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
             loading={ this.loading }
-            paymentDetails={ this.props.paymentRequest.PaymentDetails }
+            paymentDetails={ this.props.paymentRequest }
             refreshCoinBalance={ this.refreshCoinBalance }
             refreshIssuerRates={ this.refreshIssuerRates }
             removePayment={ this.props.removePayment }

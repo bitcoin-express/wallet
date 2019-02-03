@@ -48,16 +48,6 @@ class PayTab extends React.Component {
   }
 
   componentWillMount() {
-    let {
-      paymentDetails,
-      wallet,
-    } = this.props;
-
-    const {
-      amount,
-      currency,
-    } = paymentDetails;
-
     this.props.refreshIssuerRates(false);
   }
 
@@ -256,17 +246,17 @@ class PayTab extends React.Component {
     } = this.props;
 
     const {
-      email,
+      policies,
     } = paymentDetails;
 
     const {
       checked,
     } = this.state;
 
-    let emailActive = email && (email.receipt || email.refund);
+    let policyActive = policies && (policies.receipt_via_email || policies.refund_via_email);
     let userEmail = wallet.getSettingsVariable(wallet.config.EMAIL);
 
-    if (!userEmail || !emailActive) {
+    if (!userEmail || !policyActive) {
       return null;
     }
 
@@ -275,7 +265,7 @@ class PayTab extends React.Component {
         onCheck={ (ev, checked) => this.setState({ checked }) }
         checked={ checked }
         label={ <span>Include <b>{ userEmail }</b></span> }
-        disabled={ !emailActive }
+        disabled={ !policyActive }
         labelStyle={{
           width: 'initial',
           color: styles.colors.mainBlue,
@@ -326,12 +316,12 @@ class PayTab extends React.Component {
     } = wallet.config;
 
     const {
-      amount,
       currency,
-      domain,
-      memo,
+      acceptable_issuers,
+      description,
       payment_url,
-      seller,
+      email_customer_contact,
+      value,
     } = this.props.paymentDetails;
 
     const {
@@ -367,17 +357,17 @@ class PayTab extends React.Component {
             </div>
             <div style={{ marginLeft: '15px' }}>
               <PaymentInfo
-                amount={ amount }
+                amount={ value }
                 currency={ currency }
                 disabled={ true }
-                domain={ domain }
+                domain={ acceptable_issuers }
                 inactive={ true }
                 fee={ 0 }
                 isFlipped={ isFlipped }
                 isFullScreen={ isFullScreen }
-                memo={ memo }
+                memo={ description }
                 payment_url={ payment_url }
-                seller={ seller }
+                seller={ email_customer_contact }
                 showValuesInCurrency={ showValuesInCurrency }
                 total={ 0 }
                 wallet={ wallet }
@@ -408,17 +398,17 @@ class PayTab extends React.Component {
           swapList,
           secsToExpire,
         } = this.state.args;
-        total = parseFloat(amount);
+        total = parseFloat(value);
 
         return <div style={ this.styles.container }>
           <SwapInfo
-            amount={ amount }
+            amount={ value }
             currency={ currency }
             disabled={ disabled }
             errorMsg={ errorMsg }
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
-            memo={ memo }
+            memo={ description }
             payment_url={ payment_url }
             secsToExpire={ secsToExpire }
             showValuesInCurrency={ showValuesInCurrency }
@@ -536,22 +526,22 @@ class PayTab extends React.Component {
           timeToExpire,
         } = this.state.args;
         console.log("timetoexpire - " + timeToExpire)
-        total = parseFloat(amount) + parseFloat(splitFee);
+        total = parseFloat(value) + parseFloat(splitFee);
 
         return <div style={ this.styles.container }>
 
           <PaymentInfo
-            amount={ amount }
+            amount={ value }
             currency={ currency }
             disabled={ disabled }
-            domain={ domain }
+            domain={ acceptable_issuers }
             errorMsg={ errorMsg }
             fee={ splitFee }
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
-            memo={ memo }
+            memo={ description }
             payment_url={ payment_url }
-            seller={ seller }
+            seller={ email_customer_contact }
             showValuesInCurrency={ showValuesInCurrency }
             timeToExpire={ parseInt(timeToExpire) }
             total={ total }
@@ -630,7 +620,7 @@ class PayTab extends React.Component {
             small={ true }
             removeInitialSpaces={ !isFullScreen }
             showValuesInCurrency={ showValuesInCurrency }
-            value={ parseFloat(amount) }
+            value={ parseFloat(value) }
             wallet={ wallet }
             xr={ xr }
           />
