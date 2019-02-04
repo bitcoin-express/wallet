@@ -447,7 +447,7 @@ var doPrepareCurrency = function(fsm) {
       }
 
       // Suceed - Swap coins
-      const swapPromises = getSwapPromisesList(swapList);
+      const swapPromises = getSwapPromisesList(swapList, currency, service, emailRecovery);
       const message = "Fetching exchange rates...";
       return fsm.args.notification("displayLoader", { message })
         .then(() => Promise.all(swapPromises));

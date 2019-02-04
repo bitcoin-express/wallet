@@ -1,5 +1,13 @@
 
-
+/**
+ * From the list of swaps to proceed for the actual payment, get the earliest expiry time.
+ *
+ * :param currency: [string] target currency.
+ * :param expiryRates: [array] list of rates information when swapping coins by the issuer.
+ * :param swapList: [array] the list of swap objects.
+ *
+ * :return: [string] ISOString of the earliest expiry date.
+ */
 export function getEarliestExpiryTime(currency, expiryRates, swapList) {
   if (typeof expiryRates == "string") {
     // It's already the expiry ISOString date
@@ -27,7 +35,17 @@ export function getEarliestExpiryTime(currency, expiryRates, swapList) {
 };
 
 
-export function getSwapPromisesList(swapList) {
+/**
+ * Returns the list of promises to resolve in other to proceed with all the swaps of coins required for the actual payment.
+ *
+ * :param currency: [string] target currency.
+ * :param swapList: [array] the list of swap objects.
+ * :param service: [obj] issuer service, the object response from 'info' request to the issuer.
+ * :param emailRecovery: [bool] user allow recovery at the wallet settings.
+ *
+ * :return: [array] the promises of swaps to resolve.
+ */
+export function getSwapPromisesList(swapList, currency, service, emailRecovery) {
   return swapList.map((swap) => {
     const sourceCurrency = Object.keys(swap)[0];
     const {
@@ -55,7 +73,23 @@ export function getSwapPromisesList(swapList) {
 };
 
 
-export function getPaymentOptions(withEmail, wallet, policies)
+/**
+ * Returns the 'options' object of the payment, with the settings regarding the email notifications.
+ *
+ * :param withEmail: [bool] if false, options is null.
+ * :param wallet: [obj]
+ * :param policies: [obj] PaymentDetails policies object.
+ *
+ * :return: [obj] The options object, i.e.
+ *
+ *   options : {
+ *     "send_receipt_to": {
+ *       "email": "david@geemail.com"
+ *     },
+ *     "language_preference": "en-GB"
+ *   }
+ */
+export function getPaymentOptions(withEmail, wallet, policies) {
   const email = wallet.getSettingsVariable(wallet.config.EMAIL);
 
   if (!withEmail || !email) {
