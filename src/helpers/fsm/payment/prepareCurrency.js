@@ -41,7 +41,7 @@ export function getPrepareCurrencyTransitions () {
 export default function doPrepareCurrency(fsm) {
 
   if (fsm.args.ack) {
-    const result = (fsm.args.ack.status === "ok") ? fsm.ackOk() : fsm.error();
+    const result = (fsm.args.ack.status === "ok") ? fsm.ackOk() : fsm.interrupted();
     return Promise.resolve(result);
   }
 
@@ -270,13 +270,13 @@ function getArgumentErrors(args) {
  * :param secsToRates: [int] seconds for the swap rates to expire
  */
 function getSwapTimers(fsm, secsToPayment, secsToRates) {
-  const MAX_MILLI_SECONDS = 2147483647;
+  const MAX_MILLISECONDS = 2147483647;
   const throwError = (key) => () => { throw new Error(key) };
 
-  const payTimeout = Math.min(MAX_MILLI_SECONDS, 1000 * secsToPayment);
+  const payTimeout = Math.min(MAX_MILLISECONDS, 1000 * secsToPayment);
   const paymentTimer = setTimeout(throwError("paymentTimeout"), payTimeout); 
 
-  const ratesTimeout = Math.min(MAX_MILLI_SECONDS, 1000 * secsToRates);
+  const ratesTimeout = Math.min(MAX_MILLISECONDS, 1000 * secsToRates);
   const disableButtonTimer = setTimeout(throwError("disableSwap"), ratesTimeout);
   const swapRateTimer = setTimeout(throwError("ratesTimeout"), ratesTimeout + 5000); 
 

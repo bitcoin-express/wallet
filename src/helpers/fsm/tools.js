@@ -54,13 +54,14 @@ export function persistFSM(wallet, args) {
 
 
 export function getRecoveryCoins(args) {
-  let coins = [];
-  if (args.payment && args.payment.coins) {
-    coins = args.payment.coins;
-  }
   if (args.ack && args.ack.coins) {
-    coins = coins.concat(args.ack.coins);
+    return args.ack.coins;
   }
-  return coins;
+
+  if (args.payment && args.payment.coins) {
+    return args.payment.coins;
+  }
+
+  return [];
 }
 

@@ -1,4 +1,4 @@
-import { persistFSM, getRecoveryCoins } from '../tools';
+import { persistFSM, getRecoveryCoins, getSecondsToISODate } from '../tools';
 // Question: What happens when an error is triggered?
 
 
@@ -6,7 +6,11 @@ export function getRecoverCoinsTransitions() {
   return [{
     name: 'coinRecoveryComplete',
     from: 'RecoverCoins',
-    to: 'Exit'
+    to: 'PaymentFailed'
+  }, {
+    name: 'failed',
+    from: 'RecoverCoins',
+    to: 'StartPayment'
   }];
 }
 
@@ -15,7 +19,13 @@ export default function doRecoverCoins(fsm) {
   console.log("do"+fsm.state);
 
   const { wallet } = fsm.args;
-  const { COIN_STORE, storage } = wallet.config;
+  const {
+    COIN_STORE,
+    DEFAULT_ISSUER,
+    ISSUE_POLICY,
+    storage,
+    VERIFY_EXPIRE,
+  } = wallet.config;
 
   let recoverCoinsPromise;
   const coinsToRecover = getRecoveryCoins(fsm.args);
@@ -25,23 +35,65 @@ export default function doRecoverCoins(fsm) {
     const message = (fsm.args.error || "") + "- trying to recover your coins...";
     fsm.args.notification("displayLoader", { message });
 
-    let oldBalance;
-    const checkCoinsExistance = (value) => {
-      oldBalance = value;
-      return wallet.issuer("exist", {
-        issuerRequest: {
-          fn: "exist",
-          coin: coinsToRecover,
-        }
-      });
-    }
+    const policy = wallet.getSettingsVariable(ISSUE_POLICY);
 
-    let coins;
-    const storeCoins = (response) => {
+    let coins, oldBalance, timer;
+    const verifyCoins = (value) => {
+      oldBalance = value;
+
       if (response.deferInfo || response.status !== "ok") {
-        return 0;
+        throw new Error("failed");
       }
-      // TO_DO: Must we verify the coins?
+
+      fsm.args.notification("displayLoader", {
+        message: `Verifying ${coinsToRecover.length} coins...`,
+      });
+
+      if (!fsm.args.ack.recovery) {
+        const verifyArgs = {
+          action: "recovery",
+          domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
+          expiryPeriod_ms: wallet.getExpiryPeriod(VERIFY_EXPIRE),
+          external: true,
+          policy,
+        };
+        return wallet.verifyCoins(coinsToRecover, verifyArgs, false, fsm.args.currency);
+      }
+
+      const {
+        expiry,
+        issuer,
+        tid,
+      } = fsm.args.ack.recovery;
+
+      const verifyArgs = {
+        action: "recovery",
+        beginResponse: {
+          tid,
+        },
+        domain: issuer,
+        expiryPeriod_ms: expiry,
+        external: true,
+        policy,
+      };
+
+      const MAX_MILLISECONDS = 2147483647;
+      const secondsToExpire = getSecondsToISODate(fsm.args.expires);
+      const timeout = Math.min(MAX_MILLISECONDS, 1000 * secondsToExpire);
+      timer = setTimeout(() => { throw new Error("timeout") }, timeout); 
+
+      return wallet.verifyCoins(coinsToRecover, verifyArgs, false, fsm.args.currency);
+    };
+
+    const storeCoins = (response) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (!response || (response.coin && response.coin.length == 0)) {
+        throw new Error("failed");
+      }
+
       coins = response.coins;
       fsm.args.notification("displayLoader", {
         message: `Recovering ${coins.length} coins...`,
@@ -49,44 +101,9 @@ export default function doRecoverCoins(fsm) {
       return storage.addAllIfAbsent(COIN_STORE, coins, false, fsm.args.currency);
     };
 
-    const recordTransaction = (value) => {
-      if (oldBalance == value) {
-        return storage.flush();
-      }
-
-      const recoveredValue = value - oldBalance;
-      if (recoveredValue == 0) {
-        fsm.args.error += ". No coins recovered.";
-        return true;
-      }
-
-      fsm.args.error += `. Recovered coins: ${fsm.args.currency} ${recoveredValue.toFixed(8)}.`;
-      return wallet.recordTransaction({
-        headerInfo: {
-          fn: 'coin recovery',
-          domain: fsm.args.order_id,
-        },
-        paymentInfo: {
-          actualValue: recoveredValue,
-          faceValue: recoveredValue,
-          newValue: recoveredValue,
-          comment: "recovery from payment failure",
-          fee: 0,
-        },
-        coin: coins,
-        other: {
-          target: fsm.args.amount,
-          item: fsm.args.payment.transaction_id,
-        },
-        currency: fsm.args.currency,
-      });
-    };
-
     recoverCoinsPromise = wallet.Balance(fsm.args.currency)
-      .then(checkCoinsExistance)
-      .then(storeCoins)
-      .then(() => wallet.Balance(fsm.args.currency))
-      .then(recordTransaction);
+      .then(verifyCoins)
+      .then(storeCoins);
 
   } else {
     recoverCoinsPromise = Promise.resolve(storage.flush());
@@ -95,6 +112,6 @@ export default function doRecoverCoins(fsm) {
   return Promise.all([persistFSM(wallet, null), recoverCoinsPromise])
     .then(() => BitcoinExpress.Host.PaymentAckAck(fsm.args.ack))
     .then(() => fsm.coinRecoveryComplete())
-    .catch(() => fsm.coinRecoveryComplete());
+    .catch((err) => fsm.failed());
 };
 
