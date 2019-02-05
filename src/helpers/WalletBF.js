@@ -2453,11 +2453,11 @@ export default class WalletBF extends SwapBF {
     const emailEncrypt = this.getSettingsVariable(EMAIL_ENCRYPT);
     const encryptType = this.getSettingsVariable(ENCRYPT_TYPE);
     if (emailEncrypt && encryptType == 1) {
-      // manual
+      // manual encryption
       email[1] = this.getSettingsVariable(PASSWORD_ENCRYPT);
       email[2] = this._Uint8ArrayToBase64();
     } else if (emailEncrypt) {
-      // auto
+      // auto encryption
       email[1] = this._Uint8ArrayToBase64();
       email[2] = this._Uint8ArrayToBase64();
 

@@ -39,3 +39,28 @@ export function getSecondsToISODate(ISODate) {
   return Math.ceil(seconds - now);
 }
 
+
+export function persistFSM(wallet, args) {
+  if (!args) {
+    return wallet.setPersistentVariable(wallet.config.FSM, null);
+  }
+
+  let argsCloned = JSON.parse(JSON.stringify(args));
+  delete argsCloned.wallet;
+  delete argsCloned.notification;
+  delete argsCloned.other;
+  return wallet.setPersistentVariable(wallet.config.FSM, argsCloned);
+}
+
+
+export function getRecoveryCoins(args) {
+  let coins = [];
+  if (args.payment && args.payment.coins) {
+    coins = args.payment.coins;
+  }
+  if (args.ack && args.ack.coins) {
+    coins = coins.concat(args.ack.coins);
+  }
+  return coins;
+}
+
