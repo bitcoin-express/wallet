@@ -21,9 +21,7 @@ export default function doRecoverCoins(fsm) {
   const { wallet } = fsm.args;
   const { storage } = wallet.config;
 
-  let recoverCoinsPromise;
   let coinsList = [];
-
   if (fsm.args.payment && fsm.args.payment.coins) {
     coinsList.push(fsm.args.payment.coins);
   }
@@ -32,6 +30,7 @@ export default function doRecoverCoins(fsm) {
     coinsList.push(fsm.args.ack.coins);
   }
 
+  let recoverCoinsPromise;
   if (coinsList.length > 0) {
     const message = "Trying to recover your coins...";
     fsm.args.notification("displayLoader", { message });
