@@ -1,4 +1,4 @@
-import { persistFSM, getRecoveryCoins } from '../tools';
+import { persistFSM } from '../tools';
 // Question: What happens when an error is triggered?
 
 
