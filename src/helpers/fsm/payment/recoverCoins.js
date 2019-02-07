@@ -33,7 +33,7 @@ export default function doRecoverCoins(fsm) {
   }
 
   if (coinsList.length > 0) {
-    const message = (fsm.args.error || "") + "- trying to recover your coins...";
+    const message = "Trying to recover your coins...";
     fsm.args.notification("displayLoader", { message });
     recoverCoinsPromise = recoverCoins(coinsList.pop(), coinsList, fsm.args);
   } else {
@@ -46,7 +46,7 @@ export default function doRecoverCoins(fsm) {
     }
     const { coins } = response;
     fsm.args.notification("displayLoader", {
-      message: `Recovering ${coins.length} coins...`,
+      message: `Storing ${coins.length} coins...`,
     });
     return storage.addAllIfAbsent(COIN_STORE, coins, false, fsm.args.currency);
   };
@@ -75,14 +75,8 @@ function recoverCoins(coins, coinList, args) {
       throw new Error("failed");
     }
 
-    args.notification("displayLoader", {
-      message: `Verifying ${coins.length} coins...`,
-    });
-
     if (!args.ack.recovery) {
-      return {
-        coins,
-      };
+      return { coins };
     }
 
     const {
@@ -102,6 +96,9 @@ function recoverCoins(coins, coinList, args) {
       policy,
     };
 
+    args.notification("displayLoader", {
+      message: `Verifying ${coins.length} coins...`,
+    });
     return wallet.verifyCoins(coins, verifyArgs, false, args.currency);
   };
 
@@ -113,6 +110,10 @@ function recoverCoins(coins, coinList, args) {
       external: true,
       policy,
     };
+
+    args.notification("displayLoader", {
+      message: `Verifying ${response.coins.length} coins...`,
+    });
     return wallet.verifyCoins(response.coins, verifyArgs, false, args.currency);
   };
 
@@ -120,11 +121,9 @@ function recoverCoins(coins, coinList, args) {
     if (response.coins && getCoinsValue(wallet, response.coins) > 0) {
       return response;
     }
-
     if (coinList.length > 0) {
       throw new Error("failed");
     }
-
     // Iterative
     return recoverCoins(coinList.pop(), coinList, args);
   };
