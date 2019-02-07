@@ -1,5 +1,4 @@
 import { persistFSM } from '../tools';
-// Question: What happens when an error is triggered?
 
 
 export function getRecoverCoinsTransitions() {
