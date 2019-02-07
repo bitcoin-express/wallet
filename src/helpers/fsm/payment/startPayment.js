@@ -48,7 +48,7 @@ export default function doStartPayment(fsm) {
   };
 
   const MAX_MILLISECONDS = 2147483647;
-  const timeout = Math.min(MAX_MILLISECONDS, 1000 * parseInt(fsm.args.time_budget));
+  const timeout = Math.min(MAX_MILLISECONDS, 1000 * parseInt(fsm.args.time_budget || 60));
   // Bitcoin Express library also will handle the time_budget in the AJAX call timeout.
   let timer = setTimeout(() => { throw new Error("timeout") }, timeout); 
 
