@@ -57,6 +57,7 @@ export default function doPaymentFailed(fsm) {
   return wallet.Balance(fsm.args.currency)
     .then(recordTransaction)
     .then(() => persistFSM(wallet, null))
+    .then(() => wallet.storage.flush())
     .then(() => fsm.args.ack ? BitcoinExpress.Host.PaymentAckAck(fsm.args.ack) : true)
     .then(() => fsm.exit());
 };
