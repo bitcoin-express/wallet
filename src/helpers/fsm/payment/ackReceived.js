@@ -8,13 +8,13 @@ export function getAckReceivedTransitions() {
     from: 'AckReceived',
     to: 'SendAckAck'
   }, {
-    name: 'error',
+    name: 'failed',
     from: 'AckReceived',
-    to: 'RecoverCoins'
+    to: 'PaymentFailed'
   }, {
     name: 'paymentRecovery',
     from: 'AckReceived',
-    to: 'PaymentInterrupted'
+    to: 'RecoverCoins'
   }];
 }
 
@@ -62,7 +62,7 @@ var doAckReceived = function(fsm) {
       fsm.args.error = "Received a bad PaymentAck";
       break;
   }
-  return Promise.resolve(fsm.error());                  
+  return Promise.resolve(fsm.failed());                  
 };
 
 
@@ -113,7 +113,7 @@ function proceedValidAck(fsm) {
 
   const handleError = (err) => {
     fsm.args.error = err.message || err;
-    return fsm.error();
+    return fsm.failed();
   };
 
   // The present version does not lock the coin store for the duration of

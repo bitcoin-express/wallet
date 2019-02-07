@@ -12,14 +12,14 @@ export function getStartPaymentTransitions() {
     from: 'StartPayment',
     to: function() {
       console.log("Payment attempt", this.args.paymentAttempts);
-      return this.args.paymentAttempts <= 3 ? 'PaymentInterrupted' : 'VerifyPaymentCoins';
+      return this.args.paymentAttempts <= 3 ? 'RecoverCoins' : 'PaymentFailed';
     }
   }, {
     name: 'timeout',
     from: 'StartPayment',
     to: function() {
       console.log("Payment attempt", this.args.paymentAttempts);
-      return this.args.paymentAttempts <= 3 ? 'PaymentInterrupted' : 'VerifyPaymentCoins';
+      return this.args.paymentAttempts <= 3 ? 'RecoverCoins' : 'PaymentFailed';
     }
   }];
 }
@@ -30,12 +30,14 @@ export default function doStartPayment(fsm) {
 
   const expires = getSecondsFromISODate(fsm.args.expires);
   const now = new Date().getTime() / 1000;
+  // After here, no need to check if the payment expired, as we already called it.
   if (expires < now) {
     fsm.args.error = "Payment request expired";
     return Promise.resolve(fsm.timeout());
   }
 
   const getPaymentAck = (response) => {
+    clearTimeout(timer);
     fsm.args.ack = response.PaymentAck;
     return fsm.paymentAckArrived();          
   };
@@ -44,6 +46,11 @@ export default function doStartPayment(fsm) {
     fsm.args.error = err.message || err;
     return fsm.error();         
   };
+
+  const MAX_MILLISECONDS = 2147483647;
+  const timeout = Math.min(MAX_MILLISECONDS, 1000 * parseInt(fsm.args.time_budget));
+  // Bitcoin Express library also will handle the time_budget in the AJAX call timeout.
+  let timer = setTimeout(() => { throw new Error("timeout") }, timeout); 
 
   fsm.args.paymentAttempts += 1;
   return BitcoinExpress.Host.Payment(fsm.args.payment, fsm.args.amount)

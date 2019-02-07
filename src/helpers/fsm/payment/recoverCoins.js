@@ -1,4 +1,4 @@
-import { persistFSM, getRecoveryCoins, getSecondsToISODate } from '../tools';
+import { persistFSM, getRecoveryCoins } from '../tools';
 // Question: What happens when an error is triggered?
 
 
@@ -37,7 +37,7 @@ export default function doRecoverCoins(fsm) {
 
     const policy = wallet.getSettingsVariable(ISSUE_POLICY);
 
-    let coins, oldBalance, timer;
+    let coins, oldBalance;
     const verifyCoins = (value) => {
       oldBalance = value;
 
@@ -77,19 +77,10 @@ export default function doRecoverCoins(fsm) {
         policy,
       };
 
-      const MAX_MILLISECONDS = 2147483647;
-      const secondsToExpire = getSecondsToISODate(fsm.args.expires);
-      const timeout = Math.min(MAX_MILLISECONDS, 1000 * secondsToExpire);
-      timer = setTimeout(() => { throw new Error("timeout") }, timeout); 
-
       return wallet.verifyCoins(coinsToRecover, verifyArgs, false, fsm.args.currency);
     };
 
     const storeCoins = (response) => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-
       if (!response || (response.coin && response.coin.length == 0)) {
         throw new Error("failed");
       }
@@ -110,7 +101,6 @@ export default function doRecoverCoins(fsm) {
   }
 
   return Promise.all([persistFSM(wallet, null), recoverCoinsPromise])
-    .then(() => BitcoinExpress.Host.PaymentAckAck(fsm.args.ack))
     .then(() => fsm.coinRecoveryComplete())
     .catch((err) => fsm.failed());
 };
