@@ -10,11 +10,11 @@ export function getAckReceivedTransitions() {
   }, {
     name: 'failed',
     from: 'AckReceived',
-    to: 'PaymentFailed'
+    to: 'RecoverFailedCoins'
   }, {
     name: 'paymentRecovery',
     from: 'AckReceived',
-    to: 'RecoverCoins'
+    to: 'StartPayment'
   }];
 }
 

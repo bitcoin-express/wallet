@@ -8,6 +8,7 @@ import doAckReceived, { getAckReceivedTransitions } from './payment/ackReceived'
 import doSendAckAck, { getSendAckAckTransitions } from './payment/sendAckAck';
 import doComplete, { getCompleteTransitions } from './payment/complete';
 import doRecoverCoins, { getRecoverCoinsTransitions } from './payment/recoverCoins';
+import doRecoverFailedCoins, { getRecoverFailedCoinsTransitions } from './payment/recoverCoins';
 import doPaymentFailed, { getPaymentFailedTransitions } from './payment/paymentFailed';
 import doExit, { getExitTransitions } from './payment/exit';
 //import doPaymentInterrupted, { getPaymentInterruptedTransaction } from './payment/paymentInterrupted';
@@ -23,6 +24,7 @@ transitions = transitions.concat(getAckReceivedTransitions());
 transitions = transitions.concat(getSendAckAckTransitions());
 transitions = transitions.concat(getCompleteTransitions());
 transitions = transitions.concat(getRecoverCoinsTransitions());
+transitions = transitions.concat(getRecoverFailedCoinsTransitions());
 transitions = transitions.concat(getPaymentFailedTransitions());
 transitions = transitions.concat(getExitTransitions());
 //transitions = transitions.concat(getPaymentInterruptedTransaction());
@@ -112,6 +114,7 @@ export default {
     doPaymentReady,
     doComplete,
     doRecoverCoins,
+    doRecoverFailedCoins,
     doPaymentFailed,
     doExit,
     //doPaymentInterrupted,
