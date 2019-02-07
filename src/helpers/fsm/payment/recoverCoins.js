@@ -51,9 +51,9 @@ export default function doRecoverCoins(fsm) {
     return storage.addAllIfAbsent(COIN_STORE, coins, false, fsm.args.currency);
   };
 
-  return persistFSM(wallet, null)
-    .then(recoverCoinsPromise)
+  return recoverCoinsPromise
     .then(storeCoins)
+    .then(() => persistFSM(wallet, null))
     .then(() => fsm.coinRecoveryComplete())
     .catch((err) => fsm.failed());
 };
