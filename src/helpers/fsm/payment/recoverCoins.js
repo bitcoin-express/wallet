@@ -35,7 +35,7 @@ export default function doRecoverCoins(fsm) {
     fsm.args.notification("displayLoader", { message });
     recoverCoinsPromise = recoverCoins(coinsList.pop(), coinsList, fsm.args);
   } else {
-    recoverCoinsPromise = Promise.resolve(storage.flush());
+    recoverCoinsPromise = Promise.resolve(true);
   }
 
   const storeCoins = (response) => {
@@ -52,6 +52,7 @@ export default function doRecoverCoins(fsm) {
   return recoverCoinsPromise
     .then(storeCoins)
     .then(() => persistFSM(wallet, null))
+    .then(() => storage.flush())
     .then(() => fsm.coinRecoveryComplete())
     .catch((err) => fsm.failed());
 };
@@ -119,10 +120,10 @@ function recoverCoins(coins, coinList, args) {
     if (response.coins && getCoinsValue(wallet, response.coins) > 0) {
       return response;
     }
-    if (coinList.length > 0) {
+    if (coinList.length == 0) {
       throw new Error("failed");
     }
-    // Iterative
+    // Iterative, call to the next list (in this particular case, original coins)
     return recoverCoins(coinList.pop(), coinList, args);
   };
 
