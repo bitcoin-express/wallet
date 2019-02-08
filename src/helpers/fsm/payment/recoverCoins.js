@@ -29,14 +29,18 @@ export default function doRecoverCoins(fsm) {
     coinsList.push(fsm.args.ack.coins);
   }
 
-  let recoverCoinsPromise;
-  if (coinsList.length > 0) {
-    const message = "Trying to recover your coins...";
+  if (coinsList.length == 0) {
+    const message = "No coins to recover, finishing payment...";
     fsm.args.notification("displayLoader", { message });
-    recoverCoinsPromise = recoverCoins(coinsList.pop(), coinsList, fsm.args);
-  } else {
-    recoverCoinsPromise = Promise.resolve(true);
+
+    return persistFSM(wallet, null)
+      .then(() => storage.flush())
+      .then(() => fsm.coinRecoveryComplete())
+      .catch((err) => fsm.failed());
   }
+
+  const message = "Trying to recover your coins...";
+  fsm.args.notification("displayLoader", { message });
 
   const storeCoins = (response) => {
     if (!response || (response.coin && response.coin.length == 0)) {
@@ -49,7 +53,7 @@ export default function doRecoverCoins(fsm) {
     return storage.addAllIfAbsent(COIN_STORE, coins, false, fsm.args.currency);
   };
 
-  return recoverCoinsPromise
+  return recoverCoins(coinsList.pop(), coinsList, fsm.args)
     .then(storeCoins)
     .then(() => persistFSM(wallet, null))
     .then(() => storage.flush())
