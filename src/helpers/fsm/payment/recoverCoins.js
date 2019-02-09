@@ -94,7 +94,7 @@ function recoverCoinsWithHomeIssuer(fsm) {
     if (!response || (response.coin && response.coin.length == 0)) {
       throw new Error("failed");
     }
-    // TO_DO - check status code 1018
+
     const { coins } = response;
     fsm.args.notification("displayLoader", {
       message: `Storing ${coins.length} coins...`,
@@ -125,6 +125,7 @@ function _getCoinsLists(fsm) {
 
 function recoverCoins(coins, coinList, args) {
   const { wallet } = args;
+
   const {
     COIN_STORE,
     DEFAULT_ISSUER,
@@ -132,14 +133,30 @@ function recoverCoins(coins, coinList, args) {
     VERIFY_EXPIRE,
   } = wallet.config;
 
+  const {
+    currency,
+    notification,
+  } = args;
+
   const responseContainsCoins = (response) => {
+    if (response && response.error && response.error.code == 1018) {
+      // smaller value than expected
+      const params = {
+        issuerRequest: {
+          fn: "exist",
+          coin: coins,
+        }
+      };
+
+      return wallet.issuer("exist", params)
+        .then((resp) => recoverCoins(resp.coins || coinList.pop(), coinList, args));
+    }
+
     if (response.verifyInfo && response.verifyInfo.actualValue > 0) {
-      // TO_DO - exist when
-      // getCoinsValue(wallet, response.coins) != response.verifyInfo.actualValue
       return response;
     }
+
     if (coinList.length == 0) {
-      // has_coins == false
       throw new Error("failed");
     }
     // Iterative, call to the next list (in this particular case, original coins)
@@ -153,11 +170,6 @@ function recoverCoins(coins, coinList, args) {
     external: true,
     policy: wallet.getSettingsVariable(ISSUE_POLICY),
   };
-
-  const {
-    currency,
-    notification,
-  } = args;
 
   // TO_DO: Improve for multi-issuer situation
   return doVerifyCoins(() => verifyCoins(coins, verifyArgs, notification, currency))
