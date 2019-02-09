@@ -118,10 +118,12 @@ function proceedValidAck(fsm) {
 
   fsm.args.payment.ack = fsm.ack;
   return persistFSM(wallet, fsm.args)
+    .then(wallet.storage.flush)
     .then(() => wallet.Balance(currency))
     .then(recordTransaction)
     .then(storeItem)
-    .then(() => fsm.ackOk())
+    .then(wallet.storage.flush)
+    .then(fsm.ackOk)
     .catch(handleError);
 }
 

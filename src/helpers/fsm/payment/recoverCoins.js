@@ -21,11 +21,11 @@ export default function doRecoverCoins(fsm) {
   const { storage } = wallet.config;
 
   if (!fsm.args.recovery || !fsm.args.ack || !fsm.args.ack.coins) {
-    return recoverCoinsWithHomeIssuer(fsm);
+    return recoverCoinsWithHomeIssuer(fsm)
       .then(() => persistFSM(wallet, null))
-      .then(() => storage.flush())
-      .then(() => fsm.coinRecoveryComplete())
-      .catch((err) => fsm.failed());
+      .then(storage.flush)
+      .then(fsm.coinRecoveryComplete)
+      .catch(fsm.failed);
   }
 
   const {
@@ -59,7 +59,7 @@ export default function doRecoverCoins(fsm) {
 
     fsm.args.recovery.coins = response.coins;
     return persistFSM(wallet, fsm)
-      .then(wallet.storage.flush)
+      .then(storage.flush)
       .then(() => wallet.issuer("end", {issuerRequest: { tid }}, {domain: issuer}));
   }
 
@@ -67,9 +67,9 @@ export default function doRecoverCoins(fsm) {
     .then(retrieveCoins)
     .then(() => recoverCoinsWithHomeIssuer(fsm))
     .then(() => persistFSM(wallet, null))
-    .then(() => storage.flush())
-    .then(() => fsm.coinRecoveryComplete())
-    .catch((err) => fsm.failed());
+    .then(storage.flush)
+    .then(fsm.coinRecoveryComplete)
+    .catch(fsm.failed);
 };
 
 
@@ -82,9 +82,9 @@ function recoverCoinsWithHomeIssuer(fsm) {
     fsm.args.notification("displayLoader", { message });
 
     return persistFSM(wallet, null)
-      .then(() => storage.flush())
-      .then(() => fsm.coinRecoveryComplete())
-      .catch((err) => fsm.failed());
+      .then(wallet.storage.flush)
+      .then(fsm.coinRecoveryComplete)
+      .catch(fsm.failed);
   }
 
   const message = "Trying to recover your coins...";
@@ -108,6 +108,7 @@ function recoverCoinsWithHomeIssuer(fsm) {
 
 
 function _getCoinsLists(fsm) {
+  // Get all the possible coins to verify in reversed array order of importance.
   let coinsList = [];
   if (fsm.args.payment && fsm.args.payment.coins) {
     coinsList.push(fsm.args.payment.coins);
@@ -131,20 +132,10 @@ function recoverCoins(coins, coinList, args) {
     VERIFY_EXPIRE,
   } = wallet.config;
 
-  const doVerifyCoins = () => {
-    const verifyArgs = {
-      action: "recovery",
-      domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
-      expiryPeriod_ms: wallet.getExpiryPeriod(VERIFY_EXPIRE),
-      external: true,
-      policy: wallet.getSettingsVariable(ISSUE_POLICY),
-    };
-
-    return verifyCoins(coins, verifyArgs, args.notification, args.currency) 
-  };
-
   const responseContainsCoins = (response) => {
-    if (response.coins && getCoinsValue(wallet, response.coins) > 0) {
+    if (response.verifyInfo && response.verifyInfo.actualValue > 0) {
+      // TO_DO - exist when
+      // getCoinsValue(wallet, response.coins) != response.verifyInfo.actualValue
       return response;
     }
     if (coinList.length == 0) {
@@ -155,8 +146,22 @@ function recoverCoins(coins, coinList, args) {
     return recoverCoins(coinList.pop(), coinList, args);
   };
 
+  const verifyArgs = {
+    action: "recovery",
+    domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
+    expiryPeriod_ms: wallet.getExpiryPeriod(VERIFY_EXPIRE),
+    external: true,
+    policy: wallet.getSettingsVariable(ISSUE_POLICY),
+  };
+
+  const {
+    currency,
+    notification,
+  } = args;
+
   // TO_DO: Improve for multi-issuer situation
-  return doVerifyCoins().then(responseContainsCoins);
+  return doVerifyCoins(() => verifyCoins(coins, verifyArgs, notification, currency))
+    .then(responseContainsCoins);
 };
 
 
