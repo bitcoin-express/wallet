@@ -53,6 +53,9 @@ const componentStyles = (theme) => {
       zIndex: '100',
       overflowY: 'hidden',
       height: '-webkit-fill-available',
+      height: '-moz-available',
+      height: 'fill-available',
+      height: '100%',
     },
     blockchain: {
       textDecoration: 'inherit',
