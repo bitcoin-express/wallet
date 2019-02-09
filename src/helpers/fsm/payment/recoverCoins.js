@@ -20,15 +20,63 @@ export default function doRecoverCoins(fsm) {
   const { wallet } = fsm.args;
   const { storage } = wallet.config;
 
-  let coinsList = [];
-  if (fsm.args.payment && fsm.args.payment.coins) {
-    coinsList.push(fsm.args.payment.coins);
+  if (!fsm.args.recovery || !fsm.args.ack || !fsm.args.ack.coins) {
+    return recoverCoinsWithHomeIssuer(fsm);
+      .then(() => persistFSM(wallet, null))
+      .then(() => storage.flush())
+      .then(() => fsm.coinRecoveryComplete())
+      .catch((err) => fsm.failed());
   }
 
-  if (fsm.args.ack && fsm.args.ack.coins) {
-    coinsList.push(fsm.args.ack.coins);
+  const {
+    ack,
+    currency,
+    notification,
+    recovery,
+  } = fsm.args;
+
+  const {
+    expiry,
+    issuer,
+    tid,
+  } = recovery;
+
+  const verifyArgs = {
+    action: "recovery",
+    beginResponse: {
+      tid,
+    },
+    domain: issuer,
+    expiryPeriod_ms: expiry,
+    external: true,
+    policy: wallet.getSettingsVariable(wallet.config.ISSUE_POLICY),
+  };
+
+  const retrieveCoins = (response) => {
+    if (!response.coins || getCoinsValue(wallet, response.coins) == 0) {
+      return 0;
+    }
+
+    fsm.args.recovery.coins = response.coins;
+    return persistFSM(wallet, fsm)
+      .then(wallet.storage.flush)
+      .then(() => wallet.issuer("end", {issuerRequest: { tid }}, {domain: issuer}));
   }
 
+  return verifyCoins(ack.coins, verifyArgs, notification, currency)
+    .then(retrieveCoins)
+    .then(() => recoverCoinsWithHomeIssuer(fsm))
+    .then(() => persistFSM(wallet, null))
+    .then(() => storage.flush())
+    .then(() => fsm.coinRecoveryComplete())
+    .catch((err) => fsm.failed());
+};
+
+
+function recoverCoinsWithHomeIssuer(fsm) {
+  const { wallet } = fsm.args;
+
+  let coinsList = _getCoinsLists(fsm);
   if (coinsList.length == 0) {
     const message = "No coins to recover, finishing payment...";
     fsm.args.notification("displayLoader", { message });
@@ -46,6 +94,7 @@ export default function doRecoverCoins(fsm) {
     if (!response || (response.coin && response.coin.length == 0)) {
       throw new Error("failed");
     }
+    // TO_DO - check status code 1018
     const { coins } = response;
     fsm.args.notification("displayLoader", {
       message: `Storing ${coins.length} coins...`,
@@ -54,12 +103,23 @@ export default function doRecoverCoins(fsm) {
   };
 
   return recoverCoins(coinsList.pop(), coinsList, fsm.args)
-    .then(storeCoins)
-    .then(() => persistFSM(wallet, null))
-    .then(() => storage.flush())
-    .then(() => fsm.coinRecoveryComplete())
-    .catch((err) => fsm.failed());
+    .then(storeCoins);
 };
+
+
+function _getCoinsLists(fsm) {
+  let coinsList = [];
+  if (fsm.args.payment && fsm.args.payment.coins) {
+    coinsList.push(fsm.args.payment.coins);
+  }
+  if (fsm.args.ack && fsm.args.ack.coins) {
+    coinsList.push(fsm.args.ack.coins);
+  }
+  if (fsm.args.recovery && fsm.args.recovery.coins) {
+    coinsList.push(fsm.args.recovery.coins);
+  }
+  return coinsList;
+}
 
 
 function recoverCoins(coins, coinList, args) {
@@ -71,53 +131,16 @@ function recoverCoins(coins, coinList, args) {
     VERIFY_EXPIRE,
   } = wallet.config;
 
-  const policy = wallet.getSettingsVariable(ISSUE_POLICY);
-
-  const verifyCoinsFromAck = () => {
-    if (response.deferInfo || response.status !== "ok") {
-      throw new Error("failed");
-    }
-
-    if (!args.ack.recovery) {
-      return { coins };
-    }
-
-    const {
-      expiry,
-      issuer,
-      tid,
-    } = args.ack.recovery;
-
-    const verifyArgs = {
-      action: "recovery",
-      beginResponse: {
-        tid,
-      },
-      domain: issuer,
-      expiryPeriod_ms: expiry,
-      external: true,
-      policy,
-    };
-
-    args.notification("displayLoader", {
-      message: `Verifying ${coins.length} coins...`,
-    });
-    return wallet.verifyCoins(coins, verifyArgs, false, args.currency);
-  };
-
-  const verifyCoins = (response) => {
+  const doVerifyCoins = () => {
     const verifyArgs = {
       action: "recovery",
       domain: wallet.getSettingsVariable(DEFAULT_ISSUER),
       expiryPeriod_ms: wallet.getExpiryPeriod(VERIFY_EXPIRE),
       external: true,
-      policy,
+      policy: wallet.getSettingsVariable(ISSUE_POLICY),
     };
 
-    args.notification("displayLoader", {
-      message: `Verifying ${response.coins.length} coins...`,
-    });
-    return wallet.verifyCoins(response.coins, verifyArgs, false, args.currency);
+    return verifyCoins(coins, verifyArgs, args.notification, args.currency) 
   };
 
   const responseContainsCoins = (response) => {
@@ -125,6 +148,7 @@ function recoverCoins(coins, coinList, args) {
       return response;
     }
     if (coinList.length == 0) {
+      // has_coins == false
       throw new Error("failed");
     }
     // Iterative, call to the next list (in this particular case, original coins)
@@ -132,10 +156,16 @@ function recoverCoins(coins, coinList, args) {
   };
 
   // TO_DO: Improve for multi-issuer situation
-  return verifyCoinsFromAck()
-    .then(verifyCoins)
-    .then(responseContainsCoins);
+  return doVerifyCoins().then(responseContainsCoins);
 };
+
+
+function verifyCoins(coins, args, notification, currency) {
+  notification("displayLoader", {
+    message: `Verifying ${coins.length} coins...`,
+  });
+  return wallet.verifyCoins(coins, args, false, currency);
+}
 
 
 function getCoinsValue(wallet, coins) {

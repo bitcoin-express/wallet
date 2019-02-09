@@ -116,9 +116,7 @@ function proceedValidAck(fsm) {
     return fsm.failed();
   };
 
-  // The present version does not lock the coin store for the duration of
-  // the payment. Therefore if another device were to cause the balance to
-  // reduce, the history item may be incorrect.
+  fsm.args.payment.ack = fsm.ack;
   return persistFSM(wallet, fsm.args)
     .then(() => wallet.Balance(currency))
     .then(recordTransaction)
