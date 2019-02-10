@@ -60,7 +60,7 @@ export default function doRecoverCoins(fsm) {
     fsm.args.recovery.coins = response.coins;
     return persistFSM(wallet, fsm)
       .then(storage.flush)
-      .then(() => wallet.issuer("end", {issuerRequest: { tid }}, {domain: issuer}));
+      .then(() => wallet.issuer("end", {issuerRequest: {tid}}, {domain: issuer}));
   }
 
   return verifyCoins(ack.coins, verifyArgs, notification, currency)

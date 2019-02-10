@@ -30,6 +30,36 @@ var doAckReceived = function(fsm) {
     case "issuer-error":
       return Promise.resolve(fsm.paymentRecovery());
 
+    case "soft-error":
+      const { retry_after } = fsm.ack;
+      const { wallet } = fsm.args;
+      const MAX_WAIT = 10; // 10 seconds
+
+      const handleSoftError = () => {
+        if (retry_after < MAX_WAIT) {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => resolve(fsm.paymentRecovery()), retry_after * 1000);
+          });
+        }
+
+        const notificationParams = {
+          secsToExpire: retry_after,
+        };
+
+        const promises = [
+          new Promise((resolve, reject) => setTimeout(() => resolve(false), retry_after * 1000)),
+          fsm.args.notification("displaySoftError", notificationParams)
+        ];
+
+        return Promise.race(promises)
+          .then((cancelled) => cancelled ? fsm.failed() : fsm.paymentRecovery());
+      };
+
+      return persistFSM(wallet, fsm.args)
+        .then(wallet.storage.flush)
+        .then(handleSoftError)
+        .catch(fsm.failed);
+
     case "payment-unknown":
       fsm.args.error = "Seller could not identify the sale item";
       break;

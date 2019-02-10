@@ -10,8 +10,9 @@ import isURL from 'validator/lib/isURL';
 import BitcoinCurrency from '../BitcoinCurrency';
 import HelpTooltip from '../HelpTooltip';
 import RateLoader from './exchange/RateLoader';
-import SwapInfo from './pay/SwapInfo';
+import DateCounter from './pay/DateCounter';
 import PaymentInfo from './pay/PaymentInfo';
+import SwapInfo from './pay/SwapInfo';
 
 import styles from '../../helpers/Styles';
 import FSM from '../../helpers/FSM';
@@ -103,6 +104,16 @@ class PayTab extends React.Component {
     return new Promise((resolve, reject) => {
 
       switch(state) {
+
+        case "displaySoftError":
+          this.handleOnClick = () => resolve(true);
+          this.setState({
+            state: "SoftError",
+            disabled: false,
+            args,
+          });
+          break;
+
         case "disableSwap":
           this.setState({
             disabled: true,
@@ -110,9 +121,7 @@ class PayTab extends React.Component {
           break;
 
         case "displaySwap":
-          this.handleOnClick = function() {
-            resolve(true);
-          }.bind(this);
+          this.handleOnClick = () => resolve(true);
           this.setState({
             state: "SwapInfo",
             disabled: false,
@@ -162,9 +171,7 @@ class PayTab extends React.Component {
           break;
 
         case "displayRecovery":
-          this.handleOnClick = function(resp) {
-            resolve(resp);
-          }.bind(this);
+          this.handleOnClick = (resp) => resolve(resp);
           this.setState({
             state: "Recover",
             disabled: false,
@@ -331,11 +338,13 @@ class PayTab extends React.Component {
       state,
     } = this.state;
 
+    const {
+      secsToExpire,
+    } = this.state.args;
 
     if (Object.keys(exchangeRates).length === 0) {
       return <RateLoader />;
     }
-    let total = 0;
 
     switch (state) {
 
@@ -393,12 +402,43 @@ class PayTab extends React.Component {
         } = this.state.args;
         return <RateLoader message={ message } />;
 
+      case "SoftError":
+
+        return <div style={ this.styles.container }>
+          <h3 style={{
+            color: styles.colors.mainTextColor,
+          }}>
+            Payment is delayed. Cancel payment if you do NOT wish to wait.
+          </h3>
+          <DateCounter
+            inSeconds={ true }
+            timeToExpire={ parseInt(secsToExpire) }
+          />
+          <br />
+          <div style={ this.styles.buttonSection }>
+            <div style={ this.styles.button }>
+              <RaisedButton
+                label="Cancel Payment Now"
+                labelStyle={{
+                  color: styles.colors.mainTextColor,
+                  fontWeight: 'bold',
+                }}
+                style={{
+                  backgroundColor: styles.colors.mainBlue,
+                  borderRadius: '5px',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                }}
+                primary={ true }
+                onClick={ this.handleOnClick }
+              />
+            </div>
+          </div>
+        </div>;
+
       case "SwapInfo":
         const {
           swapList,
-          secsToExpire,
         } = this.state.args;
-        total = parseFloat(value);
 
         return <div style={ this.styles.container }>
           <SwapInfo
@@ -413,7 +453,7 @@ class PayTab extends React.Component {
             secsToExpire={ secsToExpire }
             showValuesInCurrency={ showValuesInCurrency }
             swapList={ swapList }
-            total={ total }
+            total={ parseFloat(value) }
             wallet={ wallet }
             xr={ xr }
           />
@@ -422,7 +462,7 @@ class PayTab extends React.Component {
             <div style={ this.styles.button }>
               <RaisedButton
                 disabled={ disabled }
-                label={ "Confirm swap" }
+                label="Confirm swap"
                 labelStyle={{
                   color: styles.colors.mainTextColor,
                   fontWeight: 'bold',
@@ -526,7 +566,6 @@ class PayTab extends React.Component {
           timeToExpire,
         } = this.state.args;
         console.log("timetoexpire - " + timeToExpire)
-        total = parseFloat(value) + parseFloat(splitFee);
 
         return <div style={ this.styles.container }>
 
@@ -544,7 +583,7 @@ class PayTab extends React.Component {
             seller={ email_customer_contact }
             showValuesInCurrency={ showValuesInCurrency }
             timeToExpire={ parseInt(timeToExpire) }
-            total={ total }
+            total={ parseFloat(value) + parseFloat(splitFee) }
             wallet={ wallet }
             xr={ xr }
           />
