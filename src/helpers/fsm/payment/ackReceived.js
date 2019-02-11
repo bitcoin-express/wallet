@@ -21,44 +21,17 @@ export function getAckReceivedTransitions() {
 
 var doAckReceived = function(fsm) {
   console.log("do"+fsm.state);
-
-  if (fsm.ack.status == "ok") {
-    return proceedValidAck(fsm)
-  }
   
   switch (fsm.ack.status) {
+
+    case "ok":
+      return proceedValidAck(fsm)
+
     case "issuer-error":
       return Promise.resolve(fsm.paymentRecovery());
 
     case "soft-error":
-      const { retry_after } = fsm.ack;
-      const { wallet } = fsm.args;
-      const MAX_WAIT = 10; // 10 seconds
-
-      const handleSoftError = () => {
-        if (retry_after < MAX_WAIT) {
-          return new Promise((resolve, reject) => {
-            setTimeout(() => resolve(fsm.paymentRecovery()), retry_after * 1000);
-          });
-        }
-
-        const notificationParams = {
-          secsToExpire: retry_after,
-        };
-
-        const promises = [
-          new Promise((resolve, reject) => setTimeout(() => resolve(false), retry_after * 1000)),
-          fsm.args.notification("displaySoftError", notificationParams)
-        ];
-
-        return Promise.race(promises)
-          .then((cancelled) => cancelled ? fsm.failed() : fsm.paymentRecovery());
-      };
-
-      return persistFSM(wallet, fsm.args)
-        .then(wallet.storage.flush)
-        .then(handleSoftError)
-        .catch(fsm.failed);
+      return proceedSoftError(fsm);
 
     case "payment-unknown":
       fsm.args.error = "Seller could not identify the sale item";
@@ -92,8 +65,49 @@ var doAckReceived = function(fsm) {
       fsm.args.error = "Received a bad PaymentAck";
       break;
   }
-  return Promise.resolve(fsm.failed());                  
+
+  const { wallet } = fsm.args;
+  fsm.args.payment.ack = fsm.ack;
+  return persistFSM(wallet, fsm.args)
+    .then(wallet.storage.flush)
+    .then(fsm.failed);                  
 };
+
+
+function proceedSoftError(fsm) {
+  const { wallet } = fsm.args;
+  const { retry_after } = fsm.ack;
+  const MAX_WAIT = 10; // 10 seconds for now
+
+  const handleSoftError = () => {
+    if (retry_after < MAX_WAIT) {
+      const message = `Retrieve payment after ${retry_after} seconds...`;
+      fsm.args.notification("displayLoader", { message })
+
+      return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(fsm.paymentRecovery()), retry_after * 1000);
+      });
+    }
+
+    const notificationParams = {
+      secsToExpire: retry_after,
+    };
+
+    const promises = [
+      fsm.args.notification("displaySoftError", notificationParams),
+      new Promise((resolve, reject) => setTimeout(() => resolve(false), retry_after * 1000))
+    ];
+
+    return Promise.race(promises)
+      .then((cancelled) => cancelled ? fsm.failed() : fsm.paymentRecovery());
+  };
+
+  fsm.args.payment.ack = fsm.ack;
+  return persistFSM(wallet, fsm.args)
+    .then(wallet.storage.flush)
+    .then(handleSoftError)
+    .catch(fsm.failed);
+}
 
 
 function proceedValidAck(fsm) {
@@ -141,17 +155,23 @@ function proceedValidAck(fsm) {
     return wallet.saveItem(item, fsm.args.currency);
   };
 
+  const persistHistoryItemAndFSM = (newBalance) => {
+    fsm.args.payment.ack = fsm.ack;
+    const promises = [
+      persistFSM(wallet, fsm.args),
+      recordTransaction(newBalance),
+      storeItem()
+    ];
+    return Promise.all(promises);
+  };
+
   const handleError = (err) => {
     fsm.args.error = err.message || err;
     return fsm.failed();
   };
 
-  fsm.args.payment.ack = fsm.ack;
-  return persistFSM(wallet, fsm.args)
-    .then(wallet.storage.flush)
-    .then(() => wallet.Balance(currency))
-    .then(recordTransaction)
-    .then(storeItem)
+  return wallet.Balance(currency)
+    .then(persistHistoryItemAndFSM)
     .then(wallet.storage.flush)
     .then(fsm.ackOk)
     .catch(handleError);
