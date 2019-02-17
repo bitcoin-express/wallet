@@ -1,5 +1,17 @@
+/**
+* Wallet Class.
+* The Wallet provides a number of support functions that help to manage
+* the Wallet more methodically. This Wallet code is compatible with 
+* Bitcoin-fast Issuer v1.
+*/
 import Transaction from './walletbf/Transaction'
-import SwapBF from './walletbf/SwapBF'
+import {
+  atomicSwap,
+  exportSwapCode,
+  importSwapCode,
+  includeSwapCoins,
+  revertSwapRequest,
+} from './walletbf/SwapBF'
 
 import {
   depositIntent,
@@ -18,18 +30,11 @@ import {
 
 import FSM from './FSM';
 
-const defaultIssuer = "be.ap.rmp.net";
-//const defaultIssuer = "eu.carrotpay.com";
 
 export const DEFAULT_SETTINGS = {
-  acceptableIssuers: [
-    "eu.carrotpay.com",
-    "be.ap.rmp.net"
-  ],
   btcdisplay: "XBT",
   crypto: "XBT",
   currency: "USD", // "GBP", "EUR"
-  defaultIssuer,
   email: "",
   emailEncrypt: false,
   emailRecovery: false,
@@ -51,16 +56,12 @@ export const DEFAULT_SETTINGS = {
   walletLocalName: "",
 };
 
-/**
- * Wallet Class.
- * The Wallet provides a number of support functions that help to manage
- * the Wallet more methodically. This Wallet code is compatible with 
- * Bitcoin-fast Issuer v1.
- */
-export default class WalletBF extends SwapBF {
 
-  constructor() {
-    super();
+export default class WalletBF {
+
+  constructor(defaultIssuer, acceptableIssuers) {
+    this.defaultIssuer = defaultIssuer || "eu.carrotpay.com";
+    this.acceptableIssuers = acceptableIssuers || ["eu.carrotpay.com", "be.ap.rmp.net"];
 
     this.config = {
       version: window.version,
@@ -158,11 +159,30 @@ export default class WalletBF extends SwapBF {
     this.importVerifiedCoin = importVerifiedCoin.bind(this);
     this.verifyCoins = verifyCoins.bind(this);
     this.verifyCoinsRecovery = verifyCoinsRecovery.bind(this);
+
+    // Swap functions
+    this.atomicSwap = atomicSwap.bind(this);
+    this.exportSwapCode = exportSwapCode.bind(this);
+    this.importSwapCode = importSwapCode.bind(this);
+    this.includeSwapCoins = includeSwapCoins.bind(this);
+    this.revertSwapRequest = revertSwapRequest.bind(this);
   }
+
+
+  getDefaultSettings() {
+    const issuerVariables = {
+      acceptableIssuers: this.acceptableIssuers,
+      defaultIssuer: this.defaultIssuer,
+    };
+
+    return Object.assign({}, DEFAULT_SETTINGS, issuerVariables);
+  }
+
 
   isGoogleDrive() {
     return this.config.storage.config.name == 'googleDrive';
   }
+
 
   /**
    * Stores a 'value' with the named 'key'. If the key already exists, the old value
@@ -221,6 +241,7 @@ export default class WalletBF extends SwapBF {
     return storage.setToPromise(PERSISTENT, SETTINGS, value);
   }
 
+
   /**
    * Turn debugging on or off (default off).
    */
@@ -228,15 +249,20 @@ export default class WalletBF extends SwapBF {
     this.config.debug = debug;
   }
 
+
   /**
    * Set the bitcoin redemption speed
    */
   setBitcoinSpeed(speed) {
-    // if (this.config.debug) console.log("WalletBF setBitcoinSpeed="+speed);
+    const {
+      PERSISTENT,
+      storage,
+    } = this.config;
+
     this.config.blockchainSpeed = speed;
-    return this.config.storage.setToPromise(
-      this.config.PERSISTENT, "blockchainSpeed", speed);
+    return storage.setToPromise(PERSISTENT, "blockchainSpeed", speed);
   }
+
 
   /**
    * @param storageMethod Install a storage module that complies with the WalletPersistence interface
@@ -247,6 +273,7 @@ export default class WalletBF extends SwapBF {
     }
     this.config.storage = storageMethod;
   }
+
 
   /**
    * A constructor for the Coin type which is obtained from a raw base64 string.
@@ -421,10 +448,6 @@ export default class WalletBF extends SwapBF {
   }
 
   getAcceptableDomains(issuers) {
-    // TO_DO
-    const {
-      acceptableIssuers,
-    } = DEFAULT_SETTINGS;
 
     return issuers.map((issuer) => {
       if (issuer.startsWith("(") && issuer.endsWith(")")) {
@@ -432,7 +455,7 @@ export default class WalletBF extends SwapBF {
       }
       return issuer;
     }).filter((val) => {
-      return acceptableIssuers.indexOf(val) > -1;
+      return this.acceptableIssuers.indexOf(val) > -1;
     });
   }
 
@@ -548,7 +571,7 @@ export default class WalletBF extends SwapBF {
       console.log("WalletBF getDefaultIssuerInfo()");
     }
 
-    const def = DEFAULT_SETTINGS.defaultIssuer;
+    const def = this.getDefaultSettings().defaultIssuer;
 
     try {
       return issuers[this.getSettingsVariable(DEFAULT_ISSUER, def)];
@@ -806,7 +829,7 @@ export default class WalletBF extends SwapBF {
 
     const {
       transactions,
-    } = DEFAULT_SETTINGS;
+    } = this.getDefaultSettings();
 
     const crypto = this.getPersistentVariable(CRYPTO, "XBT");
     let hist = storage.get(HISTORY, {});
@@ -1048,8 +1071,8 @@ export default class WalletBF extends SwapBF {
       console.log('WalletBF.processPayment', paymentDetails);
     }
 
-    const defIssuer = DEFAULT_SETTINGS.defaultIssuer;
-    const defPolicy = DEFAULT_SETTINGS.issuePolicy;
+    const defIssuer = this.defaultIssuer;
+    const defPolicy = this.getDefaultSettings().issuePolicy;
     let targetValue = parseFloat(paymentDetails.amount);
 
     if (Number.isNaN(targetValue)) {
@@ -1547,7 +1570,7 @@ export default class WalletBF extends SwapBF {
       crypto = this.getPersistentVariable(CRYPTO, "XBT");
     }
 
-    const defIssuer = DEFAULT_SETTINGS.defaultIssuer;
+    const defIssuer = this.defaultIssuer;
     const args = {
       domain: this.getSettingsVariable(this.config.DEFAULT_ISSUER, defIssuer),
     };
@@ -2386,7 +2409,7 @@ export default class WalletBF extends SwapBF {
       }
     };
 
-    const defPolicy = DEFAULT_SETTINGS.issuePolicy;
+    const defPolicy = this.getDefaultSettings().issuePolicy;
 
     // Split required
     return this.issuer("begin", params).then((beginResponse) => {
@@ -2484,7 +2507,7 @@ export default class WalletBF extends SwapBF {
    * @return [float] sum of the coins values
    */
   getExpiryPeriod(type, isDate=false) {
-    let expiryPeriod = this.getSettingsVariable(type, DEFAULT_SETTINGS[type]);
+    let expiryPeriod = this.getSettingsVariable(type, this.getDefaultSettings()[type]);
     expiryPeriod = parseFloat(expiryPeriod) * (1000 * 60 * 60);
 
     return isDate ? (new Date()).getTime() + expiryPeriod : expiryPeriod;
@@ -2851,7 +2874,7 @@ export default class WalletBF extends SwapBF {
           currency: args.currency || "XBT",
           expiry: new Date(newExpiry).toISOString(),
           fn: "redeem",
-          issuePolicy: args.policy || DEFAULT_SETTINGS.issuePolicy,
+          issuePolicy: args.policy || this.getDefaultSettings().issuePolicy,
           tid: tid,
         },
         recovery: {
@@ -3378,7 +3401,7 @@ export default class WalletBF extends SwapBF {
     }
 
     if (!domain || typeof domain !== 'string') {
-      domain = this.getSettingsVariable(this.config.DEFAULT_ISSUER) || DEFAULT_SETTINGS.defaultIssuer;
+      domain = this.getSettingsVariable(this.config.DEFAULT_ISSUER) || this.defaultIssuer;
     }
     const protocol = this.getSettingsVariable(this.config.ISSUER_PROTOCOL) || "https://";
     return protocol + domain + this.config.ISSUER_PATH + fn;

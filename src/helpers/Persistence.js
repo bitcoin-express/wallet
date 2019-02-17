@@ -10,7 +10,7 @@ export const PERSISTENCE_TYPES = ['localStorage', 'googleDrive'];
 
 export default class Persistence {
 
-  constructor(handleDataLocked) {
+  constructor(handleDataLocked, defaultSettings) {
 
     if (!handleDataLocked) {
       throw new Error('No handleDataLocked in Persistence');
@@ -28,7 +28,7 @@ export default class Persistence {
       lastUpdate: '2017-12-20'
     };
 
-    this.gdrive = new GoogleDrive(handleDataLocked);
+    this.gdrive = new GoogleDrive(handleDataLocked, defaultSettings);
     this.lstorage = new LocalStorage();
 
     this.tools = new Tools();

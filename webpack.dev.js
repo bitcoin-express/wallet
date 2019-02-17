@@ -44,7 +44,7 @@ module.exports = function (version, destPath) {
         { from: 'js', to: 'vendor' },
         { from: 'css', to: '../css' },
         { from: 'imgs', to: '../css/img' },
-        { from: 'test/demo.html', to: '../test/demo.html' },
+        { from: 'test/browser/demo.html', to: '../test/demo.html' },
         { from: 'probe.html', to: '../probe.html' }
       ]),
       new ExtractTextPlugin('../css/styles.css'),

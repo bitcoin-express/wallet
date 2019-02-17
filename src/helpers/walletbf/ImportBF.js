@@ -1,6 +1,3 @@
-import {
-  DEFAULT_SETTINGS,
-} from '../WalletBF';
 
 
 export function importVerifiedCoin(coin) {
@@ -17,7 +14,7 @@ export function importVerifiedCoin(coin) {
   const {
     crypto,
     issuePolicy,
-  } = DEFAULT_SETTINGS;
+  } = this.getDefaultSettings();
 
   const verifyExpire = this.getSettingsVariable(VERIFY_EXPIRE);
   const policy = this.getSettingsVariable(ISSUE_POLICY, issuePolicy);
@@ -193,7 +190,7 @@ export function verifyCoins(coins, args, inSession=true, repository=null) {
   const {
     crypto,
     issuePolicy,
-  } = DEFAULT_SETTINGS;
+  } = this.getDefaultSettings();
 
   repository = repository || this.getPersistentVariable(CRYPTO, crypto);
 

@@ -13,6 +13,8 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import Wallet from './src/Wallet';
 import styles from './src/helpers/Styles';
 
+import { getDefaultParams } from "./config.js";
+
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
@@ -27,6 +29,7 @@ const states = {
   REVEAL_APP: 0,
   PROCESS_PAYMENT: 1,
 };
+
 
 class App extends React.Component {
 
@@ -183,7 +186,9 @@ class App extends React.Component {
     } = this.state;
 
     return <Wallet
+      acceptableIssuers={ this.props.acceptableIssuers }
       close={ this.close }
+      defaultIssuer={ this.props.defaultIssuer }
       isFullScreen={ isFullScreen }
       initializeDraggableArea={(id) => {
         BitcoinExpress.Host.WalletMakeDraggable(id);
@@ -193,12 +198,7 @@ class App extends React.Component {
       onContractClick={ this.switchWalletSize(false) }
       onExpandClick={ this.switchWalletSize(true) }
       paymentRequest={ paymentRequest }
-      removePayment={() => {
-        BitcoinExpress.Host.PopupMessage("Payment failed", 1500);
-        /* this.setState({
-          paymentRequest: null,
-        }); */
-      }}
+      removePayment={() => BitcoinExpress.Host.PopupMessage("Payment failed", 1500)}
     />;
   }
 
@@ -221,6 +221,7 @@ class App extends React.Component {
   }
 }
 
+
 function getParameterByName (name, url) {
   if (!url) {
     url = window.location.href;
@@ -238,8 +239,11 @@ function getParameterByName (name, url) {
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
+
 ReactDOM.render(
   <App
+    acceptableIssuers={ getDefaultParams().acceptableIssuers }
+    defaultIssuer={ getDefaultParams().defaultIssuer }
     isFullScreen={ getParameterByName('fullScreen') == 'true' }
     paymentRequest={ JSON.parse(getParameterByName('paymentRequest')) }
   />,

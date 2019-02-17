@@ -276,7 +276,7 @@ function redeemCoins(coins, address, args, crypto=null) {
         fn: "redeem",
         bitcoinAddress: address,
         coin: base64Coins,
-        issuePolicy: args.policy || DEFAULT_SETTINGS.issuePolicy,
+        issuePolicy: args.policy || this.getDefaultSettings().issuePolicy,
         bitcoinSpeed: args.speed,
       },
       recovery: {

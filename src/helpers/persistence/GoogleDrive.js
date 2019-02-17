@@ -10,6 +10,7 @@ const settings = {
   scopes: 'https://www.googleapis.com/auth/drive.file',
 };
 
+
 /*
  * DISCOVERY_DOCS
  *  - Array of API discovery doc URLs for APIs used by the quickstart
@@ -23,11 +24,12 @@ const settings = {
  */
 export default class GoogleDrive {
 
-  constructor(handleDataLocked) {
+  constructor(handleDataLocked, defaultSettings) {
     this.CLIENT_ID = settings.client_id;
     this.DISCOVERY_DOCS = settings.discovery_docs;
     this.SCOPES = settings.scopes;
 
+    this.defaultSettings = defaultSettings;
     this.isSignedIn = false;
 
     // wallet files
@@ -206,15 +208,10 @@ export default class GoogleDrive {
    * (walletId, lockId, folderId, infoId)
    */
   initializeStorage() {
-    return this._updateAppFolderId().then((id) => {
-      return this._updateInfoId();
-    }).then((id) => {
-      return this._updateWalletContent();
-    }).then((id) => {
-      return true;
-    }).catch((err) => {
-      return Promise.reject(err);
-    });
+    return this._updateAppFolderId()
+      .then(this._updateInfoId)
+      .then(this._updateWalletContent)
+      .then((id) => true);
   }
 
   /**
@@ -231,7 +228,8 @@ export default class GoogleDrive {
       this.folderId = id;
       return id;
     }, () => {
-      return Promise.reject(Error("App folder not found, but signed in"));
+      const msg = "App folder not found, but signed in";
+      return Promise.reject(Error(msg));
     });
   }
 
@@ -298,16 +296,16 @@ export default class GoogleDrive {
    * returns the info file id
    */
   createFiles() {
-    return this._createAppFolder().then((id) => {
+    const createFile = (id) => {
       this.folderId = id;
       return this._createWalletFile();
-    }).then((id) => {
-      return this._createInfoFile(id);
-    }).then((file) => {
-      return file.id;
-    }).catch((err) => {
-      return Promise.reject(Error("Error on creating wallet files"));
-    });
+    };
+
+    return this._createAppFolder()
+      .then(createFile)
+      .then((id) => this._createInfoFile(id))
+      .then((file) => file.id)
+      .catch((err) => Promise.reject(Error("Error on creating wallet files")));
   }
 
   /**
@@ -318,10 +316,10 @@ export default class GoogleDrive {
       name: this.appFolder,
       mimeType: "application/vnd.google-apps.folder"
     };
+
     return new Promise((resolve, reject) => {
-      gapi.client.drive.files.create(metadata).execute((file) => {
-        resolve(file.id);
-      });
+      gapi.client.drive.files.create(metadata)
+        .execute((file) => resolve(file.id));
     });
   }
 
@@ -329,21 +327,25 @@ export default class GoogleDrive {
    * create the initial file wallet.json (empty content)
    */
   _createWalletFile() {
-    return this.createFile(DEFAULT_SETTINGS, this.walletFile).then((file) => {
-      this.wallet = DEFAULT_SETTINGS;
+    const persistWallet = (file) => {
+      this.wallet = this.defaultSettings;
       this.walletId = file.id;
       return file.id;
-    });
+    };
+
+    return this.createFile(this.defaultSettings, this.walletFile)
+      .then(persistWallet);
   }
 
   _generateGoogleFileId() {
+    const params = {
+      count: 1,
+      space: "drive"
+    };
+
     return new Promise((resolve, reject) => {
-      gapi.client.drive.files.generateIds({
-        count: 1,
-        space: "drive"
-      }).execute((result) => {
-        resolve(result.ids[0]);
-      });
+      gapi.client.drive.files.generateIds(params)
+        .execute((result) => resolve(result.ids[0]));
     });
   }
 
@@ -357,11 +359,12 @@ export default class GoogleDrive {
         id: id,
         lockId: fileId, 
       };
-      return this.createFile(data, this.infoFile).then((file) => {
-        this.lockId = fileId;
-        this.infoId = file.id;
-        return file;
-      });
+
+      return this.createFile(data, this.infoFile);
+    }).then((file) => {
+      this.lockId = fileId;
+      this.infoId = file.id;
+      return file;
     });
   }
 
@@ -375,12 +378,12 @@ export default class GoogleDrive {
         id: this.walletId,
         lockId: fileId, 
       };
-      return this.updateFile(data, this.infoId).then((file) => {
-        if (save) {
-          this.lockId = fileId;
-        }
-        return file;
-      });
+      return this.updateFile(data, this.infoId);
+    }).then((file) => {
+      if (save) {
+        this.lockId = fileId;
+      }
+      return file;
     });
   }
 
@@ -392,10 +395,11 @@ export default class GoogleDrive {
   sessionStart(act, dev, timeout=15000) {
     const promCreateLock = this._createLockFile(act, dev, timeout);
     const promReadWallet = this._readWallet();
+
     return new Promise((resolve, reject) => {
-      Promise.all([promCreateLock, promReadWallet]).then((responses) => {
-        return resolve(true); 
-      }).catch((err) => {
+      Promise.all([promCreateLock, promReadWallet])
+        .then((responses) => resolve(true))
+        .catch((err) => {
         // is Locked
         const oldLockId = this.lockId;
         if (err.name == "ReferenceError" && err.message == "Already locked") {
@@ -470,6 +474,7 @@ export default class GoogleDrive {
     });
   }
 
+
   /**
    * creates file wallet.lock.json
    * @param action [string]
@@ -477,53 +482,50 @@ export default class GoogleDrive {
    * @param timeout [number]
    */
   _createLockFile(action, device, timeout) {
-    const session_id = Math.random().toString().slice(2);
-    let wallet_name = "";
     const persistent = this.get("persistent");
-    if (persistent && persistent.walletSettings) {
-      wallet_name = this.get("persistent").walletSettings["walletDriveName"];
-    }
-    let expire = new Date(new Date().getTime() + timeout).toUTCString();
-    const data = { session_id, wallet_name, action, device, expire, timeout };
-    return this.createFile(data, this.lockFile, this.lockId).then(() => {
-      return true;
-    }).catch((err) => {
-      // file already exists with the provided ID.
-      return Promise.reject(ReferenceError("Already locked"));
-    });
+    const hasSettings = persistent && persistent.walletSettings;
+
+    const data = {
+      action,
+      device,
+      expire: new Date(new Date().getTime() + timeout).toUTCString(),
+      session_id: Math.random().toString().slice(2),
+      timeout,
+      wallet_name: hasSettings ? persistent.walletSettings["walletDriveName"] : "",
+    };
+
+    return this.createFile(data, this.lockFile, this.lockId)
+      .then(() => true)
+      .catch((err) => Promise.reject(ReferenceError("Already locked")));
   }
 
+
   _readLockFile() {
-    return this.getFileContent(this.lockId, true).then((response) => {
-      return response;
-    }).catch((err) => {
-      return Promise.reject(ReferenceError("Can not read locked"));
-    });
+    return this.getFileContent(this.lockId, true);
   }
+
 
   sessionEnd() {
     let lockFileId = this.lockId;
-    return this.flush().then(() => {
-      // create new file id for the lock
-      return this._updateInfoFile();
-    }).then(() => {
-      return this.deleteFile(lockFileId);
-    }).then((id) => {
-      return true;
-    });
+
+    return this.flush()
+      .then(this._updateInfoFile)
+      .then(() => this.deleteFile(lockFileId))
+      .then((id) => true);
   }
 
   deleteDriveFiles() {
-    return new Promise((resolve, reject) => {
-      this.deleteFile(this.walletId).then((resp) => {
-        return this.deleteFile(this.infoId);
-      }).then((resp) => {
-        delete this.walletId;
-        delete this.infoId;
-        resolve(0);
-      });
-    });
+    const removeData = (resp) => {
+      delete this.walletId;
+      delete this.infoId;
+      return 0;
+    };
+
+    return this.deleteFile(this.walletId)
+      .then((resp) => this.deleteFile(this.infoId))
+      .then(removeData);
   }
+
 
   /**
    * @param name [string] 
@@ -558,6 +560,7 @@ export default class GoogleDrive {
     });
   }
 
+
   getMultipartRequestBody(data, metadata) {
     const delimiter = "\r\n--" + this.boundary + "\r\n";
     const close_delim = "\r\n--" + this.boundary + "--";
@@ -570,6 +573,7 @@ export default class GoogleDrive {
       JSON.stringify(data) +
       close_delim;
   }
+
 
   getFileContent(id, metadata=false) {
     return new Promise((resolve, reject) => {
@@ -598,6 +602,7 @@ export default class GoogleDrive {
       });
     });
   }
+
 
   createFile(data, name, id=null) {
     
