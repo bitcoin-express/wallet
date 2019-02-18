@@ -1,6 +1,7 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 import { shallow, mount, render } from 'enzyme';
+import waitUntil from 'async-wait-until';
 
 
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
@@ -14,7 +15,10 @@ import getWallet from '../../test/__mocks__/wallet'
 describe('Payments', () => {
 
   let component;
-  jest.setTimeout(30000);
+
+  const flushPromises = () => {
+    return new Promise(resolve => setImmediate(resolve));
+  };
 
   beforeEach((done) => {
     injectTapEventPlugin();
@@ -60,15 +64,15 @@ describe('Payments', () => {
         />
       </MuiThemeProvider>
     );
-
-    setTimeout(() => {
-      done();
-    }, 10000);
+    done();
   });
 
-  it('payment test 1', () => {
-    console.log(component.dive().state()); 
-    expect(component.dive().state('status')).toBe(0);
+  it('payment test 1', async () => {
+    jest.setTimeout(20000);
+    console.log(component.dive().state('status'));
+    console.log(component.dive().state('status'));
+    await waitUntil(() => component.dive().state('status') == 2, 10000);
+    expect(component.dive().state('status')).toBe(2);
   });
 });
 

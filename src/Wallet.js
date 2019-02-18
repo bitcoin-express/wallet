@@ -749,6 +749,7 @@ class Wallet extends React.Component {
       console.log(`Total balance: ${balance}`);
       return this.refreshSettings();
     }).then((settings) => {
+      console.log(updateState);
       if (updateState) {
         this.setState({
           status: states.APP,
