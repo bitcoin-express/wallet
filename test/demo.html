@@ -85,22 +85,17 @@
     };
 
     var req = {
-      fullScreen: false,
-      PaymentRequest: {
-        payment_details_version: "1",
-        PaymentDetails: {
-          payment_url: "https://be.ap.rmp.net/Bitcoin-express/v1/issuer/mockPayment",
-          currency: "XBT",
-          issuers: ["be.ap.rmp.net", "eu.carrotpay.com"],
-          merchant_data: "9992645143674",
-          memo: "The art of asking",
-          email: {
-            contact: "sales@merchant.com",
-            receipt: true,
-            refund: false
-          },
-          time: "2017-06-01T00:00:00Z",
-          expires: "2018-07-27T00:00:00Z"
+      "fullScreen": false,
+      "PaymentRequest": {
+        "payment_details_version": "1",
+        "PaymentDetails": {
+          "acceptable_issuers": ["(be.ap.rmp.net)"],
+          "amount": 0.0000123,
+          "created": new Date().toISOString(),
+          "currency": "XBT",
+          "description": "test payment 1",
+          "payment_url": "https://be.ap.rmp.net/Bitcoin-express/v1/issuer/mockPayment",
+          "transaction_id": "XX11"
         }
       }
     }

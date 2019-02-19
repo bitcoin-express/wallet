@@ -164,6 +164,11 @@ export default class WalletBF extends SwapBF {
     return this.config.storage.config.name == 'googleDrive';
   }
 
+
+  getDefaultSettings() {
+    return DEFAULT_SETTINGS;
+  }
+
   /**
    * Stores a 'value' with the named 'key'. If the key already exists, the old value
    * will be replaced and returned in the result, other wise null will be returned.

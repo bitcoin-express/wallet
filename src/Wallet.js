@@ -8,7 +8,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
 import ActionHome from 'material-ui/svg-icons/action/home';
 
-import WalletBF, { DEFAULT_SETTINGS } from './helpers/WalletBF';
+import WalletBF from './helpers/WalletBF';
 import Persistence from './helpers/Persistence';
 import LocalStorage from './helpers/persistence/LocalStorage';
 import ExchangeRate from './helpers/ExchangeRate';
@@ -31,6 +31,7 @@ import HistoryTab from './components/tabs/HistoryTab';
 import MainTab from './components/tabs/MainTab';
 import PayTab from './components/tabs/PayTab';
 import ExchangeTab from './components/tabs/ExchangeTab';
+
 import AboutDialog from './components/dialogs/AboutDialog';
 import AddFundsDialog from './components/dialogs/AddFundsDialog';
 import AuthenticateDialog from './components/dialogs/AuthenticateDialog';
@@ -53,16 +54,31 @@ import '../css/index.css';
 import 'font-awesome/css/font-awesome.css';
 import 'react-tabs/style/react-tabs.css';
 
+
 const states = {
   INITIAL: 0,
   WELCOME: 1,
   APP: 2,
 };
 
+
 class Wallet extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.time = new Time();
+    this.tools = new Tools();
+    this.xr = new ExchangeRate();
+
+    this.handleGoogleDriveLocked = this.handleGoogleDriveLocked.bind(this);
+
+
+    this.wallet = new WalletBF(props.defaultIssuer, props.acceptableIssuers);
+
+    const defaultSettings = this.wallet.getDefaultSettings();
+    const persistence = new Persistence(this.handleGoogleDriveLocked, defaultSettings);
+    this.wallet.setStorageMethod(persistence);
 
     this.state = {
       alert: {
@@ -87,24 +103,16 @@ class Wallet extends React.Component {
       notification: [],
       notificationIndex: 0,
       password: "",
-      settings: Object.assign({}, DEFAULT_SETTINGS),
+      settings: defaultSettings,
       signoutAlert: false,
       status: states.INITIAL,
       tabIndex: props.paymentRequest ? 5 : 0,
       targetValue: "",
     };
 
-    this.wallet = new WalletBF();
-    this.handleGoogleDriveLocked = this.handleGoogleDriveLocked.bind(this);
-    this.wallet.setStorageMethod(new Persistence(this.handleGoogleDriveLocked));
-
-    this.time = new Time();
-    this.tools = new Tools();
-
-    this.xr = new ExchangeRate();
-    this.xr.setSeparator(DEFAULT_SETTINGS.separator);
-    this.xr.setCurrency(DEFAULT_SETTINGS.currency);
-    this.xr.setBTCDisplay(DEFAULT_SETTINGS.btcdisplay);
+    this.xr.setSeparator(defaultSettings.separator);
+    this.xr.setCurrency(defaultSettings.currency);
+    this.xr.setBTCDisplay(defaultSettings.btcdisplay);
 
     this.styles = {
       tab: {
@@ -217,8 +225,8 @@ class Wallet extends React.Component {
     const login = () => {
       if (localStorage.getItem('loggedIn') == 'true') {
         // Attempt to login
-        this.autoLogin();
-        return;
+        console.log("wallet logged in with localStorage");
+        return this.autoLogin();
       }
 
       this.setState({
@@ -226,7 +234,7 @@ class Wallet extends React.Component {
       });
     };
 
-    const handleError = ({ error, warning }) => {
+    const handleError = (error) => {
       if (this.wallet.config.debug == true) {
         console.log(error);
       }
@@ -234,17 +242,16 @@ class Wallet extends React.Component {
       if (localStorage.getItem('loggedIn') == 'true') {
         // TO_DO: Try again to login, this should not be
         // possible to happen.
-        this.autoLogin();
-        return;
+        return this.autoLogin();
       }
 
       this.setState({
         status: states.WELCOME
       });
-      this.handleNotificationUpdate(warning, true);
+      this.handleNotificationUpdate(error.message, true);
     };
 
-    this.xr.refreshExchangeRates()
+    return this.xr.refreshExchangeRates()
       .then(login)
       .catch(handleError);
   }
@@ -255,7 +262,7 @@ class Wallet extends React.Component {
     if (els.length > 0 && els[0].children[1].children[0] && !this.props.paymentRequest) {
 
       // initialize (first time loaded wallet)
-      if (prevState.status !== states.APP) {
+      if (prevState.status !== states.APP && els[0].children[1].children[0].style) {
         els[0].children[1].children[0].style.width = "12%";
       }
 
@@ -270,11 +277,11 @@ class Wallet extends React.Component {
       const leftMin = ['0%', 'calc(20% - 5px)', 'calc(40% - 3px)', 'calc(60% - 2px)', '80%', '100%'];
 
       let el = document.getElementsByClassName("tabsbar")[0].children[1].children[0];
-      if (tabIndex == 5) {
+      if (tabIndex == 5 && el.style) {
         el.style.width = '0px';
-      } else if (tabIndex == 0) {
+      } else if (tabIndex == 0 && el.style) {
         el.style.width = isFullScreen ? "12%" : "20%";
-      } else {
+      } else if (el.style) {
         el.style.width = isFullScreen ? "22%" : "20%";
       }
 
@@ -282,7 +289,7 @@ class Wallet extends React.Component {
         // change wallet mode (expand / retract)
         // click to re-render
         this.forceTabClick(tabIndex);
-      } else if (tabIndex != prevState.tabIndex) {
+      } else if (tabIndex != prevState.tabIndex && el.style) {
         el.style.left = isFullScreen ? left[tabIndex] : leftMin[tabIndex];
       }
     }
@@ -467,11 +474,11 @@ class Wallet extends React.Component {
       SETTINGS,
     } = this.wallet.config;
 
-    let settings = DEFAULT_SETTINGS;
+    let settings = this.wallet.getDefaultSettings();
     const walletSettings = this.wallet.getPersistentVariable(SETTINGS);
 
     if (settings) {
-      settings = Object.assign({}, DEFAULT_SETTINGS, walletSettings);
+      settings = Object.assign({}, this.wallet.getDefaultSettings(), walletSettings);
       this.updateSettingsState(settings);
       return Promise.resolve(settings);
     }
@@ -479,9 +486,9 @@ class Wallet extends React.Component {
     console.log("ALERT!! Does it arrive here??");
 
     const storeSettings = () => {
-      settings = Object.assign({}, DEFAULT_SETTINGS);
+      settings = Object.assign({}, this.wallet.getDefaultSettings());
       return this.executeInSession("Initialize settings", false, () => {
-        return this.wallet.setPersistentVariable(SETTINGS, DEFAULT_SETTINGS);
+        return this.wallet.setPersistentVariable(SETTINGS, this.wallet.getDefaultSettings());
       }).then(() => {
         this.updateSettingsState(settings);
         return settings;
@@ -563,12 +570,26 @@ class Wallet extends React.Component {
   }
 
   autoLogin() {
-    this.wallet.config.storage.gdrive.handleClientLoad().then((isSignedIn) => {
+    if (this.props.test) {
+      return this.startLocalStorageWallet();
+    }
+
+    console.log("contacting google api...");
+    const successGDriveLogin = (isSignedIn) => {
+      console.log("positive gapi response", isSignedIn);
       if (isSignedIn) {
         return this.startGoogleDriveWallet();
       }
       return this.startLocalStorageWallet();
-    }, this.onNotFilesFound);
+    };
+
+    const failedGDriveLogin = () => {
+      console.log("error gapi response");
+      return this.onNotFilesFound();
+    };
+
+    return this.wallet.config.storage.gdrive.handleClientLoad()
+      .then(successGDriveLogin, failedGDriveLogin);
   }
 
   login() {
@@ -654,6 +675,7 @@ class Wallet extends React.Component {
   }
 
   startLocalStorageWallet(changeState = true) {
+    console.log("Starting localStorage wallet...");
     this.login();
     this.wallet.config.storage.setType('localStorage');
     return this._authenticate(true, changeState);
@@ -1660,6 +1682,7 @@ class Wallet extends React.Component {
   }
 
   onNotFilesFound(err) {
+    console.log("no files found");
     if (err.name === 'ReferenceError') {
       // No internet connection or No files in Google Drive.
       this.openDialog({
@@ -2110,7 +2133,7 @@ class Wallet extends React.Component {
       } = this.props;
 
       let el = document.getElementsByClassName("tabsbar")[0].children[1].children[0];
-      if (paymentRequest) {
+      if (paymentRequest && el.style) {
         if (index == 0) {
           el.style.width = isFullScreen ? "12%" : "16.6667%";
           el.style.marginLeft = "0%";
@@ -2118,7 +2141,7 @@ class Wallet extends React.Component {
           el.style.width = isFullScreen ? "17.6%" : "16.6667%";
           el.style.marginLeft = isFullScreen ? `${-10*(6-index) - (10-index)}px` : "0%";
         }
-      } else {
+      } else if (el.style) {
         if (index == 0) {
           el.style.width = isFullScreen ? "12%" : "20%";
           el.style.marginLeft = "0%";
@@ -3032,7 +3055,7 @@ class Wallet extends React.Component {
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
             loading={ this.loading }
-            paymentDetails={ this.props.paymentRequest }
+            paymentDetails={ this.props.paymentRequest.PaymentDetails }
             refreshCoinBalance={ this.refreshCoinBalance }
             refreshIssuerRates={ this.refreshIssuerRates }
             removePayment={ this.props.removePayment }
@@ -3088,10 +3111,12 @@ class Wallet extends React.Component {
     switch (status) {
 
       case states.APP:
+        console.log("showing application screen...");
         content =  this.renderApp();
         break;
 
       case states.WELCOME:
+        console.log("showing logon screen...");
         content = (
           <LogonScreen
             { ...this.props }
@@ -3112,6 +3137,7 @@ class Wallet extends React.Component {
         break;
 
       default:
+        console.log("showing welcome screen...");
         content = <WelcomeScreen
           isFullScreen={ isFullScreen }
         />;

@@ -1,7 +1,7 @@
 import { persistFSM, getRecoveryCoins, getSecondsToISODate } from '../tools';
 
 
-export function getPaymentFailedTransaction() {
+export function getPaymentFailedTransitions() {
   return [{
     name: 'exit',
     from: 'PaymentFailed',

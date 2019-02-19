@@ -3,19 +3,19 @@ import doPrepareCurrency, { getPrepareCurrencyTransitions } from './payment/prep
 import doConfirmPayment, { getConfirmPaymentTransitions } from './payment/confirmPayment';
 import doSplitCoins, { getSplitCoinsTransitions } from './payment/splitCoins';
 import doPaymentReady, { getPaymentReadyTransitions } from './payment/paymentReady';
-import doStartPayment, { getStartPaymentTransitions } from './payment/paymentReady';
+import doStartPayment, { getStartPaymentTransitions } from './payment/startPayment';
 import doAckReceived, { getAckReceivedTransitions } from './payment/ackReceived';
 import doSendAckAck, { getSendAckAckTransitions } from './payment/sendAckAck';
 import doComplete, { getCompleteTransitions } from './payment/complete';
 import doRecoverCoins, { getRecoverCoinsTransitions } from './payment/recoverCoins';
-import doRecoverFailedCoins, { getRecoverFailedCoinsTransitions } from './payment/recoverCoins';
+import doRecoverFailedCoins, { getRecoverFailedCoinsTransitions } from './payment/recoverFailedCoins';
 import doPaymentFailed, { getPaymentFailedTransitions } from './payment/paymentFailed';
 import doExit, { getExitTransitions } from './payment/exit';
 //import doPaymentInterrupted, { getPaymentInterruptedTransaction } from './payment/paymentInterrupted';
 //import doVerifyPaymentCoins, { getVerifyPaymentCoinsTransaction } from './payment/verifyPaymentCoin';
 
 
-let transitions = transitions.concat(getPrepareCurrencyTransitions());
+let transitions = getPrepareCurrencyTransitions();
 transitions = transitions.concat(getConfirmPaymentTransitions());
 transitions = transitions.concat(getSplitCoinsTransitions());
 transitions = transitions.concat(getPaymentReadyTransitions());

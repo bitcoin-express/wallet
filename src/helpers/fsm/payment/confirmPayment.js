@@ -42,8 +42,9 @@ export default function doConfirmPayment(fsm) {
     timer = setTimeout(() => { throw new Error("paymentTimeout") }, timeoutSeconds);
 
     return fsm.args.notification("displayPayment", {
+      amount: fsm.args.amount,
       splitFee: fee || 0,
-      timeToExpire,
+      timeToExpire: timeoutSeconds,
     });
   };
 
@@ -69,7 +70,7 @@ export default function doConfirmPayment(fsm) {
   };
 
   return fsm.args.wallet.getBitcoinExpressFee(fsm.args.amount, fsm.args.currency)
-    .then(getSplitFee)
+    .then(getSplitFees)
     .then(doSplit)
     .catch(handleError);
 };

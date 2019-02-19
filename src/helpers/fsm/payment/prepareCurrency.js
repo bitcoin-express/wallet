@@ -50,7 +50,7 @@ export default function doPrepareCurrency(fsm) {
   }
 
   const now = new Date().getTime() / 1000;
-  if (expiresgetSecondsFromISODate(fsm.args.expires) < now) {
+  if (getSecondsFromISODate(fsm.args.expires) < now) {
     fsm.args.error = "Payment request expired";
     return Promise.resolve(fsm.paymentTimeout());
   }
@@ -159,8 +159,8 @@ export default function doPrepareCurrency(fsm) {
     return fsm.error(); 
   }
 
-  return wallet.getIssuerExchangeRates()
-    .then(() => wallet.Balance(currency))
+  return fsm.args.wallet.getIssuerExchangeRates()
+    .then(() => fsm.args.wallet.Balance(fsm.args.currency))
     .then(getSwapList)
     .then(prepareSwap)
     .then(doSwap)
@@ -215,7 +215,7 @@ function getArgumentErrors(args) {
   const {
     amount,
     currency,
-    issuers,
+    acceptable_issuers,
     description,
   } = args;
 
@@ -240,13 +240,13 @@ function getArgumentErrors(args) {
 
   // Check problems with issuer list
   if (wallet.config.debug) {
-    console.log("Issuer accepted list - " + issuers);
+    console.log("Issuer accepted list - " + acceptable_issuers);
   }
 
-  if (!issuers) {
-    errorList.push("'issuers undefined'");
-  } else if (!Array.isArray(issuers) || issuers.length == 0) {
-    errorList.push("'issuers list'");
+  if (!acceptable_issuers) {
+    errorList.push("'acceptable_issuers undefined'");
+  } else if (!Array.isArray(acceptable_issuers) || acceptable_issuers.length == 0) {
+    errorList.push("'acceptable_issuers list'");
   }
 
   // Check if description is present
@@ -254,7 +254,7 @@ function getArgumentErrors(args) {
     errorList.push("'description undefined'");
   }
 
-  let issuerList = wallet.getAcceptableDomains(issuers);
+  let issuerList = wallet.getAcceptableDomains(acceptable_issuers);
   if (issuerList.length == 0) {
     errorList.push("'no acceptable issuer domains'");
   }

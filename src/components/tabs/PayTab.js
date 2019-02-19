@@ -328,7 +328,7 @@ class PayTab extends React.Component {
       description,
       payment_url,
       email_customer_contact,
-      value,
+      amount,
     } = this.props.paymentDetails;
 
     const {
@@ -366,7 +366,7 @@ class PayTab extends React.Component {
             </div>
             <div style={{ marginLeft: '15px' }}>
               <PaymentInfo
-                amount={ value }
+                amount={ amount }
                 currency={ currency }
                 disabled={ true }
                 domain={ acceptable_issuers }
@@ -442,7 +442,7 @@ class PayTab extends React.Component {
 
         return <div style={ this.styles.container }>
           <SwapInfo
-            amount={ value }
+            amount={ amount }
             currency={ currency }
             disabled={ disabled }
             errorMsg={ errorMsg }
@@ -453,7 +453,7 @@ class PayTab extends React.Component {
             secsToExpire={ secsToExpire }
             showValuesInCurrency={ showValuesInCurrency }
             swapList={ swapList }
-            total={ parseFloat(value) }
+            total={ parseFloat(amount) }
             wallet={ wallet }
             xr={ xr }
           />
@@ -570,7 +570,7 @@ class PayTab extends React.Component {
         return <div style={ this.styles.container }>
 
           <PaymentInfo
-            amount={ value }
+            amount={ amount }
             currency={ currency }
             disabled={ disabled }
             domain={ acceptable_issuers }
@@ -583,7 +583,7 @@ class PayTab extends React.Component {
             seller={ email_customer_contact }
             showValuesInCurrency={ showValuesInCurrency }
             timeToExpire={ parseInt(timeToExpire) }
-            total={ parseFloat(value) + parseFloat(splitFee) }
+            total={ parseFloat(amount) + parseFloat(splitFee) }
             wallet={ wallet }
             xr={ xr }
           />
@@ -659,7 +659,7 @@ class PayTab extends React.Component {
             small={ true }
             removeInitialSpaces={ !isFullScreen }
             showValuesInCurrency={ showValuesInCurrency }
-            value={ parseFloat(value) }
+            value={ parseFloat(amount) }
             wallet={ wallet }
             xr={ xr }
           />
