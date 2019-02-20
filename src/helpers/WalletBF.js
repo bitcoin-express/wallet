@@ -3067,7 +3067,7 @@ export default class WalletBF extends SwapBF {
         if (resp.status !== "ok") {
           let errMsg = "Redeem response status is " + resp.status;
           if (resp.error && resp.error.length > 0) {
-            errMsg = resp.error[0].message;
+            errMsg = "Issuer error: " + resp.error[0].message;
           }
           return Promise.reject(Error(errMsg));
         }

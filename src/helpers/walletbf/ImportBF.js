@@ -473,8 +473,7 @@ const _verifyCoins_inner_ = function (request, args) {
       domain: args.domain,
     };
 
-    return this.issuer("verify", request, params).then((resp) => {
-
+    const handleResponse = (resp) => {
       if (resp.deferInfo) {
         const req  = JSON.parse(JSON.stringify(request));
         return this._restartDeferral(verify, resp, req, 10000).then(() => {
@@ -506,7 +505,9 @@ const _verifyCoins_inner_ = function (request, args) {
         return this.includeCoinsInStore(resp.coin);
       }
       return 0;
-    }).then((numCoins) => {
+    };
+
+    const handleRecordHistory = (numCoins) => {
       if (debug && numCoins == 0) {
         console.log("Redeem zero coins");
         return Promise.resolve(true);
@@ -553,9 +554,10 @@ const _verifyCoins_inner_ = function (request, args) {
       }
       verifyResponse.currency = this._getCryptoFromArray(verifyResponse.coin);
       return this.recordTransaction(verifyResponse);
-    }).then(() => {
-      return this._cleanTransaction(verifyResponse, args);
-    }).catch((err) => {
+    };
+
+
+    const handleError = (err) => {
       // VERIFY FAILED
       // So now we know that verify has failed, we need to recover as best we can          
       // This could be any kind of failure so it's good practice to check and
@@ -583,35 +585,52 @@ const _verifyCoins_inner_ = function (request, args) {
         }
       };
 
-      return this.issuer("exist", existParams, params).then((response) => {
+      const handleExist = (response) => {
         existResponse = response;
         if (existResponse.coin && existResponse.coin.length > 0) {
           return this.includeCoinsInStore(existResponse.coin);
         }
-        return 0;
-      }).then((numCoins) => {
         if (debug && numCoins == 0) {
-          console.log("_verifyCoins_inner_. Coins does not exist");
+          console.log("_verifyCoins_inner_. Coins does not exist or already in store");
         }
+        return 0;
+      };
 
-        let promise = Promise.resolve(true);
-        if (numCoins > 0) {
-          if (typeof(args.originalFaceValue) !== "undefined") {
-            existResponse.verifyInfo.faceValue = args.originalFaceValue;
-          }
-          existResponse.other = args.other || {};
-          existResponse.currency = this._getCryptoFromArray(existResponse.coin);
-          promise = this.recordTransaction(existResponse);
-        }
-
-        return promise.then(() => numCoins);
-      }).then((numCoins) => {
+      const handleStoreCoins = (numCoins) => {
         if (numCoins == 0) {
-          return Promise.reject(new Error("Coin has no value"));
+          return 0;
         }
-        return numCoins;
-      });
-    });
+
+        if (typeof(args.originalFaceValue) !== "undefined") {
+          existResponse.verifyInfo.faceValue = args.originalFaceValue;
+        }
+        existResponse.other = args.other || {};
+        existResponse.currency = this._getCryptoFromArray(existResponse.coin);
+        return this.recordTransaction(existResponse);
+      };
+
+      const throwError = (numCoins) => {
+        if (err.error && err.error.length > 0) {
+          throw new Error(err.error[0].message);
+        }
+        if (numCoins == 0) {
+          throw new Error("Verify failed and no coins recovered");
+        }
+        throw new Error("Verify failed but coins were recovered");
+      };
+
+      return this.issuer("exist", existParams, params)
+        .then(handleExist)
+        .then(handleStoreCoins)
+        .then(throwError);
+    };
+
+
+    return this.issuer("verify", request, params)
+      .then(handleResponse)
+      .then(handleRecordHistory)
+      .then(() => this._cleanTransaction(verifyResponse, args))
+      .catch(handleError);
   };
 
   return verify();
