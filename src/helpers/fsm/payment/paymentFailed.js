@@ -20,7 +20,7 @@ export default function doPaymentFailed(fsm) {
 
   const recordTransaction = (balance) => {
     if (fsm.args.balance == balance) {
-      return storage.flush();
+      return wallet.config.storage.flush();
     }
 
     const recovered = balance - fsm.args.balance;
@@ -57,7 +57,7 @@ export default function doPaymentFailed(fsm) {
   return wallet.Balance(fsm.args.currency)
     .then(recordTransaction)
     .then(() => persistFSM(wallet, null))
-    .then(() => wallet.storage.flush())
+    .then(() => wallet.config.storage.flush())
     .then(() => fsm.args.ack ? BitcoinExpress.Host.PaymentAckAck(fsm.args.ack) : true)
     .then(() => fsm.exit());
 };

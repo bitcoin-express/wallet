@@ -2239,14 +2239,11 @@ export default class WalletBF extends SwapBF {
       deferredSuccess,
       refreshBalance,
     } = args;
-
     confirmation = confirmation || function (_x, _y, fn) { fn(); };
 
-    let payment = this._parseBitcoinURI(uri);
-
+    const payment = this._parseBitcoinURI(uri);
     if (!payment) {
-      throw new Error ("Invalid Bitcoin uri");
-      return;
+      return Promise.reject(new Error ("Invalid Bitcoin uri"));
     }
 
     const {
@@ -2268,45 +2265,48 @@ export default class WalletBF extends SwapBF {
     // transaction fee.
     // The transaction fee is optional but if the fee paid
     // is too little it is likely to take a long time to complete.
-    const params = {
-      issuerRequest: {
-        fn: "redeem"
-      }
-    };
-    let balance = 0;
 
-    return this.Balance("XBT").then((res) => {
+    let balance = 0;
+    const issuerBegin = (res) => {
       balance = res;
       if (balance < amount) {
         throw new Error("Insufficient funds");
       }
+
+      const params = {
+        issuerRequest: {
+          fn: "redeem"
+        }
+      };
+
       return this.issuer("begin", params);
-    }).then((beginResponse) => {
+    };
+
+    const issuerRedeem = (beginResponse) => {
       if (beginResponse.deferInfo) {
         throw new Error(beginResponse.deferInfo.reason);
-        return;
-      } else if (beginResponse.status !== "ok") {
+      }
+
+      if (beginResponse.status !== "ok") {
         throw new Error("Problem on initialiting issuer");
-        return;
+      }
+
+      const paymentAmount = parseFloat(amount);
+      if (paymentAmount <= 0) {
+        throw new Error("Amount must be positive");
       }
 
       const recommendedFees = this.getBlockchainCurrencyInfo(beginResponse, "XBT");
+      const minValue = parseFloat(recommendedFees.minRedemptionValue || "0.0");
 
-      const bitcoinFee = parseFloat(recommendedFees[speed] || "0.0");
-      let minValue = parseFloat(recommendedFees.minRedemptionValue || "0.0");
-      let paymentAmount = parseFloat(amount);
-      if (paymentAmount <= 0) {
-        throw new Error("Amount must be positive");
-        return;
-      } else if (paymentAmount <= minValue) {
+      if (paymentAmount <= minValue) {
         throw new Error("Transfer amount too small for this blockchain");
-        return;
       }
 
-      let txAmount = this._round(paymentAmount + bitcoinFee, 8);
+      const bitcoinFee = parseFloat(recommendedFees[speed] || "0.0");
+      const txAmount = this._round(paymentAmount + bitcoinFee, 8);
       if (txAmount > balance) {
         throw new Error("Insufficient funds to pay this blockchain fees");
-        return;
       }
 
       let args = {
@@ -2320,17 +2320,15 @@ export default class WalletBF extends SwapBF {
         uri: uri,
         address: address,
       };
-
       let coinList = this.getStoredCoins(false, "XBT");
       let selection = this._coinSelection(txAmount, coinList, args);
+      if (!selection.targetValue || Number.isNaN(selection.targetValue)) {
+        throw new Error("Amount is not a number");
+      }
+
       if (this.config.debug) {
         console.log('args for WalletBF._coinSelection', args);
         console.log('list for WalletBF._coinSelection', selection);
-      }
-
-      if (!selection.targetValue || Number.isNaN(selection.targetValue)) {
-        throw new Error("Amount is not a number");
-        return;
       }
 
       // _coinSelection will select coins expecting to pay a fee.
@@ -2338,43 +2336,49 @@ export default class WalletBF extends SwapBF {
       // is smaller than the smallest coin sent. For this reason we
       // need to remove the smallest coins so long as there are
       // sufficient funds to satisfy the transactionAmount 
-      if (selection.targetValue !== 0 && selection.faceValue >= txAmount) {
-        let allCoins = selection.toVerify.concat(selection.selection);
-        
-        allCoins.sort((a,b) => {
-          //we need allCoins in smallest value order
-          if (a.value < b.value) { return -1; }
-          if (a.value > b.value) { return 1; }
-          return 0;
-        });
-
-        let change = this._round(selection.faceValue - txAmount, 8);
-        while(allCoins.length > 1) {
-          if ((change < allCoins[0].value)) {
-            break;
-          }
-          // remove extra coin
-          change -= allCoins.shift().value;
-        }
-
-        args.inCoinCount = allCoins.length;
-        args.outCoinCount = 1;
-
-        return new Promise((resolve, reject) => {
-          confirmation(parseFloat(amount), bitcoinFee, () => {
-            args.firstTimeCalled = true;
-            const params = [allCoins, address, args, "XBT", {
-              deferredSuccess,
-              refreshBalance,
-              success,
-            }];
-            this.redeemCoins(...params).then(resolve).catch(reject);
-          });
-        });
-      } else {
-        return Promise.reject(Error("Insufficient funds"));
+      if (selection.targetValue == 0 || selection.faceValue < txAmount) {
+        throw new Error("Insufficient funds");
       }
-    });
+
+      let allCoins = selection.toVerify.concat(selection.selection);
+      allCoins.sort((a,b) => {
+        //we need allCoins in smallest value order
+        if (a.value < b.value) { return -1; }
+        if (a.value > b.value) { return 1; }
+        return 0;
+      });
+
+      let change = this._round(selection.faceValue - txAmount, 8);
+      while(allCoins.length > 1) {
+        if ((change < allCoins[0].value)) {
+          break;
+        }
+        // remove extra coin
+        change -= allCoins.shift().value;
+      }
+
+      args.inCoinCount = allCoins.length;
+      args.outCoinCount = 1;
+      args.firstTimeCalled = true;
+
+      return new Promise((resolve, reject) => {
+        const callbackFunctions = {
+          deferredSuccess,
+          refreshBalance,
+          success,
+        };
+
+        confirmation(parseFloat(amount), bitcoinFee, () => {
+          this.redeemCoins(allCoins, address, args, "XBT", callbackFunctions)
+            .then(resolve)
+            .catch(reject);
+        });
+      });
+    };
+
+    return this.Balance("XBT")
+      .then(issuerBegin)
+      .then(issuerRedeem);
   }
 
   getBitcoinExpressFee(amount, crypto) {
@@ -2959,6 +2963,7 @@ export default class WalletBF extends SwapBF {
 
         return this.issuer("exist", existParams, params)
           .then(storeCoinsIfRequired)
+          .then(storage.removeFrom(SESSION, tid))
           .then(() => storage.sessionEnd())
           .then(() => Promise.reject(err))
           .catch(handleRecoverError);
@@ -3057,11 +3062,9 @@ export default class WalletBF extends SwapBF {
             });
           }
 
-          return promise.then(() => {
-            return this._restartDeferral(redeem, resp, req, 60000);
-          }).then(() => {
-            return Promise.reject(Error("Redeem deferred"));
-          });
+          return promise
+            .then(() => this._restartDeferral(redeem, resp, req, 60000))
+            .then(() => Promise.reject(Error("Redeem deferred")));
         }
 
         if (resp.status !== "ok") {

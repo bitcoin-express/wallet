@@ -25,7 +25,7 @@ export default function doRecoverCoins(fsm) {
       .then(() => persistFSM(wallet, null))
       .then(storage.flush)
       .then(fsm.coinRecoveryComplete)
-      .catch(fsm.failed);
+      .catch((err) => fsm.failed());
   }
 
   const {
@@ -63,13 +63,13 @@ export default function doRecoverCoins(fsm) {
       .then(() => wallet.issuer("end", {issuerRequest: {tid}}, {domain: issuer}));
   }
 
-  return verifyCoins(ack.coins, verifyArgs, notification, currency)
+  return verifyCoins(wallet, ack.coins, verifyArgs, notification, currency)
     .then(retrieveCoins)
     .then(() => recoverCoinsWithHomeIssuer(fsm))
     .then(() => persistFSM(wallet, null))
     .then(storage.flush)
     .then(fsm.coinRecoveryComplete)
-    .catch(fsm.failed);
+    .catch((err) => fsm.failed());
 };
 
 
@@ -84,7 +84,7 @@ function recoverCoinsWithHomeIssuer(fsm) {
     return persistFSM(wallet, null)
       .then(wallet.storage.flush)
       .then(fsm.coinRecoveryComplete)
-      .catch(fsm.failed);
+      .catch((err) => fsm.failed());
   }
 
   const message = "Trying to recover your coins...";
@@ -172,12 +172,12 @@ function recoverCoins(coins, coinList, args) {
   };
 
   // TO_DO: Improve for multi-issuer situation
-  return doVerifyCoins(() => verifyCoins(coins, verifyArgs, notification, currency))
+  return verifyCoins(wallet, coins, verifyArgs, notification, currency)
     .then(responseContainsCoins);
 };
 
 
-function verifyCoins(coins, args, notification, currency) {
+function verifyCoins(wallet, coins, args, notification, currency) {
   notification("displayLoader", {
     message: `Verifying ${coins.length} coins...`,
   });

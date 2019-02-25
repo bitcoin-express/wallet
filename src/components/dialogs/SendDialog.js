@@ -255,7 +255,8 @@ class SendDialog extends React.Component {
       loadingMessage: "Reloading Bitcoin fees...",
     });
 
-    return this._refreshFees(true).then(() => {
+
+    const transferBTC = () => {
       this.setState({
         payment,
         loadingMessage: "Preparing the Bitcoin transfer...",
@@ -271,23 +272,31 @@ class SendDialog extends React.Component {
         refreshBalance: refreshCoinBalance,
       };
       return wallet.transferBitcoin(uri, speed, args);
-    }).then(() => {
-    }).catch((error) => {
-      refreshCoinBalance("XBT").then(() => {
-        if (error.message == "Redeem deferred") {
-          snackbarUpdate("Blockchain transfer has been scheduled and is expected to start soon");
-          closeDialog();
-        } else if (error.message) {
-          snackbarUpdate(error.message, true);
-          this.setState({
-            sendStatus: 'initial',
-          });
-        } else {
-          snackbarUpdate("Failed to redeem coins", true);
-          closeDialog();
-        }
-      });
-    });
+    };
+
+    const handleError = (error) => {
+      if (error.message == "Redeem deferred") {
+        snackbarUpdate("Blockchain transfer has been scheduled and is expected to start soon");
+        closeDialog();
+        return refreshCoinBalance("XBT");
+      }
+
+      if (error.message) {
+        snackbarUpdate(error.message, true);
+        this.setState({
+          sendStatus: 'initial',
+        });
+        return refreshCoinBalance("XBT");
+      }
+
+      snackbarUpdate("Failed to redeem coins", true);
+      closeDialog();
+      return refreshCoinBalance("XBT");
+    };
+
+    return this._refreshFees(true)
+      .then(transferBTC)
+      .catch(handleError);
   };
 
   handleSendClick() {
