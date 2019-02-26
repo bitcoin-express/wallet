@@ -30,21 +30,35 @@ export default function doSplitCoins(fsm) {
     return Promise.resolve(fsm.paymentTimeout());
   }
 
-  const retrieveCoins = (coins) => {
+  if (fsm.args.policies && fsm.args.policies.change_furnished) {
+    // TO_DO
+  }
+
+  const preparePaymentObject = (coins) => {
     let payment = {
-      id: Math.random().toString(36).replace(/[^a-z]+/g, ''),
-      transaction_id: fsm.args.transaction_id,
+      wallet_id: Math.random().toString(36).replace(/[^a-z]+/g, ''),
       coins: coins.map((c) => typeof c == "string" ? c : c.base64),
-      order_id: fsm.args.order_id,
       client: "web",
       language_preference: "en_GB",
     };
+
     if (fsm.args.useEmail) {
-      // User wants to use his email for recovery reasons
       payment["options"] = getPaymentOptions(fsm.args);
     }
-    fsm.args.payment = payment;
 
+    if (fsm.args.order_id) {
+      payment["order_id"] = fsm.args.order_id;
+    }
+
+    if (fsm.args.transaction_id) {
+      payment["transaction_id"] = fsm.args.transaction_id;
+    }
+
+    if (fsm.args.time_budget) {
+      payment["time_budget"] = fsm.args.time_budget;
+    }
+
+    fsm.args.payment = payment;
     return fsm.coinsReady();
   };
 
@@ -56,7 +70,7 @@ export default function doSplitCoins(fsm) {
 
   const { amount, currency, wallet } = fsm.args;
   return wallet._getCoinsExactValue(amount, {}, false, currency)
-    .then(retrieveCoins)
+    .then(preparePaymentObject)
     .catch(handleError);
 };
 
@@ -71,7 +85,7 @@ export function getPaymentOptions(args) {
   const emailArray = wallet._fillEmailArray(0, true, currency);
 
   const email = emailArray[0];
-  const password = emailArray[1];
+  const passphrase = emailArray[1];
   const reference = emailArray[2];
 
   if (!withEmail || !email) {
@@ -81,8 +95,8 @@ export function getPaymentOptions(args) {
   let emailObj = {
     email,
   };
-  if (password && reference) {
-    emailObj["password"] = password;
+  if (passphrase && reference) {
+    emailObj["passphrase"] = passphrase;
     emailObj["reference"] = reference;
   }
 

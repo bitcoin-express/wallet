@@ -23,47 +23,18 @@ var doAckReceived = function(fsm) {
   console.log("do"+fsm.state);
   
   switch (fsm.ack.status) {
-
     case "ok":
-      return proceedValidAck(fsm)
+      return proceedValidAck(fsm);
 
-    case "issuer-error":
-      return Promise.resolve(fsm.paymentRecovery());
-
-    case "soft-error":
+    case "deferred":
+      if (!fsm.ack.retry_after || fsm.ack.retry_after==0) {
+        return Promise.resolve(fsm.paymentRecovery());
+      }
       return proceedSoftError(fsm);
 
-    case "payment-unknown":
-      fsm.args.error = "Seller could not identify the sale item";
-      break;
-
-    case "after-expires":
-      fsm.args.error = "The offer to sell has expired";
-      break;
-
-    case "insufficient-amount":
-      fsm.args.error = "The payment failed because we didn't send enough funds";
-      break;
-
-    case "bad-coins":
-      fsm.args.error = "One or more Coins were unexpectidly invalid";
-      break;
-
-    case "retry-expired":
-      fsm.args.error = "Seller no longer permitting access to the product url";
-      break;
-
     case "rejected":
-      fsm.args.error = "Seller rejected this payment";
-      break;
-
     case "failed":
-      fsm.args.error = "The payment failed for an unspecified reason";
-      break;
-
-    default:
-      fsm.args.error = "Received a bad PaymentAck";
-      break;
+      fsm.args.error = fsm.ack.error.message;
   }
 
   const { wallet } = fsm.args;
