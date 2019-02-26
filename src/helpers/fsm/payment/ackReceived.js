@@ -19,26 +19,26 @@ export function getAckReceivedTransitions() {
 }
 
 
-var doAckReceived = function(fsm) {
+export default function doAckReceived(fsm) {
   console.log("do"+fsm.state);
   
-  switch (fsm.ack.status) {
+  switch (fsm.args.ack.status) {
     case "ok":
       return proceedValidAck(fsm);
 
     case "deferred":
-      if (!fsm.ack.retry_after || fsm.ack.retry_after==0) {
+      if (!fsm.args.ack.retry_after || fsm.args.ack.retry_after==0) {
         return Promise.resolve(fsm.paymentRecovery());
       }
       return proceedSoftError(fsm);
 
     case "rejected":
     case "failed":
-      fsm.args.error = fsm.ack.error.message;
+      fsm.args.error = fsm.args.ack.error ? fsm.args.ack.error.message : "Payment failed";
   }
 
   const { wallet } = fsm.args;
-  fsm.args.payment.ack = fsm.ack;
+  fsm.args.payment.ack = fsm.args.ack;
   return persistFSM(wallet, fsm.args)
     .then(wallet.storage.flush)
     .then(fsm.failed);                  
@@ -47,7 +47,7 @@ var doAckReceived = function(fsm) {
 
 function proceedSoftError(fsm) {
   const { wallet } = fsm.args;
-  const { retry_after } = fsm.ack;
+  const { retry_after } = fsm.args.ack;
   const MAX_WAIT = 10; // 10 seconds for now
 
   const handleSoftError = () => {
@@ -73,7 +73,7 @@ function proceedSoftError(fsm) {
       .then((cancelled) => cancelled ? fsm.failed() : fsm.paymentRecovery());
   };
 
-  fsm.args.payment.ack = fsm.ack;
+  fsm.args.payment.ack = fsm.args.ack;
   return persistFSM(wallet, fsm.args)
     .then(wallet.storage.flush)
     .then(handleSoftError)
@@ -82,13 +82,16 @@ function proceedSoftError(fsm) {
 
 
 function proceedValidAck(fsm) {
-  const { wallet } = fsm.args;
+  const {
+    payment,
+    wallet,
+  } = fsm.args;
 
   const recordTransaction = (newBalance) => {
     const historyTransaction = {
       headerInfo: {
         fn: 'buy item',
-        domain: fsm.ack.seller || extractHostname(document.referrer),
+        domain: fsm.args.ack.seller || extractHostname(document.referrer),
       },
       paymentInfo: {
         actualValue: fsm.args.amount,
@@ -119,7 +122,7 @@ function proceedValidAck(fsm) {
         description: fsm.args.description,
         payment_url: fsm.args.payment_url,
       },
-      paymentAck: fsm.ack,
+      paymentAck: fsm.args.ack,
     };
     fsm.args.item = item;
 
@@ -127,7 +130,7 @@ function proceedValidAck(fsm) {
   };
 
   const persistHistoryItemAndFSM = (newBalance) => {
-    fsm.args.payment.ack = fsm.ack;
+    fsm.args.payment.ack = fsm.args.ack;
     const promises = [
       persistFSM(wallet, fsm.args),
       recordTransaction(newBalance),
@@ -141,10 +144,10 @@ function proceedValidAck(fsm) {
     return fsm.failed();
   };
 
-  return wallet.Balance(currency)
+  return wallet.Balance(fsm.args.currency)
     .then(persistHistoryItemAndFSM)
-    .then(wallet.storage.flush)
-    .then(fsm.ackOk)
+    .then(() => wallet.config.storage.flush())
+    .then(() => fsm.ackOk())
     .catch(handleError);
 }
 

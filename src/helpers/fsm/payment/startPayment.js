@@ -53,8 +53,12 @@ export default function doStartPayment(fsm) {
     return fsm.error();         
   };
 
+  const payment = {
+    "Payment": fsm.args.payment,
+  };
+
   fsm.args.paymentAttempts += 1;
-  return Promise.race([timerPromise, BitcoinExpress.Host.Payment(fsm.args.payment, fsm.args.amount)])
+  return Promise.race([timerPromise, BitcoinExpress.Host.Payment(payment, fsm.args.amount)])
     .then(getPaymentAck)
     .catch(handleError);
 };
