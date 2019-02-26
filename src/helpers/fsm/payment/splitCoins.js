@@ -39,7 +39,6 @@ export default function doSplitCoins(fsm) {
       wallet_id: Math.random().toString(36).replace(/[^a-z]+/g, ''),
       coins: coins.map((c) => typeof c == "string" ? c : c.base64),
       client: "web",
-      language_preference: "en_GB",
     };
 
     if (fsm.args.useEmail) {
