@@ -101,7 +101,7 @@
     }
 
     function startPayment (price) {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = price || 0.0000123;
       BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
         // an object containing the PaymentAck
@@ -144,7 +144,7 @@
       startPayment(1);
     });
     document.getElementById("mock_payment_6").addEventListener('click', function () {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = "XBT";
       copyReq.PaymentRequest.PaymentDetails['currency'] = 0.000002;
       BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
@@ -164,7 +164,7 @@
 
     });
     document.getElementById("mock_payment_7").addEventListener('click', function () {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
       delete copyReq.PaymentRequest.PaymentDetails.acceptable_issuers;
@@ -185,7 +185,7 @@
 
     });
     document.getElementById("mock_payment_8").addEventListener('click', function () {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
       copyReq.PaymentRequest.PaymentDetails.acceptable_issuers = "be.ap.rmp.net";
@@ -206,7 +206,7 @@
 
     });
     document.getElementById("mock_payment_9").addEventListener('click', function () {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
       delete copyReq.PaymentRequest.PaymentDetails.description;
@@ -227,7 +227,7 @@
 
     });
     document.getElementById("mock_payment_10").addEventListener('click', function () {
-      var copyReq = Object.assign({}, req);
+      var copyReq = JSON.parse(JSON.stringify(req));
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
       delete copyReq.PaymentRequest.PaymentDetails.expires;
