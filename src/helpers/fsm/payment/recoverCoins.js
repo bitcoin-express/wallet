@@ -82,7 +82,7 @@ function recoverCoinsWithHomeIssuer(fsm) {
     fsm.args.notification("displayLoader", { message });
 
     return persistFSM(wallet, null)
-      .then(wallet.storage.flush)
+      .then(wallet.config.storage.flush)
       .then(fsm.coinRecoveryComplete)
       .catch((err) => fsm.failed());
   }

@@ -57,17 +57,17 @@
     </li>
     <li>
       <a id="mock_payment_7" href="#">
-        Error payment: without issuer list - 0.000002XBT
+        Error payment: without acceptable issuer list - 0.000002XBT
       </a>
     </li>
     <li>
       <a id="mock_payment_8" href="#">
-        Error payment: issuer list string instead array - 0.000002XBT
+        Error payment: Acceptable issuer list string instead array - 0.000002XBT
       </a>
     </li>
     <li>
       <a id="mock_payment_9" href="#">
-        Error payment: Memo undefined
+        Error payment: Description undefined
       </a>
     </li>
     <li>
@@ -167,7 +167,7 @@
       var copyReq = Object.assign({}, req);
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      delete copyReq.PaymentRequest.PaymentDetails.issuers;
+      delete copyReq.PaymentRequest.PaymentDetails.acceptable_issuers;
       BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
         // an object containing the PaymentAck
         if ("PaymentAck" in container) {
@@ -188,7 +188,7 @@
       var copyReq = Object.assign({}, req);
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      copyReq.PaymentRequest.PaymentDetails.issuers = "be.ap.rmp.net";
+      copyReq.PaymentRequest.PaymentDetails.acceptable_issuers = "be.ap.rmp.net";
       BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
         // an object containing the PaymentAck
         if ("PaymentAck" in container) {
@@ -209,7 +209,7 @@
       var copyReq = Object.assign({}, req);
       copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
       copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      delete copyReq.PaymentRequest.PaymentDetails.memo;
+      delete copyReq.PaymentRequest.PaymentDetails.description;
       BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
         // an object containing the PaymentAck
         if ("PaymentAck" in container) {

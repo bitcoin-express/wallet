@@ -1,3 +1,4 @@
+import React from 'react';
 import { getSecondsFromISODate, getSecondsToISODate } from '../tools';
 
 
@@ -24,6 +25,10 @@ export function getPrepareCurrencyTransitions () {
     to: 'RecoverCoins'
   }, {
     name: 'insufficientFunds',
+    from: 'PrepareCurrency',
+    to: 'Exit'
+  }, {
+    name: 'malformedPayment',
     from: 'PrepareCurrency',
     to: 'Exit'
   }, {
@@ -57,8 +62,11 @@ export default function doPrepareCurrency(fsm) {
 
   const errors = getArgumentErrors(fsm.args);
   if (errors.length > 0) {
-    fsm.args.error = "Malformed payment request - " + errors.join(", ");
-    return Promise.resolve(fsm.error()); 
+    fsm.args.error = <div>
+      <b>Malformed payment request:</b><br/>
+      { errors.join(", ") }
+    </div>;
+    return Promise.resolve(fsm.malformedPayment()); 
   }
 
 
@@ -247,6 +255,8 @@ function getArgumentErrors(args) {
     errorList.push("'acceptable_issuers undefined'");
   } else if (!Array.isArray(acceptable_issuers) || acceptable_issuers.length == 0) {
     errorList.push("'acceptable_issuers list'");
+  } else if (wallet.getAcceptableDomains(acceptable_issuers).length == 0) {
+    errorList.push("'no acceptable issuer domains'");
   }
 
   // Check if description is present
@@ -254,10 +264,6 @@ function getArgumentErrors(args) {
     errorList.push("'description undefined'");
   }
 
-  let issuerList = wallet.getAcceptableDomains(acceptable_issuers);
-  if (issuerList.length == 0) {
-    errorList.push("'no acceptable issuer domains'");
-  }
   return errorList;
 };
 
