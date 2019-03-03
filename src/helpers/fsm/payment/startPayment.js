@@ -49,6 +49,7 @@ export default function doStartPayment(fsm) {
 
   const handleError = (err) => {
     clearTimeout(timer);
+    console.log(err);
     fsm.args.error = err.message || err;
     return fsm.error();         
   };

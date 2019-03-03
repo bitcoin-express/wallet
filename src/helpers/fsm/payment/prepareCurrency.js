@@ -79,12 +79,8 @@ export default function doPrepareCurrency(fsm) {
     fsm.args.other.rates = exchangeRates;
     fsm.args.other.expiryExchangeRates = expiry;
 
-    const totalCurrency = fsm.args.wallet.getBalanceAs(fsm.args.currency, fsm.args.issuerList, exchangeRates);
-    if (fsm.args.amount > totalCurrency) {
-      throw new Error("insufficientFunds");
-    }
-
-    return response;
+    const { currency, wallet } = fsm.args;
+    return wallet.Balance(currency);
   };
 
 
@@ -100,7 +96,7 @@ export default function doPrepareCurrency(fsm) {
 
     // Get swaps needed to reach the amount
     const amountToTarget = fsm.args.amount - balance;
-    return wallet.getSwapCoins(fsm.args.currency, amountToTarget, fsm.args.other.rates);
+    return fsm.args.wallet.getSwapCoins(fsm.args.currency, amountToTarget, fsm.args.other.rates);
   };
 
 
@@ -142,13 +138,12 @@ export default function doPrepareCurrency(fsm) {
 
     const message = "Fetching exchange rates...";
     fsm.args.notification("displayLoader", { message })
-
-    return Promise.all(doSwapsFromList(fsm.args, service, emailRecovery));
+    return doSwapsFromList(fsm.args, service, emailRecovery);
   };
 
 
   const handleError = (err) => {
-
+    console.log(err);
     switch (err.message) {
       case "insufficientFunds":
         fsm.args.error = "Insufficient funds to proceed with this payment";
@@ -168,7 +163,7 @@ export default function doPrepareCurrency(fsm) {
   }
 
   return fsm.args.wallet.getIssuerExchangeRates()
-    .then(() => fsm.args.wallet.Balance(fsm.args.currency))
+    .then(getExchangeRates)
     .then(getSwapList)
     .then(prepareSwap)
     .then(doSwap)
@@ -188,11 +183,11 @@ export default function doPrepareCurrency(fsm) {
  * :return: [array] the promises of swaps to resolve.
  */
 function doSwapsFromList(args, service, emailRecovery) {
-  return args.other.swapList.map((swap) => {
+  return Promise.all(args.other.swapList.map((swap) => {
     const sourceCurrencyKey = Object.keys(swap)[0];
     const sourceCurrency = swap[sourceCurrencyKey];
 
-    const args = {
+    const atomicArgs = {
       source: {
         sourceValue: parseFloat(sourceCurrency.from.toFixed(8)),
         sourceCurrency: sourceCurrencyKey,
@@ -206,8 +201,8 @@ function doSwapsFromList(args, service, emailRecovery) {
       fee: sourceCurrency.fee,
       maxSelected: false,
     };
-    return wallet.atomicSwap(args, service, true);
-  });
+    return args.wallet.atomicSwap(atomicArgs, service, true);
+  }));
 };
 
 

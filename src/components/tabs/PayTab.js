@@ -49,7 +49,7 @@ class PayTab extends React.Component {
   }
 
   componentWillMount() {
-    this.props.refreshIssuerRates(false);
+    //this.props.refreshIssuerRates(false);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -57,10 +57,14 @@ class PayTab extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevProps.exchangeRates != this.props.exchangeRates) {
+    //if (prevProps.exchangeRates != this.props.exchangeRates) {
       // rates are ready to use
-      this.runPaymentFSM();
-    }
+      //this.runPaymentFSM();
+    //}
+  }
+
+  componentDidMount() {
+    this.runPaymentFSM();
   }
 
   _initializeStyles(props) {
@@ -214,8 +218,8 @@ class PayTab extends React.Component {
       wallet: wallet,
       notification: this.notificationFSM,
       other: {
-        rates: exchangeRates,
-        expiryExchangeRates,
+        //rates: exchangeRates,
+        //expiryExchangeRates,
       },
     }, paymentDetails));
 
@@ -342,9 +346,9 @@ class PayTab extends React.Component {
       secsToExpire,
     } = this.state.args;
 
-    if (Object.keys(exchangeRates).length === 0) {
-      return <RateLoader />;
-    }
+    //if (Object.keys(exchangeRates).length === 0) {
+      //return <RateLoader />;
+    //}
 
     switch (state) {
 

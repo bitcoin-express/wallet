@@ -35,6 +35,17 @@ export default function doConfirmPayment(fsm) {
     return Promise.resolve(fsm.paymentTimeout());
   }
 
+  const getBeginResponse = (beginResponse) => {
+    const {
+      amount,
+      currency,
+      wallet,
+    } = fsm.args;
+
+    fsm.args.beginResponse = beginResponse;
+    return wallet.getBitcoinExpressFee(amount, currency, beginResponse);
+  };
+
   let timer;
   const getSplitFees = (fee) => {
     const MAX_MILLI_SECONDS = 2147483647;
@@ -59,6 +70,7 @@ export default function doConfirmPayment(fsm) {
   };
 
   const handleError = (err) => {
+    console.log(err);
     switch (err.message) {
       case "paymentTimeout":
         fsm.args.error = "Payment request expired";
@@ -69,7 +81,14 @@ export default function doConfirmPayment(fsm) {
     return Promise.resolve(fsm.error()); 
   };
 
-  return fsm.args.wallet.getBitcoinExpressFee(fsm.args.amount, fsm.args.currency)
+  const params = {
+    issuerRequest: {
+      fn: "verify"
+    }
+  };
+
+  return fsm.args.wallet.issuer("begin", params)
+    .then(getBeginResponse)
     .then(getSplitFees)
     .then(doSplit)
     .catch(handleError);

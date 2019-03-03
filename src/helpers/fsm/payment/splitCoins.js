@@ -64,11 +64,15 @@ export default function doSplitCoins(fsm) {
 
   const handleError = (err) => {
     fsm.args.error = err.message || err;
+    console.log(err);
     return fsm.error(); 
   };
 
-  const { amount, currency, wallet } = fsm.args;
-  return wallet._getCoinsExactValue(amount, {}, false, currency)
+  const { amount, currency, wallet, beginResponse } = fsm.args;
+  const args = {
+    beginResponse,
+  };
+  return wallet._getCoinsExactValue(amount, args, false, currency)
     .then(preparePaymentObject)
     .catch(handleError);
 };

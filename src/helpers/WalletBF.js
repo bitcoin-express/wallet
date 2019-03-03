@@ -2381,25 +2381,16 @@ export default class WalletBF extends SwapBF {
       .then(issuerRedeem);
   }
 
-  getBitcoinExpressFee(amount, crypto) {
-
+  getBitcoinExpressFee(amount, crypto, beginResponse=null) {
     const {
       debug,
       ISSUE_POLICY,
       VERIFY_EXPIRE,
     } = this.config;
 
-    const params = {
-      issuerRequest: {
-        fn: "verify"
-      }
-    };
-
-    const defPolicy = DEFAULT_SETTINGS.issuePolicy;
-
-    // Split required
-    return this.issuer("begin", params).then((beginResponse) => {
+    const getFee = (beginResponse) => {
       const expiryEmail = this._fillEmailArray(0, true, crypto);
+      const defPolicy = DEFAULT_SETTINGS.issuePolicy;
 
       let args = {
         beginResponse,
@@ -2431,7 +2422,19 @@ export default class WalletBF extends SwapBF {
         return this._getVerificationFee(mockCoin, args).totalFee;
       }
       return 0;
-    });
+    };
+
+    // Split required
+    if (!beginResponse) {
+      const params = {
+        issuerRequest: {
+          fn: "verify"
+        }
+      };
+      return this.issuer("begin", params).then(getFee);
+    }
+
+    return Promise.resolve(beginResponse).then(getFee);
   }
 
   _fillEmailArray(target = 0, persistent = true, crypto = "XBT") {
@@ -3932,7 +3935,7 @@ export default class WalletBF extends SwapBF {
   _ensureDomainIsSet(args, coins) {
     let self = this;
     //When /begin has already returned a response, we must use that Issuer's domain 
-    if ("beginResponse" in args && "headerInfo" in args.beginResponse && "domain" in args.beginResponse.headerInfo) {
+    if (args && args.beginResponse && args.beginResponse.headerInfo && args.beginResponse.headerInfo.domain) {
       args.domain = args.beginResponse.headerInfo.domain;
     //} else if (typeof(args.domain) === "undefined") {
       //Set the domain if all coins come from the same Issuer
@@ -4074,17 +4077,20 @@ export default class WalletBF extends SwapBF {
         return;
       }
 
-      let { targetValue } = splitList[splitList.length - 1];
-      let params = [targetValue, splitList, args, inSession, crypto];
-      this.splitCoins(...params).then((newSplitCoin) => {
+      const handleSplitResponse = (newSplitCoin) => {
         // split success
         if (newSplitCoin) {
           selection.push(newSplitCoin);
           resolve(selection);
-        } else {
-          reject(Error("No coin came back from splitCoins"));
+          return;
         }
-      }).catch(reject);
+        reject(Error("No coin came back from splitCoins"));
+      };
+
+      let { targetValue } = splitList[splitList.length - 1];
+      this.splitCoins(targetValue, splitList, args, inSession, crypto)
+        .then(handleSplitResponse)
+        .catch(reject);
     });
   }
 
