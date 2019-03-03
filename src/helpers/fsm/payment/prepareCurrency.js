@@ -100,14 +100,19 @@ export default function doPrepareCurrency(fsm) {
   };
 
 
-  let service, emailRecovery, timers = [];
+  let service, emailRecovery;
   const prepareSwap = (response) => {
     const { swapList } = response;
     fsm.args.other.swapList = swapList;
 
-    if (Object.keys(swapList).length == 0) {
-      // No need to swap any coin.
+    if (fsm.args.amount <= fsm.args.balance) {
       return true;
+    }
+
+    let totalSwap = 0;
+    swapList.forEach((swap) => { totalSwap += swap[Object.keys(swap)[0]]["exchange"] || 0 });
+    if ((fsm.args.balance + totalSwap) < fsm.args.amount) {
+      throw new Error("insufficientFunds");
     }
 
     emailRecovery = response.emailVerify;
@@ -117,13 +122,16 @@ export default function doPrepareCurrency(fsm) {
     const secondsToExpireSwapRates = getSecondsToExpireSwapRates(fsm.args);
     const countdown = Math.min(secondsToExpirePayment, secondsToExpireSwapRates);
 
-    timers = getSwapTimers(fsm, secondsToExpirePayment, secondsToExpireSwapRates)
+    const promises = getSwapTimers(fsm, secondsToExpirePayment, secondsToExpireSwapRates);
+    const randomTinyNumber = Math.floor(Math.random() * 10000) / 10000
+    const userNotification = fsm.args.notification("displaySwap", {
+      swapList,
+      secsToExpire: countdown + randomTinyNumber,
+    });
+    promises.push(userNotification);
 
     // Wait for the user to confirm the swap by clicking the button, otherwise a timer will trigger.
-    return fsm.args.notification("displaySwap", {
-      swapList,
-      secsToExpire: countdown,
-    });
+    return Promise.race(promises);
   };
 
 
@@ -132,9 +140,6 @@ export default function doPrepareCurrency(fsm) {
       // No need to swap any coin.
       return true;
     }
-
-    // Clear all the timers
-    timers.forEach((timer) => clearTimeout(timer));
 
     const message = "Fetching exchange rates...";
     fsm.args.notification("displayLoader", { message })
@@ -272,16 +277,20 @@ function getArgumentErrors(args) {
  */
 function getSwapTimers(fsm, secsToPayment, secsToRates) {
   const MAX_MILLISECONDS = 2147483647;
-  const throwError = (key) => () => { throw new Error(key) };
+  const throwError = (reject, key) => reject(new Error(key));
 
   const payTimeout = Math.min(MAX_MILLISECONDS, 1000 * secsToPayment);
-  const paymentTimer = setTimeout(throwError("paymentTimeout"), payTimeout); 
+  const paymentTimer = new Promise((resolve, reject) => {
+    setTimeout(() => throwError(reject, "paymentTimeout"), payTimeout)
+  }); 
 
   const ratesTimeout = Math.min(MAX_MILLISECONDS, 1000 * secsToRates);
-  const disableButtonTimer = setTimeout(throwError("disableSwap"), ratesTimeout);
-  const swapRateTimer = setTimeout(throwError("ratesTimeout"), ratesTimeout + 5000); 
+  // const disableButtonTimer = setTimeout(throwError("disableSwap"), ratesTimeout - 5000);
+  const swapRateTimer = new Promise((resolve, reject) => {
+    setTimeout(() => throwError(reject, "ratesTimeout"), ratesTimeout); 
+  }); 
 
-  return [paymentTimer, disableButtonTimer, swapRateTimer];
+  return [paymentTimer, swapRateTimer]; // disableButtonTimer, 
 }
 
 
@@ -307,7 +316,7 @@ function _getEarliestExpiryTime(currency, expiryRates, swapList) {
 
   // Get the earliest expiry time
   currency = currency.toUpperCase();
-  const currencyKeys = Object.keys(swapList);
+  const currencyKeys = swapList.map((swap) => Object.keys(swap)[0]);
 
   let expiry;
   currencyKeys.forEach((currencyCode) => {

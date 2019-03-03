@@ -48,19 +48,8 @@ class PayTab extends React.Component {
     console.log("nothing to do yet");
   }
 
-  componentWillMount() {
-    //this.props.refreshIssuerRates(false);
-  }
-
   componentWillReceiveProps(nextProps) {
     this._initializeStyles(nextProps);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    //if (prevProps.exchangeRates != this.props.exchangeRates) {
-      // rates are ready to use
-      //this.runPaymentFSM();
-    //}
   }
 
   componentDidMount() {
@@ -217,10 +206,7 @@ class PayTab extends React.Component {
       // ALWAYS include when creating an FSM
       wallet: wallet,
       notification: this.notificationFSM,
-      other: {
-        //rates: exchangeRates,
-        //expiryExchangeRates,
-      },
+      other: {},
     }, paymentDetails));
 
     const handleError = (err) => {
@@ -345,10 +331,6 @@ class PayTab extends React.Component {
     const {
       secsToExpire,
     } = this.state.args;
-
-    //if (Object.keys(exchangeRates).length === 0) {
-      //return <RateLoader />;
-    //}
 
     switch (state) {
 

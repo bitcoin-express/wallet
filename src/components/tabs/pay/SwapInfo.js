@@ -243,7 +243,7 @@ export default class SwapInfo extends React.Component {
             <DateCounter
               disabled={ disabled }
               inSeconds={ true }
-              timeToExpire={ parseInt(secsToExpire) + 5 }
+              timeToExpire={ secsToExpire }
             />
           </div>
         </div>
@@ -252,3 +252,4 @@ export default class SwapInfo extends React.Component {
     </div>;
   }
 }
+// timeToExpire + 5
