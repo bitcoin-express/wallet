@@ -33,9 +33,10 @@ export default class DateCounter extends React.Component {
     if (nextProps.timeToExpire) {
       this.setState({
         counter: parseInt(nextProps.timeToExpire),
+      }, () => {
+        clearInterval(this.interval);
+        this.startInterval();
       });
-      clearInterval(this.interval);
-      this.startInterval();
     }
   }
 
