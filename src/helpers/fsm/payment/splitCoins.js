@@ -71,6 +71,7 @@ export default function doSplitCoins(fsm) {
   const { amount, currency, wallet, beginResponse } = fsm.args;
   const args = {
     beginResponse,
+    forceTarget: true,
   };
   return wallet._getCoinsExactValue(amount, args, false, currency)
     .then(preparePaymentObject)

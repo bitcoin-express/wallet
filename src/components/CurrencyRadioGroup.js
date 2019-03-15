@@ -15,7 +15,7 @@ export class CurrencyRadioGroup extends React.Component {
 
     this.styles = {
       iconStyle: {
-        fill: styles.colors.mainTextColor,
+        fill: "#303a54", //styles.colors.mainTextColor,
       },
       labelRadio: {
         display: 'flex',

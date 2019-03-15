@@ -1410,7 +1410,7 @@ export default class WalletBF extends SwapBF {
               let getEncryptedCoins = (coins, passphrase, crypto) => {
                 return this.decryptCoins(coins, passphrase).then((clist) => {
                   removedCoins[crypto] = params.coinsInFile[crypto] - clist.length;
-                  return this._setImportCoinsInStore(clist, params, verify, actionType, crypto);
+                  return this._doImportCoinsInStore(clist, params, verify, actionType, crypto);
                 }).then((result) => {
                   params.removedCoins = removedCoins[crypto];
                   return Object.assign(result, {
@@ -1436,7 +1436,7 @@ export default class WalletBF extends SwapBF {
               params.removedCoins = 0;
 
               let setParams = [coins, params, verify, actionType, crypto];
-              let promise = this._setImportCoinsInStore(...setParams);
+              let promise = this._doImportCoinsInStore(...setParams);
 
               promises.push(promise.then((result) => {
                 let coinsInFile = params.coinsInFile[result.crypto]
@@ -1527,7 +1527,7 @@ export default class WalletBF extends SwapBF {
    *   'importInfo': importInfo value of request
    *   'verifyFailed': if true, verification failed but coin in store
    */ 
-  _setImportCoinsInStore(coinList, importObject, verify, action, crypto=null) {
+  _doImportCoinsInStore(coinList, importObject, verify, action, crypto=null) {
     const {
       COIN_STORE,
       CRYPTO,

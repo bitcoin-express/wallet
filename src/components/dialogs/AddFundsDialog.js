@@ -331,7 +331,7 @@ class AddFundsDialog extends React.Component {
 
     this.state = {
       ready: false,
-      depositef: null,
+      depositRef: null,
       depositRefStore: props.wallet.getDepositRefList(),
       qr: false,
       showHistory: false,
@@ -414,6 +414,7 @@ class AddFundsDialog extends React.Component {
 
   componentWillMount() {
     const updateStateWithDeposit = (depositRef) => {
+      console.log("Deposit Reference", depositRef)
       this.setState({
         depositRef,
         ready: true,

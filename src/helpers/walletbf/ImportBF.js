@@ -280,7 +280,7 @@ export function verifyCoins(coins, args, inSession=true, repository=null) {
     }
 
     const verifyExpire = parseFloat(this.getSettingsVariable(VERIFY_EXPIRE));
-    verifyRequest = prepareVerifyRequest(args, coins, tid, issuer, verifyExpire);
+    verifyRequest = prepareVerifyRequest(args, coins, tid, issuer, verifyExpire, sumCoins);
 
     if (args.external) {
       return Promise.resolve([]);
@@ -325,7 +325,7 @@ export function verifyCoins(coins, args, inSession=true, repository=null) {
 };
 
 
-const prepareVerifyRequest = function (args, coins, tid, issuer, expire) {
+const prepareVerifyRequest = function (args, coins, tid, issuer, expire, sumCoins) {
   const expiryPeriod = args.expiryPeriod_ms || expire * 1000 * 60 * 60;
   const now = new Date().getTime();
   const expiry = new Date(now + expiryPeriod).toISOString();
@@ -342,13 +342,16 @@ const prepareVerifyRequest = function (args, coins, tid, issuer, expire) {
       tid,
       expiry,
       coin,
-      targetValue: args.target,
       issuePolicy: args.policy || issuePolicy,
     },
   };
 
+  if (args.forceTarget) {
+    request.issuerRequest["targetValue"] = args.target;
+  }
+
   request = includeRecoveryKey("verify", args, request);
-  request = includeExpiryEmailKey(args, request, issuer);
+  request = includeExpiryEmailKey(args, request, issuer, sumCoins);
   request = includeNewCoinListKey(args, request);
 
   return request;
@@ -381,7 +384,7 @@ const includeRecoveryKey = function (fn, args, request) {
 /**
  * Modify request depending if expiry email is required.
  */
-const includeExpiryEmailKey = function (args, request, issuer = {}) {
+const includeExpiryEmailKey = function (args, request, issuer = {}, sumCoins = 0) {
   const {
     expiryEmail
   } = args;

@@ -147,12 +147,12 @@ export function getDepositRef() {
 
   // Remove reference
   if (expiry < new Date()) {
-    return this.removeDepositRef()
-      .then(() => null);
+    return this.removeDepositRef().then(() => null);
   }
-  let depositReference = list[0];
-  const { domain } = depositReference.headerInfo;
-  depositReference["isDefaultIssuer"] = domain == homeIssuer;
+
+  const depositReference = list[0];
+  const sameIssuer = depositReference.headerInfo.domain == homeIssuer.trim();
+  depositReference["isDefaultIssuer"] = sameIssuer;
   return Promise.resolve(depositReference);
 }
 
