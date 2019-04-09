@@ -900,6 +900,8 @@ export default class WalletBF extends SwapBF {
 
       let verifyArgs = {
         beginResponse: response,
+        //include targetValue on verify request
+        forceTarget: true,
         action: "export split"
       };
 

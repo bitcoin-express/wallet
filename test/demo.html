@@ -78,175 +78,142 @@
   </ul>
 
   <script defer="defer" type="text/javascript">
+    var authToken = "0320ac5aba0041efc099c5a5cf264328a4a8c408453618b06b2b5f9c2cc77a43d7";
+    var returnUrl = "http://amandapalmer.net/wp-content/themes/afp/art-of-asking/images/hero_mask.png";
+
+    document.getElementById("open_wallet_1").addEventListener('click', function () {
+      showWallet(true);
+    });
+
+    document.getElementById("open_wallet_2").addEventListener('click', function () {
+      showWallet(false);
+    });
+
+    document.getElementById("mock_payment_1").addEventListener('click', function () {
+      startPayment(0.0000123);
+    });
+
+    document.getElementById("mock_payment_2").addEventListener('click', function () {
+      startPayment(0.0004);
+    });
+
+    document.getElementById("mock_payment_2_bis").addEventListener('click', function () {
+      startPayment(0.0006);
+    });
+
+    document.getElementById("mock_payment_3").addEventListener('click', function () {
+      startPayment(0.0000095);
+    });
+
+    document.getElementById("mock_payment_4").addEventListener('click', function () {
+      startPayment(0.00002);
+    });
+
+    document.getElementById("mock_payment_5").addEventListener('click', function () {
+      startPayment(1);
+    });
+
     function showWallet(fullSize) {
       BitcoinExpress.Wallet.Open({
         fullScreen: fullSize,
       });
     };
 
-    var req = {
-      "fullScreen": false,
-      "PaymentRequest": {
-        "payment_details_version": "1",
-        "PaymentDetails": {
-          "acceptable_issuers": ["(be.ap.rmp.net)"],
-          "amount": 0.0000123,
-          "created": new Date().toISOString(),
-          "currency": "XBT",
-          "description": "test payment 1",
-          "payment_url": "https://be.ap.rmp.net/Bitcoin-express/v1/issuer/mockPayment",
-          "transaction_id": "XX11"
+    function startPayment(amount, modifyRequest=null) {
+
+      var data = {
+        "amount": String(amount),
+        "callback_url": "https://bitcoin-e.org/post-order?order=IN1234",
+        "currency": "XBT",
+        "description": "Just a test to retrieve an image",
+        "email_customer_contact": "test@bitcoin-e.org",
+        "order_id": "IN1234",
+        "polices": {
+          "receipt_via_email": true,
+          "refund_via_email": false
+        },
+        "return_url": returnUrl,
+        "time_budget": "60",
+        "type": "payment"
+      };
+
+      var xhttp = new XMLHttpRequest();
+      xhttp.open("POST", "https://103.253.41.50:8443/v1.0a/transactions", true);
+      xhttp.setRequestHeader("Content-type", "application/json");
+      xhttp.setRequestHeader("BE-MG-Auth-Token", authToken);
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = JSON.parse(this.responseText);
+          var paymentDetails = response["body"][0]["payment_details"];
+
+          var req = {
+            "fullScreen": false,
+            "PaymentRequest": {
+              "payment_details_version": "1",
+              "PaymentDetails": paymentDetails
+            }
+          };
+
+          if (modifyRequest) {
+            req = modifyRequest(req);
+          }
+
+          BitcoinExpress.Wallet.Open(req).then(function(container) {
+            // an object containing the PaymentAck
+            if ("PaymentAck" in container) {
+              let PaymentAck = container.PaymentAck;
+              if ("status" in PaymentAck) {
+                console.log("Status is "+PaymentAck.status);
+                if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
+                  //return window.location.replace(PaymentAck.return_url);
+                }
+              }
+            }
+          }).catch(function(err) {
+            console.log("PaymentRequest returned ", err);
+            reject(err);
+          });
         }
-      }
+      };
+      xhttp.send(JSON.stringify(data));
     }
 
-    function startPayment (price) {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = price || 0.0000123;
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              //return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-    };
-
-    document.getElementById("open_wallet_1").addEventListener('click', function () {
-      showWallet(true);
-    });
-    document.getElementById("open_wallet_2").addEventListener('click', function () {
-      showWallet(false);
-    });
-    document.getElementById("mock_payment_1").addEventListener('click', function () {
-      startPayment(0.0000123);
-    });
-    document.getElementById("mock_payment_2").addEventListener('click', function () {
-      startPayment(0.0004);
-    })
-    document.getElementById("mock_payment_2_bis").addEventListener('click', function () {
-      startPayment(0.0006);
-    });;
-    document.getElementById("mock_payment_3").addEventListener('click', function () {
-      startPayment(0.0000095);
-    });
-    document.getElementById("mock_payment_4").addEventListener('click', function () {
-      startPayment(0.00002);
-    });
-    document.getElementById("mock_payment_5").addEventListener('click', function () {
-      startPayment(1);
-    });
     document.getElementById("mock_payment_6").addEventListener('click', function () {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = "XBT";
-      copyReq.PaymentRequest.PaymentDetails['currency'] = 0.000002;
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-
+      startPayment(0.000002);
     });
+
     document.getElementById("mock_payment_7").addEventListener('click', function () {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
-      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      delete copyReq.PaymentRequest.PaymentDetails.acceptable_issuers;
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-
+      var modifyRequest = function (data) {
+        delete data.PaymentRequest.PaymentDetails.acceptable_issuers;
+        return data;
+      };
+      startPayment(0.000002, modifyRequest);
     });
+
     document.getElementById("mock_payment_8").addEventListener('click', function () {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
-      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      copyReq.PaymentRequest.PaymentDetails.acceptable_issuers = "be.ap.rmp.net";
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-
+      var modifyRequest = function (data) {
+        data.PaymentRequest.PaymentDetails.acceptable_issuers = "be.ap.rmp.net";
+        return data;
+      };
+      startPayment(0.000002, modifyRequest);
     });
+
     document.getElementById("mock_payment_9").addEventListener('click', function () {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
-      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      delete copyReq.PaymentRequest.PaymentDetails.description;
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-
+      var modifyRequest = function (data) {
+        delete data.PaymentRequest.PaymentDetails.description;
+        return data;
+      };
+      startPayment(0.000002, modifyRequest);
     });
+
     document.getElementById("mock_payment_10").addEventListener('click', function () {
-      var copyReq = JSON.parse(JSON.stringify(req));
-      copyReq.PaymentRequest.PaymentDetails['amount'] = 0.000002;
-      copyReq.PaymentRequest.PaymentDetails['currency'] = "XBT";
-      delete copyReq.PaymentRequest.PaymentDetails.expires;
-      BitcoinExpress.Wallet.Open(copyReq).then(function(container) {
-        // an object containing the PaymentAck
-        if ("PaymentAck" in container) {
-          let PaymentAck = container.PaymentAck;
-          if ("status" in PaymentAck) {
-            console.log("Status is "+PaymentAck.status);
-            if (PaymentAck.status == "ok" && "return_url" in PaymentAck) {
-              return window.location.replace(PaymentAck.return_url);
-            }
-          }
-        }
-      }).catch(function(err) {
-        console.log("PaymentRequest returned ", err);
-      });
-
+      var modifyRequest = function (data) {
+        delete data.PaymentRequest.PaymentDetails.expires;
+        return data;
+      };
+      startPayment(0.000002, modifyRequest);
     });
+
   </script>
 
   </body>
