@@ -54,12 +54,23 @@ export default function doStartPayment(fsm) {
     return fsm.error();         
   };
 
-  const payment = {
+  let payment = {
     "Payment": fsm.args.payment,
   };
 
+  if (fsm.args.forceBrokenPayment) {
+    console.log("force broken payment");
+    payment.Payment["forceBroken"] = true;
+  }
+
   fsm.args.paymentAttempts += 1;
-  return Promise.race([timerPromise, BitcoinExpress.Host.Payment(payment, fsm.args.amount)])
+
+  const promises = [
+    timerPromise,
+    BitcoinExpress.Host.Payment(payment, fsm.args.amount)
+  ];
+
+  return Promise.race(promises)
     .then(getPaymentAck)
     .catch(handleError);
 };

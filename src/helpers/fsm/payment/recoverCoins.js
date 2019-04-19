@@ -73,6 +73,7 @@ export default function doRecoverCoins(fsm) {
 };
 
 
+
 function recoverCoinsWithHomeIssuer(fsm) {
   const { wallet } = fsm.args;
 

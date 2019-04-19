@@ -116,6 +116,7 @@ class App extends React.Component {
     *    it so not shown here.
     */
     const {
+      forceBrokenPayment,
       paymentRequest,
     } = this.props;
 
@@ -125,12 +126,14 @@ class App extends React.Component {
       this.setState({
         status: states.REVEAL_APP,
       });
-    } else {
-      this.setState({
-        status: states.PROCESS_PAYMENT,
-        paymentRequest,
-      });
+      return this._revealWallet();
     }
+
+    this.setState({
+      forceBrokenPayment,
+      paymentRequest,
+      status: states.PROCESS_PAYMENT,
+    });
     return this._revealWallet();
   }
 
@@ -178,12 +181,14 @@ class App extends React.Component {
   renderContent() {
     const {
       isFullScreen,
+      forceBrokenPayment,
       paymentRequest,
       status,
     } = this.state;
 
     return <Wallet
       close={ this.close }
+      forceBrokenPayment={ forceBrokenPayment }
       isFullScreen={ isFullScreen }
       initializeDraggableArea={(id) => {
         BitcoinExpress.Host.WalletMakeDraggable(id);
@@ -241,6 +246,7 @@ function getParameterByName (name, url) {
 ReactDOM.render(
   <App
     isFullScreen={ getParameterByName('fullScreen') == 'true' }
+    forceBrokenPayment={ getParameterByName('forceBrokenPayment') == 'true' }
     paymentRequest={ JSON.parse(getParameterByName('paymentRequest')) }
   />,
   document.getElementById('wallet')

@@ -41,7 +41,7 @@ export default function doPaymentFailed(fsm) {
         comment: "recovery from payment failure",
         fee: 0,
       },
-      coin: coins,
+      coin: fsm.args.coins,
       other: {
         target: fsm.args.amount,
         item: fsm.args.payment.transaction_id,

@@ -75,11 +75,25 @@
         Payment expires not defined
       </a>
     </li>
+    <li>
+      <a id="mock_payment_11" href="#">
+        Payment with forceBroken key value
+      </a>
+    </li>
   </ul>
 
   <script defer="defer" type="text/javascript">
-    var authToken = "0320ac5aba0041efc099c5a5cf264328a4a8c408453618b06b2b5f9c2cc77a43d7";
+    var authToken = "03e526d0e149363eee8aa4b814489764246b6aff6f13eccbdd1f498a18bfaecd99";
     var returnUrl = "http://amandapalmer.net/wp-content/themes/afp/art-of-asking/images/hero_mask.png";
+
+    function makeid(length) {
+      var text = "";
+      var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return text;
+    }
 
     document.getElementById("open_wallet_1").addEventListener('click', function () {
       showWallet(true);
@@ -127,7 +141,7 @@
         "currency": "XBT",
         "description": "Just a test to retrieve an image",
         "email_customer_contact": "test@bitcoin-e.org",
-        "order_id": "IN1234",
+        "order_id": makeid(5),
         "polices": {
           "receipt_via_email": true,
           "refund_via_email": false
@@ -148,6 +162,7 @@
 
           var req = {
             "fullScreen": false,
+            "forceBrokenPayment": false, // force wrong payment
             "PaymentRequest": {
               "payment_details_version": "1",
               "PaymentDetails": paymentDetails
@@ -212,6 +227,14 @@
         return data;
       };
       startPayment(0.000002, modifyRequest);
+    });
+
+    document.getElementById("mock_payment_11").addEventListener('click', function () {
+      var modifyRequest = function (data) {
+        data.PaymentRequest["forceBroken"] = true;
+        return data;
+      };
+      startPayment(0.0000002, modifyRequest);
     });
 
   </script>

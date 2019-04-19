@@ -82,15 +82,13 @@ export default class PaymentInfo extends React.Component {
       };
     }
 
-    const tooMuchTime = Math.floor(timeToExpire / (60 * 60)) > 0;
-
     return <div style={ styleContainer }>
       <div style={ this.styles.row }>
         <div style={ this.styles.label }>
           Payment to:
         </div>
         <div style={ this.styles.answer }>
-          { domain || this.tools.getDomainFromURL(payment_url, true) } <i
+          { this.tools.getDomainFromURL(payment_url, true) } <i
             className="fa fa-lock"
             style={{
               color: "#1c8e1c",
@@ -178,7 +176,7 @@ export default class PaymentInfo extends React.Component {
         </div>
       </div>) }
 
-      { inactive ? null : <div style={ this.styles.row2 }>
+      { inactive || <div style={ this.styles.row2 }>
         <div style={ this.styles.labelCurrency }>
           Billed as:
         </div>
@@ -203,22 +201,70 @@ export default class PaymentInfo extends React.Component {
         </div>
       </div> }
 
-      { inactive || tooMuchTime ? null : <div style={ this.styles.row2 }>
-        <div style={ this.styles.labelCurrency }>
-          Expires:
-        </div>
-        <div style={ this.styles.answer }>
-          <DateCounter
-            timeToExpire={ timeToExpire }
-          /> <i
-            className="fa fa-clock-o" 
-            style={{
-              position: "absolute",
-              right: "15px",
-            }}
-          />
-        </div>
-      </div> }
+      { inactive || <TimeToExpire
+          timeToExpire={ timeToExpire }
+          styles={ this.styles }
+        /> }
+    </div>;
+  }
+}
+
+
+class TimeToExpire extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      counter: parseInt(props.timeToExpire),
+    };
+  }
+
+  componentDidMount() {
+    this.startInterval();
+  }
+
+  startInterval() {
+    this.interval = this.tools.countdown(this.state.counter, (counter) => {
+      this.setState({
+        counter,
+      });
+    }, () => {});
+  }
+
+  render () {
+    const {
+      timeToExpire,
+      styles,
+    } = this.props;
+
+    const {
+      counter,
+    } = this.state;
+
+    if (!timeToExpire) {
+      return null;
+    }
+
+    // higher than 10 minutes
+    if (timeToExpire > 60 * 10) {
+      return null;
+    }
+
+    return <div style={ styles.row2 }>
+      <div style={ styles.labelCurrency }>
+        Expires:
+      </div>
+      <div style={ styles.answer }>
+        <DateCounter
+          timeToExpire={ timeToExpire }
+        /> <i
+          className="fa fa-clock-o" 
+          style={{
+            position: "absolute",
+            right: "15px",
+          }}
+        />
+      </div>
     </div>;
   }
 }

@@ -3052,6 +3052,7 @@ class Wallet extends React.Component {
             balance={ balance }
             exchangeRates={ exchangeRates }
             expiryExchangeRates={ expiryExchangeRates }
+            forceBrokenPayment={ this.props.forceBrokenPayment }
             isFlipped={ isFlipped }
             isFullScreen={ isFullScreen }
             loading={ this.loading }

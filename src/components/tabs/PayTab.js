@@ -179,6 +179,7 @@ class PayTab extends React.Component {
     let {
       exchangeRates,
       expiryExchangeRates,
+      forceBrokenPayment,
       loading,
       paymentDetails,
       refreshCoinBalance,
@@ -191,18 +192,15 @@ class PayTab extends React.Component {
     } = wallet.config;
 
     let machine = new FSM("paymentRequest", Object.assign({
-      // Only for payment request
-      //use by PaymentInterrupted
+      // Only for payment request use by PaymentInterrupted
       coinsExist: false,
-      //Simulates that Payment has failed
-      failPayment: false,
-
+      // Force payment failure by modifying the Payment request
+      forceBrokenPayment,
       // These are needed by the state machine
       // if > 0 causes SplitCoin to be executed
       splitFee: 0,
       // when true simulates restart after power failure
       interrupted: false,
-
       // ALWAYS include when creating an FSM
       wallet: wallet,
       notification: this.notificationFSM,
@@ -220,20 +218,6 @@ class PayTab extends React.Component {
       .then(() => refreshCoinBalance())
       .then(() => storage.sessionEnd())
       .catch(handleError);
-
-    /*
-    storage.sessionStart("Payment").then(() => {
-      return machine.run();
-    }).then(() => {
-      return refreshCoinBalance();
-    }).then(function() {
-      console.log("PaymentRequest has run to completion");
-      return storage.sessionEnd();
-    }).catch(function(err) {
-      console.log(err);
-      return storage.sessionEnd();
-    });
-    */
   }
 
   renderEmailCheckbox() {
@@ -316,8 +300,10 @@ class PayTab extends React.Component {
       currency,
       acceptable_issuers,
       description,
+      expires,
       payment_url,
       email_customer_contact,
+      seller,
       amount,
     } = this.props.paymentDetails;
 
@@ -362,7 +348,7 @@ class PayTab extends React.Component {
                 isFullScreen={ isFullScreen }
                 memo={ description }
                 payment_url={ payment_url }
-                seller={ email_customer_contact }
+                seller={ seller }
                 showValuesInCurrency={ showValuesInCurrency }
                 total={ 0 }
                 wallet={ wallet }
@@ -549,9 +535,16 @@ class PayTab extends React.Component {
       case "PaymentInfo":
         const {
           splitFee,
-          timeToExpire,
         } = this.state.args;
-        console.log("timetoexpire - " + timeToExpire)
+
+        let secondsToExpire = null;
+        if (expires) {
+          var d1 = new Date(expires),
+              d2 = new Date(); // now
+
+          secondsToExpire = Math.floor((d1 - d2) / 1e3)
+          console.log("secondsToExpire - " + secondsToExpire)
+        }
 
         return <div style={ this.styles.container }>
 
@@ -566,9 +559,9 @@ class PayTab extends React.Component {
             isFullScreen={ isFullScreen }
             memo={ description }
             payment_url={ payment_url }
-            seller={ email_customer_contact }
+            seller={ seller }
             showValuesInCurrency={ showValuesInCurrency }
-            timeToExpire={ parseInt(timeToExpire) }
+            timeToExpire={ secondsToExpire }
             total={ parseFloat(amount) + parseFloat(splitFee) }
             wallet={ wallet }
             xr={ xr }
